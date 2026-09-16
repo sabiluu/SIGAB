@@ -1,3 +1,1 @@
 # SiagaBencana
-
-Repositori dikosongkan.
