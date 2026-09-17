@@ -2,4 +2,9 @@ from .user import User
 from .village import Village
 from .shelter import Shelter
 from .sos_ticket import SOSTicket
-from .flood_log import FloodLog
+from .flood_probability_log import FloodProbabilityLog
+from .river_discharge_log import RiverDischargeLog
+from .weather_data_log import WeatherDataLog
+from .emergency_status import EmergencyStatus
+from .notification import Notification
+from .system_config import SystemConfig
