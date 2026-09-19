@@ -9,24 +9,35 @@ env/
 dist/
 build/
 
-# ===== Node.js =====
+# ===== Node.js & React/Vite =====
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+dist-ssr/
+*.local
 
-# ===== Vite =====
-frontend/dist/
+# ===== Logs =====
+logs
+*.log
 
 # ===== IDE =====
 .vscode/
+!.vscode/extensions.json
 .idea/
 *.swp
 *.swo
 *~
+*.sw?
 .DS_Store
 Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
 
 # ===== Environment =====
 .env
