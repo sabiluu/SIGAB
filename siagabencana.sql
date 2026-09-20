@@ -57,7 +57,7 @@ CREATE TABLE villages (
     INDEX idx_villages_risk (current_risk_level),
     INDEX idx_villages_probability (current_probability)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-  COMMENT='Data 25 desa Kecamatan Baureno — entitas wilayah utama';
+    COMMENT='Data 25 desa Kecamatan Baureno — entitas wilayah utama';
 
 
 -- =============================================================================
