@@ -30,8 +30,14 @@ class Settings:
     OPEN_METEO_BASE_URL: str = os.getenv(
         "OPEN_METEO_BASE_URL", "https://api.open-meteo.com/v1"
     )
+    OPEN_METEO_FLOOD_BASE_URL: str = os.getenv(
+        "OPEN_METEO_FLOOD_BASE_URL", "https://flood-api.open-meteo.com/v1"
+    )
     OSRM_BASE_URL: str = os.getenv(
         "OSRM_BASE_URL", "http://router.project-osrm.org"
+    )
+    EXTERNAL_API_TIMEOUT_SECONDS: float = float(
+        os.getenv("EXTERNAL_API_TIMEOUT_SECONDS", "8.0")
     )
 
 
