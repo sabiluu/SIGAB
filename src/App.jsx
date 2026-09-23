@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import AuthPage from './pages/AuthPage'
 import RoleHome from './pages/RoleHome'
+import { LoadingState, ErrorState, EmptyState } from './components/common/AsyncState'
 
 const assetPathPrefix = 'https://www.figma.com/api/mcp/asset/187de7f3-3e0e-42e4-9bfe-938d4a46eeaf'
 
 const icons = {
-  bell: `${assetPathPrefix}/be811.svg`, map: `${assetPathPrefix}/80da8.svg`, sos: `${assetPathPrefix}/420fc.svg`, signal: `${assetPathPrefix}/c9188.svg`, check: `${assetPathPrefix}/623c0.svg`, brand: `${assetPathPrefix}/fca0f.svg`, warga: `${assetPathPrefix}/f7d97.svg`, petugas: `${assetPathPrefix}/a12f6.svg`, phone: `${assetPathPrefix}/72ea2.svg`,
+  bell: `${assetPathPrefix}/be811.svg`, map: `${assetPathPrefix}/80da8.svg`, sos: `${assetPathPrefix}/420fc.svg`, signal: `${assetPathPrefix}/c9188.svg`, check: `${assetPathPrefix}/623c0.svg`, brand: `https://www.figma.com/api/mcp/asset/d84f02db-e7d0-4c80-8d2c-7b2c55160913/375ad.svg`, warga: `${assetPathPrefix}/f7d97.svg`, petugas: `${assetPathPrefix}/a12f6.svg`, phone: `${assetPathPrefix}/72ea2.svg`,
 }
 
 const features = [
@@ -22,7 +23,7 @@ const steps = [
 ]
 
 function Brand({ footer = false }) {
-  return <div className={`landing-brand ${footer ? 'landing-brand-footer' : ''}`}><span className="brand-icon"><img src={icons.brand} alt="" /></span><span><strong>SiagaBencana</strong><small>{footer ? 'Badan Penanggulangan Bencana Daerah - Bojonegoro' : 'BOJONEGORO'}</small></span></div>
+  return <div className={`landing-brand ${footer ? 'landing-brand-footer' : ''}`}><span className="brand-icon"><img src={icons.brand} alt="" /></span><span><strong>SiagaBencana</strong>{!footer && <small>BOJONEGORO</small>}</span></div>
 }
 
 function App() {
@@ -35,8 +36,20 @@ function App() {
   }, [])
 
   const authMatch = hash.match(/^#(masuk|daftar)(?:-(warga|petugas))?$/)
+
   if (authMatch) {
     return <AuthPage initialMode={authMatch[1] === 'daftar' ? 'register' : 'login'} initialRole={authMatch[2] || 'warga'} />
+  }
+
+  // Route khusus untuk screenshot laporan PPT (menampilkan UI State Management)
+  if (hash === '#demo') {
+    return (
+      <div style={{ padding: '60px', display: 'flex', gap: '30px', background: '#f5f7f6', minHeight: '100vh', alignItems: 'center' }}>
+         <div style={{ flex: 1 }}><LoadingState label="Sedang memuat data dari server..." /></div>
+         <div style={{ flex: 1 }}><ErrorState message="Gagal terhubung ke API Server." onRetry={() => {}} /></div>
+         <div style={{ flex: 1 }}><EmptyState title="Belum ada data tiket" message="Tiket SOS warga yang masuk akan tampil di sini." /></div>
+      </div>
+    )
   }
   if (hash === '#warga' || hash === '#petugas') {
     const token = localStorage.getItem('access_token')
@@ -58,7 +71,7 @@ function App() {
         <section className="how-section" id="cara-kerja"><div className="how-grid"><div className="how-summary"><span className="section-kicker">CARA KERJA</span><h2>Tiga langkah menuju siaga penuh</h2><p>Warga terdaftar mendapat perlindungan berlapis — dari peringatan dini otomatis hingga respons evakuasi berprioritas. Semua terhubung ke command center BPBD.</p><ul><li><span><img src={icons.check} alt="" /></span>Gratis untuk seluruh warga Baureno</li><li><span><img src={icons.check} alt="" /></span>Data pribadi terenkripsi & terverifikasi</li><li><span><img src={icons.check} alt="" /></span>Prioritas untuk lansia, balita, & difabel</li></ul></div><div className="step-list">{steps.map(([number, title, text]) => <a className="step-card" href="#daftar" key={number}><strong>{number}</strong><div><h3>{title}</h3><p>{text}</p></div><span>›</span></a>)}</div></div></section>
         <section className="landing-cta" id="daftar"><div><h2>Daftar sekarang. Bersiap sebelum air naik.</h2><p>Butuh waktu kurang dari dua menit. Sekali daftar, wilayah Anda terpantau sepanjang musim penghujan.</p></div><div className="cta-actions"><a className="cta-light" href="#daftar-warga"><img src={icons.warga} alt="" /> Daftar sebagai Warga</a><a className="cta-dark" href="#masuk-petugas"><img src={icons.petugas} alt="" /> Masuk Petugas</a></div></section>
       </main>
-      <footer className="landing-footer" id="kontak"><Brand footer /><span>© 2026 BPBD Bojonegoro • PRD v3.0</span></footer>
+      <footer className="landing-footer" id="kontak"><Brand footer /><span>© 2026 SiagaBencana</span></footer>
     </div>
   )
 }

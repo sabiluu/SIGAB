@@ -4,7 +4,7 @@ import { login, register } from '../services/authService'
 
 const assetPathPrefix = 'https://www.figma.com/api/mcp/asset/187de7f3-3e0e-42e4-9bfe-938d4a46eeaf'
 const icons = {
-  brand: `${assetPathPrefix}/fca0f.svg`,
+  brand: `https://www.figma.com/api/mcp/asset/d84f02db-e7d0-4c80-8d2c-7b2c55160913/375ad.svg`,
   user: `${assetPathPrefix}/f7d97.svg`,
   petugas: `${assetPathPrefix}/a12f6.svg`,
 }
@@ -53,10 +53,18 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
     setError('')
 
     const formData = Object.fromEntries(new FormData(event.currentTarget))
+    
+    // Validasi NIK jika ada
+    if (formData.nik && formData.nik.length < 16) {
+      setError('NIK harus terdiri dari minimal 16 digit.')
+      setSubmitting(false)
+      return
+    }
+
     try {
       const response = isRegister
         ? await register({ ...formData, role })
-        : await login(formData.email, formData.password)
+        : await login(formData.email, formData.password, role)
       const target = response?.user?.role || role
       window.location.hash = target === 'admin' || target === 'petugas' ? '#petugas' : '#warga'
     } catch (requestError) {
@@ -68,8 +76,8 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
 
   return (
     <main className="auth-page">
-      <section className="auth-hero"><div className="auth-brand"><span><img src={icons.brand} alt="" /></span><strong>SiagaBencana<small>Sistem Peringatan Dini Banjir</small></strong></div><div className="auth-hero-copy"><h1>Selamat datang di garda terdepan kesiapsiagaan banjir.</h1><p>Pantau risiko banjir real-time, terima peringatan dini, dan minta bantuan evakuasi langsung dari genggaman Anda.</p><ul><li>✓ <span>Peringatan dini berbasis debit Bengawan Solo & BMKG</span></li><li>✓ <span>Rute evakuasi & tombol SOS saat darurat</span></li><li>✓ <span>Terhubung langsung dengan Pusdalops BPBD</span></li></ul></div><small className="auth-copyright">© 2026 BPBD Bojonegoro &nbsp; • &nbsp; PRD v3.0</small></section>
-      <section className="auth-panel"><div className="auth-form-wrap"><div className="auth-tabs"><button className={!isRegister ? 'active' : ''} onClick={() => switchMode('login')} type="button">Masuk</button><button className={isRegister ? 'active' : ''} onClick={() => switchMode('register')} type="button">Daftar</button></div><h2>{isRegister ? 'Buat akun baru' : 'Masuk ke akun Anda'}</h2><p className="auth-subtitle">{isRegister ? 'Daftar untuk menerima peringatan dini banjir.' : 'Lanjutkan memantau kondisi wilayah Anda.'}</p><div className="role-switch"><button className={role === 'warga' ? 'selected' : ''} onClick={() => switchRole('warga')} type="button"><span><img src={icons.user} alt="" /></span><strong>Warga</strong><small>Publik / masyarakat</small></button><button className={role === 'petugas' ? 'selected' : ''} onClick={() => switchRole('petugas')} type="button"><span><img src={icons.petugas} alt="" /></span><strong>Petugas BPBD</strong><small>Pusdalops / admin</small></button></div>{error && <ErrorState message={error} onRetry={() => setError('')} />}<form onSubmit={handleSubmit}>{fields.map(([name, label]) => <label className="auth-field" key={name}><input name={name} type={name === 'password' ? 'password' : name === 'email' ? 'email' : 'text'} placeholder={label} autoComplete="off" required /></label>)}{!isRegister && <div className="auth-options"><label><input type="checkbox" /> Ingat saya</label><a href="#lupa-sandi">Lupa sandi?</a></div>}{submitting ? <LoadingState label="Menghubungkan ke server..." /> : <button className="auth-submit" type="submit">{isRegister ? 'Daftar Sekarang' : 'Masuk'} <span>→</span></button>}</form><p className="auth-switch">{isRegister ? 'Sudah punya akun?' : 'Belum punya akun?'} <button type="button" onClick={() => switchMode(isRegister ? 'login' : 'register')}>{isRegister ? 'Masuk di sini' : 'Daftar di sini'}</button></p></div></section>
+      <section className="auth-hero"><div className="auth-brand"><span><img src={icons.brand} alt="" /></span><strong>SiagaBencana<small>Sistem Peringatan Dini Banjir</small></strong></div><div className="auth-hero-copy"><h1>Selamat datang di garda terdepan kesiapsiagaan banjir.</h1><p>Pantau risiko banjir real-time, terima peringatan dini, dan minta bantuan evakuasi langsung dari genggaman Anda.</p><ul><li>✓ <span>Peringatan dini berbasis debit Bengawan Solo & BMKG</span></li><li>✓ <span>Rute evakuasi & tombol SOS saat darurat</span></li><li>✓ <span>Terhubung langsung dengan Pusdalops BPBD</span></li></ul></div><small className="auth-copyright">© 2026 SiagaBencana</small></section>
+      <section className="auth-panel"><div className="auth-form-wrap"><a href="#" className="auth-back">← Kembali ke Beranda</a><div className="auth-tabs"><button className={!isRegister ? 'active' : ''} onClick={() => switchMode('login')} type="button">Masuk</button><button className={isRegister ? 'active' : ''} onClick={() => switchMode('register')} type="button">Daftar</button></div><h2>{isRegister ? 'Buat akun baru' : 'Masuk ke akun Anda'}</h2><p className="auth-subtitle">{isRegister ? 'Daftar untuk menerima peringatan dini banjir.' : 'Lanjutkan memantau kondisi wilayah Anda.'}</p><div className="role-switch"><button className={role === 'warga' ? 'selected' : ''} onClick={() => switchRole('warga')} type="button"><span><img src={icons.user} alt="" /></span><strong>Warga</strong><small>Publik / masyarakat</small></button><button className={role === 'petugas' ? 'selected' : ''} onClick={() => switchRole('petugas')} type="button"><span><img src={icons.petugas} alt="" /></span><strong>Petugas BPBD</strong><small>Pusdalops / admin</small></button></div>{error && <ErrorState message={error} onRetry={() => setError('')} />}<form onSubmit={handleSubmit}>{fields.map(([name, label]) => <label className="auth-field" key={name}><input name={name} type={name === 'password' ? 'password' : name === 'email' ? 'email' : 'text'} placeholder={label} autoComplete="off" required minLength={name === 'nik' ? 16 : undefined} maxLength={name === 'nik' ? 16 : undefined} /></label>)}{!isRegister && <div className="auth-options"><label><input type="checkbox" /> Ingat saya</label><a href="#lupa-sandi">Lupa sandi?</a></div>}{submitting ? <LoadingState label="Menghubungkan ke server..." /> : <button className="auth-submit" type="submit">{isRegister ? 'Daftar Sekarang' : 'Masuk'} <span>→</span></button>}</form><p className="auth-switch">{isRegister ? 'Sudah punya akun?' : 'Belum punya akun?'} <button type="button" onClick={() => switchMode(isRegister ? 'login' : 'register')}>{isRegister ? 'Masuk di sini' : 'Daftar di sini'}</button></p></div></section>
     </main>
   )
 }
