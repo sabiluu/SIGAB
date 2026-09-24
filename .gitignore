@@ -43,3 +43,8 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+
+# ===== Private Documents =====
+02_prd_v3.md
+PANDUAN_KOLABORASI.md
+TIMELINE_MINGGU_5_14_PRIVAT.md
