@@ -31,3 +31,9 @@ export function logout() {
   localStorage.removeItem('access_token');
   window.location.hash = '';
 }
+
+export async function getProfile() {
+  return await apiFetch('/api/profile', {
+    method: 'GET'
+  });
+}

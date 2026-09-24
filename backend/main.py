@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, Enum
 from sqlalchemy.orm import sessionmaker, declarative_base, Session
 from pydantic import BaseModel
@@ -111,4 +112,30 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
             "email": db_user.email,
             "role": user.role
         }
+    }
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/login")
+
+@app.get("/api/profile")
+def get_profile(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Token tidak valid")
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=401, detail="Sesi telah berakhir")
+        
+    user = db.query(User).filter(User.id == int(user_id)).first()
+    if user is None:
+        raise HTTPException(status_code=401, detail="Pengguna tidak ditemukan")
+        
+    role_str = 'petugas' if user.role == 'admin' else 'warga'
+    return {
+        "id": user.id,
+        "full_name": user.full_name,
+        "email": user.email,
+        "role": role_str,
+        "village_id": user.village_id,
+        "is_active": user.is_active
     }
