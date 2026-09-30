@@ -4,3 +4,6 @@ from .shelters import router as shelters_router
 from .sos import router as sos_router
 from .flood import router as flood_router
 from .websocket import router as websocket_router
+from .notifications import router as notifications_router
+from .emergency import router as emergency_router
+from .dashboard import router as dashboard_router

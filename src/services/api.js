@@ -15,8 +15,9 @@ export async function apiFetch(endpoint, options = {}) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), options.timeout || DEFAULT_TIMEOUT);
   const isFormData = options.body instanceof FormData;
+  const hasCustomContentType = options.headers && options.headers['Content-Type'];
   const headers = {
-    ...(!isFormData && !(options.body instanceof URLSearchParams) && { 'Content-Type': 'application/json' }),
+    ...(!isFormData && !(options.body instanceof URLSearchParams) && !hasCustomContentType && { 'Content-Type': 'application/json' }),
     ...(token && { Authorization: `Bearer ${token}` }),
     ...options.headers,
   };
