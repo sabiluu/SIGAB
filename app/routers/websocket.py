@@ -11,10 +11,43 @@ import json
 import logging
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
 from ..services.ws_manager import ws_manager
+from ..core.database import SessionLocal
+from ..services.dashboard_builder import build_dashboard_snapshot
 
 logger = logging.getLogger("ws_router")
 
 router = APIRouter(tags=["WebSocket"])
+
+@router.websocket("/ws/dashboard")
+async def ws_dashboard(websocket: WebSocket):
+    """
+    WebSocket endpoint untuk data dashboard real-time.
+    Saat connect: kirim snapshot terkini.
+    """
+    await ws_manager.connect(websocket, channel="dashboard")
+    try:
+        # Kirim snapshot awal
+        db = SessionLocal()
+        try:
+            snapshot = build_dashboard_snapshot(db)
+            await websocket.send_text(json.dumps(snapshot, default=str))
+        finally:
+            db.close()
+
+        # Keep alive — tunggu pesan dari client (ping/pong)
+        while True:
+            data = await websocket.receive_text()
+            try:
+                msg = json.loads(data)
+                if msg.get("type") == "ping":
+                    await ws_manager.send_personal(websocket, {"type": "pong"})
+            except json.JSONDecodeError:
+                pass
+    except WebSocketDisconnect:
+        await ws_manager.disconnect(websocket, channel="dashboard")
+    except Exception as e:
+        logger.error(f"[WS dashboard] Error: {e}")
+        await ws_manager.disconnect(websocket, channel="dashboard")
 
 
 @router.websocket("/ws/alerts")

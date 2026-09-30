@@ -8,8 +8,18 @@ from ..models.user import User
 from ..models.village import Village
 from ..models.sos_ticket import SOSTicket
 from ..models.emergency_status import EmergencyStatus
+from ..services.dashboard_builder import build_dashboard_snapshot
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
+
+@router.get("/realtime")
+def get_dashboard_realtime(db: Session = Depends(get_db)):
+    """
+    REST endpoint snapshot data real-time lengkap.
+    Digunakan untuk initial load sebelum WebSocket connect,
+    atau sebagai fallback jika WebSocket gagal.
+    """
+    return build_dashboard_snapshot(db)
 
 @router.get("/stats")
 def get_dashboard_stats(

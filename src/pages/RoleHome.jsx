@@ -6,6 +6,7 @@ import WargaPetaWilayah from '../components/warga/WargaPetaWilayah'
 import WargaRiwayatKejadian from '../components/warga/WargaRiwayatKejadian'
 import WargaPanduan from '../components/warga/WargaPanduan'
 import WargaKontakDarurat from '../components/warga/WargaKontakDarurat'
+import WargaSOS from '../components/warga/WargaSOS'
 import '../styles/role-home.css'
 import '../styles/warga-portal.css'
 
@@ -136,6 +137,7 @@ function WargaHome() {
         {activeTab === 'riwayat' && <WargaRiwayatKejadian />}
         {activeTab === 'panduan' && <WargaPanduan />}
         {activeTab === 'kontak' && <WargaKontakDarurat />}
+        {activeTab === 'sos' && <WargaSOS onNavigate={(tab) => setActiveTab(tab)} />}
       </main>
 
       {/* Footer */}

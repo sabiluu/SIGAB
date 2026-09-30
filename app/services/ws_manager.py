@@ -21,11 +21,11 @@ class ConnectionManager:
     """Mengelola koneksi WebSocket per channel."""
 
     def __init__(self):
-        # channel_name -> set of active WebSocket connections
         self._channels: Dict[str, Set[WebSocket]] = {
             "alerts": set(),
             "sos": set(),
             "general": set(),
+            "dashboard": set(),
         }
         self._lock = asyncio.Lock()
 

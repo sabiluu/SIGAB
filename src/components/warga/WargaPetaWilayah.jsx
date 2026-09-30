@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
+import useDashboardRealtime from '../../hooks/useDashboardRealtime'
 
 const initialVillages = [
   // Row 1 (Near River)
@@ -40,8 +41,31 @@ const poskoData = [
 ]
 
 export default function WargaPetaWilayah() {
+  const { data } = useDashboardRealtime()
+  
+  const displayVillages = useMemo(() => {
+    if (!data?.villages) return initialVillages;
+    return initialVillages.map(v => {
+      const live = data.villages.find(lv => lv.name.toLowerCase() === v.id.toLowerCase());
+      if (live) {
+        return { ...v, status: live.risk_level === 'rendah' ? 'aman' : 'waspada', tma: live.probability.toFixed(1) + '%' };
+      }
+      return v;
+    });
+  }, [data]);
+
+  const displayPosko = useMemo(() => {
+    if (!data?.shelters) return poskoData;
+    return data.shelters.map(s => ({
+      name: s.name,
+      distance: s.address, // Use address as distance fallback for now
+      capacity: `${s.capacity_occupied}/${s.capacity_total} orang`,
+      status: 'Standby'
+    })).slice(0, 3);
+  }, [data]);
+
   const [selectedVillage, setSelectedVillage] = useState(
-    initialVillages.find((v) => v.id === 'baureno') || initialVillages[2]
+    displayVillages.find((v) => v.id === 'baureno') || displayVillages[2]
   )
   const [zoomLevel, setZoomLevel] = useState(100)
 
@@ -117,7 +141,7 @@ export default function WargaPetaWilayah() {
                 className="peta-ctrl-btn"
                 title="Pusatkan"
                 onClick={() => {
-                  setSelectedVillage(initialVillages.find((v) => v.id === 'baureno'))
+                  setSelectedVillage(displayVillages.find((v) => v.id === 'baureno'))
                   setZoomLevel(100)
                 }}
               >
@@ -151,7 +175,7 @@ export default function WargaPetaWilayah() {
             >
               {/* Row 1: 6 Villages */}
               <div className="peta-row peta-row-6">
-                {initialVillages
+                {displayVillages
                   .filter((v) => v.row === 1)
                   .map((v) => {
                     const isSel = selectedVillage.id === v.id
@@ -177,7 +201,7 @@ export default function WargaPetaWilayah() {
 
               {/* Row 2: 7 Villages */}
               <div className="peta-row peta-row-7">
-                {initialVillages
+                {displayVillages
                   .filter((v) => v.row === 2)
                   .map((v) => {
                     const isSel = selectedVillage.id === v.id
@@ -208,7 +232,7 @@ export default function WargaPetaWilayah() {
 
               {/* Row 3: 7 Villages */}
               <div className="peta-row peta-row-7">
-                {initialVillages
+                {displayVillages
                   .filter((v) => v.row === 3)
                   .map((v) => {
                     const isSel = selectedVillage.id === v.id
@@ -234,7 +258,7 @@ export default function WargaPetaWilayah() {
 
               {/* Row 4: 3 Villages */}
               <div className="peta-row peta-row-3">
-                {initialVillages
+                {displayVillages
                   .filter((v) => v.row === 4)
                   .map((v) => {
                     const isSel = selectedVillage.id === v.id
@@ -317,7 +341,7 @@ export default function WargaPetaWilayah() {
             </div>
 
             <div className="peta-posko-list">
-              {poskoData.map((posko, idx) => (
+              {displayPosko.map((posko, idx) => (
                 <div key={idx} className="peta-posko-item">
                   <div className="peta-posko-row1">
                     <span className="peta-posko-name">{posko.name}</span>

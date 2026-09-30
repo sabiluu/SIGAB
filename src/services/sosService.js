@@ -17,9 +17,18 @@ export async function getSOSTickets() {
   return apiFetch('/sos');
 }
 
-export async function updateSOSStatus(id, status) {
-  return apiFetch(`/sos/${id}/status`, {
-    method: 'PATCH',
-    body: JSON.stringify({ status }),
+export async function getMyTickets() {
+  return apiFetch('/sos/my');
+}
+
+export async function getSOSTicketById(id) {
+  return apiFetch(`/sos/${id}`);
+}
+
+export async function updateSOSStatus(id, updateData) {
+  // updateData minimal: { status: '...' }
+  return apiFetch(`/sos/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(updateData),
   });
 }

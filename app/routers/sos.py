@@ -27,6 +27,13 @@ async def create_sos_ticket(
     timestamp_str = datetime.now().strftime("%Y%m%d%H%M%S")
     ticket_number = f"SOS-{timestamp_str}"
     
+    # Kalkulasi priority_score
+    priority_score = ticket.family_count * 2
+    if ticket.has_elderly: priority_score += 5
+    if ticket.has_toddler: priority_score += 5
+    if ticket.has_pregnant: priority_score += 5
+    if ticket.has_disability: priority_score += 10
+
     new_ticket = SOSTicket(
         ticket_number=ticket_number,
         reporter_id=ticket.reporter_id,
@@ -40,7 +47,8 @@ async def create_sos_ticket(
         has_disability=ticket.has_disability,
         has_pregnant=ticket.has_pregnant,
         photo_url=ticket.photo_url,
-        status="submitted"
+        status="submitted",
+        priority_score=priority_score
     )
     db.add(new_ticket)
     db.commit()
@@ -75,6 +83,15 @@ def get_all_sos_tickets(
 ):
     """(Admin) Melihat daftar tiket SOS."""
     tickets = db.query(SOSTicket).order_by(SOSTicket.submitted_at.desc()).all()
+    return tickets
+
+@router.get("/my", response_model=List[SOSTicketResponse])
+def get_my_sos_tickets(
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_active_user)
+):
+    """(Warga) Melihat daftar tiket SOS miliknya sendiri."""
+    tickets = db.query(SOSTicket).filter(SOSTicket.reporter_id == current_user.id).order_by(SOSTicket.submitted_at.desc()).all()
     return tickets
 
 @router.get("/{ticket_id}", response_model=SOSTicketResponse)

@@ -26,6 +26,14 @@ async def run_flood_engine_job():
         result = await assess_and_update_flood_risks(db)
         logger.info(f"[Scheduler] Flood Engine selesai: Diperbarui {result['villages_updated']} desa. "
                     f"Notifikasi terkirim: {result['alerts_sent']}.")
+        
+        # Broadcast dashboard snapshot
+        from ..services.dashboard_builder import build_dashboard_snapshot
+        from ..services.ws_manager import ws_manager
+        
+        snapshot = build_dashboard_snapshot(db)
+        await ws_manager.broadcast("dashboard", snapshot)
+        logger.info("[Scheduler] Dashboard snapshot broadcasted to all connected clients.")
     except Exception as e:
         logger.error(f"[Scheduler] Terjadi kesalahan saat menjalankan Flood Engine: {e}")
     finally:
