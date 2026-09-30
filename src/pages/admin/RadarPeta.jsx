@@ -16,22 +16,10 @@ export default function RadarPeta() {
         </div>
       </div>
 
-      <div className="admin-main-grid">
-        <div className="portal-card" style={{ padding: '16px', position: 'relative', height: '600px' }}>
-          <RiskMap />
-          <div className="map-legend-bottom" style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginTop: '24px', paddingBottom: '12px' }}>
-            <div className="legend-row-img" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div className="legend-pill-img" style={{ background: '#ef4444', color: '#fff', fontWeight: 800, padding: '6px 18px', borderRadius: '9999px', fontSize: '0.85rem', minWidth: '120px', textAlign: 'center', boxShadow: '0 3px 5px rgba(0,0,0,0.15)', border: '1px solid rgba(0,0,0,0.1)' }}>TINGGI / AWAS</div>
-              <div className="legend-circle-img" style={{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.95rem', background: '#ef4444', color: '#fff', boxShadow: '0 3px 5px rgba(0,0,0,0.15)', border: '1px solid rgba(0,0,0,0.1)' }}>6</div>
-            </div>
-            <div className="legend-row-img" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div className="legend-pill-img" style={{ background: '#facc15', color: '#000', fontWeight: 800, padding: '6px 18px', borderRadius: '9999px', fontSize: '0.85rem', minWidth: '120px', textAlign: 'center', boxShadow: '0 3px 5px rgba(0,0,0,0.15)', border: '1px solid rgba(0,0,0,0.1)' }}>SEDANG / SIAGA</div>
-              <div className="legend-circle-img" style={{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.95rem', background: '#facc15', color: '#000', boxShadow: '0 3px 5px rgba(0,0,0,0.15)', border: '1px solid rgba(0,0,0,0.1)' }}>8</div>
-            </div>
-            <div className="legend-row-img" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div className="legend-pill-img" style={{ background: '#10b981', color: '#fff', fontWeight: 800, padding: '6px 18px', borderRadius: '9999px', fontSize: '0.85rem', minWidth: '120px', textAlign: 'center', boxShadow: '0 3px 5px rgba(0,0,0,0.15)', border: '1px solid rgba(0,0,0,0.1)' }}>RENDAH / AMAN</div>
-              <div className="legend-circle-img" style={{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.95rem', background: '#10b981', color: '#fff', boxShadow: '0 3px 5px rgba(0,0,0,0.15)', border: '1px solid rgba(0,0,0,0.1)' }}>9</div>
-            </div>
+          <div className="map-legend-bottom">
+            <span><i className="red-dot" /> Tinggi / Awas (6)</span>
+            <span><i className="orange-dot" /> Sedang / Siaga (8)</span>
+            <span><i className="green-dot" /> Rendah / Aman (9)</span>
           </div>
         </div>
 
