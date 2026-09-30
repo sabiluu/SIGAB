@@ -105,11 +105,6 @@ export default function WargaPetaWilayah() {
               <span>upd 08:42 WIB</span>
             </div>
           </div>
-              <span className="peta-status-pill">● Status Normal</span>
-              <span>upd 08:42 WIB</span>
-            </div>
-          </div>
-
           <div className="peta-canvas-container">
             {/* Top Floating Badge */}
             <div className="peta-layer-badge">

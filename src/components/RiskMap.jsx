@@ -35,9 +35,30 @@ const colorMap = {
 }
 
 export default function RiskMap() {
+  const amanCount = villages.filter(v => v.status === 'green').length;
+  const waspadaCount = villages.filter(v => v.status === 'orange').length;
+  const bahayaCount = villages.filter(v => v.status === 'red').length;
+
   return (
-    <div className="leaflet-map-wrapper" style={{ height: '350px', width: '100%', borderRadius: '12px', overflow: 'hidden', position: 'relative', zIndex: 1, marginTop: '16px' }}>
-      <MapContainer center={baurenoCenter} zoom={13} style={{ height: '100%', width: '100%' }}>
+    <div className="leaflet-map-wrapper" style={{ height: '500px', width: '100%', borderRadius: '12px', overflow: 'hidden', position: 'relative', zIndex: 1, marginTop: '16px' }}>
+      
+      {/* Floating Image-like Legend for Leaflet */}
+      <div className="peta-image-legend" style={{ position: 'absolute', bottom: '20px', left: '20px', zIndex: 1000, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div className="legend-row-img" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div className="legend-pill-img" style={{ background: '#facc15', color: '#000', fontWeight: 800, padding: '8px 24px', borderRadius: '9999px', fontSize: '0.9rem', minWidth: '140px', textAlign: 'center', boxShadow: '0 4px 6px rgba(0,0,0,0.3)', border: '2px solid rgba(0,0,0,0.1)' }}>WASPADA</div>
+          <div className="legend-circle-img" style={{ width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1.1rem', background: '#facc15', color: '#000', boxShadow: '0 4px 6px rgba(0,0,0,0.3)', border: '2px solid rgba(0,0,0,0.1)' }}>{waspadaCount}</div>
+        </div>
+        <div className="legend-row-img" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div className="legend-pill-img" style={{ background: '#10b981', color: '#fff', fontWeight: 800, padding: '8px 24px', borderRadius: '9999px', fontSize: '0.9rem', minWidth: '140px', textAlign: 'center', boxShadow: '0 4px 6px rgba(0,0,0,0.3)', border: '2px solid rgba(0,0,0,0.1)' }}>AMAN</div>
+          <div className="legend-circle-img" style={{ width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1.1rem', background: '#10b981', color: '#fff', boxShadow: '0 4px 6px rgba(0,0,0,0.3)', border: '2px solid rgba(0,0,0,0.1)' }}>{amanCount}</div>
+        </div>
+        <div className="legend-row-img" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div className="legend-pill-img" style={{ background: '#ef4444', color: '#fff', fontWeight: 800, padding: '8px 24px', borderRadius: '9999px', fontSize: '0.9rem', minWidth: '140px', textAlign: 'center', boxShadow: '0 4px 6px rgba(0,0,0,0.3)', border: '2px solid rgba(0,0,0,0.1)' }}>BAHAYA</div>
+          <div className="legend-circle-img" style={{ width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1.1rem', background: '#ef4444', color: '#fff', boxShadow: '0 4px 6px rgba(0,0,0,0.3)', border: '2px solid rgba(0,0,0,0.1)' }}>{bahayaCount}</div>
+        </div>
+      </div>
+
+      <MapContainer center={baurenoCenter} zoom={13} style={{ height: '100%', width: '100%', zIndex: 1 }}>
         <TileLayer
           attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
