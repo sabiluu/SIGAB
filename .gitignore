@@ -8,6 +8,9 @@ env/
 *.egg-info/
 dist/
 build/
+*.db
+*.sqlite
+*.sqlite3
 
 # ===== Node.js & React/Vite =====
 node_modules/

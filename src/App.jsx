@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import AuthPage from './pages/AuthPage'
 import RoleHome from './pages/RoleHome'
+import SOSManager from './pages/admin/SOSManager'
+import RadarPeta from './pages/admin/RadarPeta'
+import PoskoManager from './pages/admin/PoskoManager'
 import { LoadingState, ErrorState, EmptyState } from './components/common/AsyncState'
 
 const assetPathPrefix = 'https://www.figma.com/api/mcp/asset/187de7f3-3e0e-42e4-9bfe-938d4a46eeaf'
@@ -51,6 +54,25 @@ function App() {
       </div>
     )
   }
+  const adminRoutes = {
+    '#radar': RadarPeta,
+    '#radar-admin': RadarPeta,
+    '#sos': SOSManager,
+    '#sos-admin': SOSManager,
+    '#posko': PoskoManager,
+    '#posko-admin': PoskoManager,
+  }
+
+  if (adminRoutes[hash]) {
+    const token = localStorage.getItem('access_token')
+    if (!token) {
+      window.history.replaceState(null, '', '#masuk-petugas')
+      return <AuthPage initialMode="login" initialRole="petugas" />
+    }
+    const Component = adminRoutes[hash]
+    return <Component />
+  }
+
   if (hash === '#warga' || hash === '#petugas') {
     const token = localStorage.getItem('access_token')
     if (!token) {

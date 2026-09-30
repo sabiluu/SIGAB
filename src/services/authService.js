@@ -14,11 +14,11 @@ export async function register(data) {
   const response = await apiFetch('/api/register', {
     method: 'POST',
     body: JSON.stringify({
-      name: data.name,
+      full_name: data.name,
       email: data.email,
-      phone: data.phone || '08000000000',
+      phone: data.phone || '0800000000',
       password: data.password,
-      role: data.role,
+      role: data.role === 'petugas' ? 'admin' : 'user',
       village_id: null
     })
   });
