@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { logout, getProfile } from '../services/authService'
+import { apiFetch } from '../services/api'
+import wsService from '../services/wsService'
 import RiskMap from '../components/RiskMap'
 import WargaBeranda from '../components/warga/WargaBeranda'
 import WargaPetaWilayah from '../components/warga/WargaPetaWilayah'
@@ -34,21 +36,44 @@ function Brand({ admin = false }) {
 function WargaHome() {
   const [activeTab, setActiveTab] = useState('peta')
   const [userProfile, setUserProfile] = useState({ full_name: 'Ahmad Fauzi' })
+  const [isEmergencyActive, setIsEmergencyActive] = useState(false)
 
   useEffect(() => {
     getProfile()
       .then((res) => {
-        if (res && res.full_name) {
-          setUserProfile(res)
-        }
+        if (res && res.full_name) setUserProfile(res)
       })
-      .catch(() => {
-        // Fallback default
-      })
+      .catch(() => {})
+
+    apiFetch('/emergency/1')
+      .then(res => setIsEmergencyActive(res.is_emergency_active))
+      .catch(() => {})
+      
+    wsService.connect('alerts')
+    const unsub = wsService.on('emergency_status', (data) => setIsEmergencyActive(data.is_active))
+    return () => unsub()
   }, [])
 
   return (
     <div className="warga-container">
+      {/* Emergency Banner */}
+      {isEmergencyActive && (
+        <div style={{ background: '#dc2626', color: 'white', padding: '12px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 'bold' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ width: '8px', height: '8px', background: 'white', borderRadius: '50%', display: 'inline-block', animation: 'pulse 2s infinite' }}></span>
+            <span>BANJIR PARAH — EVAKUASI SEKARANG</span>
+            <span style={{ fontWeight: 'normal', opacity: 0.9, fontSize: '0.85rem' }}>Baureno • Level 4 • 09:15 WIB</span>
+          </div>
+          <button 
+            style={{ background: 'white', color: '#dc2626', border: 'none', padding: '6px 16px', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+            onClick={() => setActiveTab('sos')}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            MINTA BANTUAN SOS
+          </button>
+        </div>
+      )}
+
       {/* Header Sticky */}
       <header className="warga-header-wrapper">
         <div className="warga-header">
@@ -183,11 +208,37 @@ function History({ color, title, detail, date }) {
 function AdminHome() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [currentTime, setCurrentTime] = useState(new Date())
+  const [isEmergency, setIsEmergency] = useState(false)
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000)
-    return () => clearInterval(timer)
+    apiFetch('/emergency/1').then(res => setIsEmergency(res.is_emergency_active)).catch(() => {})
+    wsService.connect('alerts')
+    const unsub = wsService.on('emergency_status', (data) => setIsEmergency(data.is_active))
+    return () => {
+      clearInterval(timer)
+      unsub()
+    }
   }, [])
+
+  const toggleEmergency = async () => {
+    // Optimistic update supaya UI langsung berasa "bisa diklik"
+    const nextState = !isEmergency
+    setIsEmergency(nextState)
+
+    try {
+      if (isEmergency) {
+        await apiFetch('/emergency/1/deactivate', { method: 'POST', body: JSON.stringify({}) })
+      } else {
+        await apiFetch('/emergency/1/activate', { method: 'POST', body: JSON.stringify({}) })
+      }
+    } catch(e) { 
+      console.error(e)
+      alert("Gagal menghubungi server: " + e.message)
+      // Revert if failed
+      setIsEmergency(isEmergency)
+    }
+  }
 
   const hh = String(currentTime.getHours()).padStart(2, '0')
   const mm = String(currentTime.getMinutes()).padStart(2, '0')
@@ -237,13 +288,21 @@ function AdminHome() {
             <strong>{timeStr}</strong>
             <small>{dateStr}</small>
           </div>
-          <div className="danger-toggle">
+          <div 
+            className={`danger-toggle ${isEmergency ? 'active' : ''}`} 
+            onClick={toggleEmergency}
+            style={{ cursor: 'pointer', background: isEmergency ? '#fff1f2' : '#f1f5f9', borderColor: isEmergency ? '#fecdd3' : '#e2e8f0' }}
+          >
             <span>
               STATUS DARURAT
               <br />
-              <strong>AKTIF</strong>
+              <strong style={{ color: isEmergency ? '#e11d48' : '#64748b' }}>{isEmergency ? 'AKTIF' : 'NONAKTIF'}</strong>
             </span>
-            <i />
+            <i className="toggle-indicator" />
+            <style>{`
+              .danger-toggle i.toggle-indicator { background: ${isEmergency ? '#e11d48' : '#cbd5e1'}; transition: all 0.3s; }
+              .danger-toggle i.toggle-indicator::after { right: ${isEmergency ? '2px' : '22px'}; transition: all 0.3s; }
+            `}</style>
           </div>
           <div className="admin-avatar">●</div>
           <button onClick={logout} className="logout-btn" title="Keluar">

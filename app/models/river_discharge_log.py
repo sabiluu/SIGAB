@@ -3,14 +3,14 @@ Model RiverDischargeLog — tabel 'river_discharge_logs'.
 Log data debit Sungai Bengawan Solo dari Open-Meteo Flood API.
 """
 
-from sqlalchemy import Column, BigInteger, String, DateTime, DECIMAL, func
+from sqlalchemy import Column, Integer, String, DateTime, DECIMAL, func
 from ..core.database import Base
 
 
 class RiverDischargeLog(Base):
     __tablename__ = "river_discharge_logs"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     discharge_m3s = Column(DECIMAL(10, 2), nullable=False)
     forecast_1d = Column(DECIMAL(10, 2), nullable=True)
     forecast_3d = Column(DECIMAL(10, 2), nullable=True)

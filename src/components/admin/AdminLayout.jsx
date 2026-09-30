@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { logout } from '../../services/authService'
+import { apiFetch } from '../../services/api'
+import wsService from '../../services/wsService'
 import '../../styles/role-home.css'
 
 const brandIcon = 'https://www.figma.com/api/mcp/asset/d84f02db-e7d0-4c80-8d2c-7b2c55160913/375ad.svg'
@@ -7,11 +9,36 @@ const brandIcon = 'https://www.figma.com/api/mcp/asset/d84f02db-e7d0-4c80-8d2c-7
 export default function AdminLayout({ children, activeMenu }) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [currentTime, setCurrentTime] = useState(new Date())
+  const [isEmergency, setIsEmergency] = useState(false)
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000)
-    return () => clearInterval(timer)
+    apiFetch('/emergency/1').then(res => setIsEmergency(res.is_emergency_active)).catch(() => {})
+    wsService.connect('alerts')
+    const unsub = wsService.on('emergency_status', (data) => setIsEmergency(data.is_active))
+    
+    return () => {
+      clearInterval(timer)
+      unsub()
+    }
   }, [])
+
+  const toggleEmergency = async () => {
+    const nextState = !isEmergency
+    setIsEmergency(nextState)
+
+    try {
+      if (isEmergency) {
+        await apiFetch('/emergency/1/deactivate', { method: 'POST', body: JSON.stringify({}) })
+      } else {
+        await apiFetch('/emergency/1/activate', { method: 'POST', body: JSON.stringify({}) })
+      }
+    } catch(e) { 
+      console.error(e)
+      alert("Gagal menghubungi server: " + e.message)
+      setIsEmergency(isEmergency)
+    }
+  }
 
   const hh = String(currentTime.getHours()).padStart(2, '0')
   const mm = String(currentTime.getMinutes()).padStart(2, '0')
@@ -64,9 +91,21 @@ export default function AdminLayout({ children, activeMenu }) {
             <strong>{timeStr}</strong>
             <small>{dateStr}</small>
           </div>
-          <div className="danger-toggle">
-            <span>STATUS DARURAT<br /><strong>AKTIF</strong></span>
-            <i />
+          <div 
+            className={`danger-toggle ${isEmergency ? 'active' : ''}`} 
+            onClick={toggleEmergency}
+            style={{ cursor: 'pointer', background: isEmergency ? '#fff1f2' : '#f1f5f9', borderColor: isEmergency ? '#fecdd3' : '#e2e8f0' }}
+          >
+            <span>
+              STATUS DARURAT
+              <br />
+              <strong style={{ color: isEmergency ? '#e11d48' : '#64748b' }}>{isEmergency ? 'AKTIF' : 'NONAKTIF'}</strong>
+            </span>
+            <i className="toggle-indicator-layout" />
+            <style>{`
+              .danger-toggle i.toggle-indicator-layout { background: ${isEmergency ? '#e11d48' : '#cbd5e1'}; transition: all 0.3s; }
+              .danger-toggle i.toggle-indicator-layout::after { right: ${isEmergency ? '2px' : '22px'}; transition: all 0.3s; }
+            `}</style>
           </div>
           <div className="admin-avatar">●</div>
           <button onClick={logout} className="logout-btn"><i>⎋</i> Keluar</button>

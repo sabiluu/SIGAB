@@ -11,7 +11,7 @@ from ..core.database import Base
 class Notification(Base):
     __tablename__ = "notifications"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     type = Column(
         Enum("early_warning", "emergency_alert", "sos_update", "system_info", name="notification_type_enum"),

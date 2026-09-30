@@ -1,110 +1,88 @@
 import { MapContainer, TileLayer, Polygon, Tooltip } from 'react-leaflet'
 import { useMemo } from 'react'
 import * as turf from '@turf/turf'
-import baurenoData from '../data/baureno.json'
+import baurenoVillagesData from '../data/baureno_villages_real.json'
 
 // Center coordinate for map view - Kecamatan Baureno, Bojonegoro
 const baurenoCenter = [-7.160, 111.830]
 
-const villageNames = [
-  "Kalicari", "Baureno", "Trojalu", "Gajah", "Sraturejo", 
-  "Tanggungan", "Sumuragung", "Banjaranyar", "Bumiayu", 
-  "Blongsong", "Drajat", "Gunungsari", "Kauman", "Leran", "Poman",
-  "Ngraho", "Selorejo", "Tulungagung", "Banjaran", "Karangdayu",
-  "Pasaran", "Sroyo", "Pucangarum", "Kadungrejo", "Lebaksari"
-];
-
 const colorMap = {
-  red: '#ef4444',
-  orange: '#f97316',
-  green: '#10b981'
+  awas: '#ef4444',     // Red (Bahaya/Awas)
+  siaga: '#f97316',    // Orange (Siaga)
+  aman: '#10b981'      // Green (Aman)
+}
+
+// Simple hash function to generate consistent pseudo-random numbers from strings
+function hashString(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
 }
 
 export default function RiskMap() {
   const villages = useMemo(() => {
-    // 1. Extract the actual Baureno district polygon from GeoJSON
-    const districtFeature = baurenoData.features[0];
-    
-    // Calculate bounding box of the district
-    const bbox = turf.bbox(districtFeature);
-    
-    // 2. Generate village center points spread within the bounding box
-    const xRange = bbox[2] - bbox[0];
-    const yRange = bbox[3] - bbox[1];
-    const pointsArray = [];
-    
-    for (let i = 0; i < villageNames.length; i++) {
-      const r = Math.floor(i / 5);
-      const c = i % 5;
-      
-      const lng = bbox[0] + (c + 0.5) * (xRange / 5) + (Math.random() - 0.5) * (xRange / 6);
-      const lat = bbox[1] + (r + 0.5) * (yRange / 5) + (Math.random() - 0.5) * (yRange / 6);
-      
-      const pt = turf.point([lng, lat]);
-      if (turf.booleanPointInPolygon(pt, districtFeature)) {
-        pointsArray.push(pt);
-      } else {
-        pointsArray.push(turf.point([bbox[0] + xRange/2, bbox[1] + yRange/2]));
-      }
-    }
-    
-    const points = turf.featureCollection(pointsArray);
-
-    // 3. Compute Voronoi polygons bounded by the district bbox
-    const voronoiPolygons = turf.voronoi(points, { bbox });
-
-    // 4. Intersect each Voronoi polygon with the real district polygon!
     const finalVillages = [];
     
-    for (let i = 0; i < villageNames.length; i++) {
-      const name = villageNames[i];
-      let status = 'green';
-      let prob = Math.floor(Math.random() * 20);
+    // Parse the real geojson data
+    baurenoVillagesData.features.forEach((feature, i) => {
+      const geom = feature.geometry;
+      if (!geom) return;
+
+      const name = feature.properties.adm4_name || feature.properties.name || `Desa ${i+1}`;
       
-      if (["Kalicari", "Baureno", "Trojalu", "Gajah", "Sraturejo"].includes(name)) {
-        status = 'red';
-        prob = 80 + Math.floor(Math.random() * 15);
-      } else if (["Tanggungan", "Sumuragung", "Banjaranyar", "Bumiayu", "Drajat"].includes(name)) {
-        status = 'orange';
-        prob = 40 + Math.floor(Math.random() * 30);
+      // Generate consistent dummy data based on the village name
+      const seed = hashString(name);
+      
+      let status = 'aman';
+      let prob = 10 + (seed % 20); // 10-30% baseline
+      
+      // Determine fake status based on name for a realistic presentation visualization
+      const nameUpper = name.toUpperCase();
+      
+      // Desa yang dekat Bengawan Solo atau rawan (Merah/Awas)
+      if (["BAURENO", "PASINAN", "BUMIAYU", "NGEMPLAK", "SEMBUNGLOR", "TROJALU", "GAJAH", "SRATUREJO"].some(n => nameUpper.includes(n))) {
+        status = 'awas';
+        prob = 80 + (seed % 15); // 80-95%
+      } 
+      // Desa penyangga / siaga (Oranye/Siaga)
+      else if (["TANGGUNGAN", "SUMURAGUNG", "BANJARANYAR", "DRAJAT", "GUNUNGSARI", "KARANGDAYU", "KADUNGREJO", "LEBAKSARI"].some(n => nameUpper.includes(n))) {
+        status = 'siaga';
+        prob = 40 + (seed % 30); // 40-70%
       }
+      
+      // GeoJSON is [lng, lat], Leaflet Polygon expects [lat, lng]
+      const mapCoords = (coords) => coords.map(c => [c[1], c[0]]);
       
       let polygonCoords = [];
-      let centerLat = baurenoCenter[0];
-      let centerLng = baurenoCenter[1];
-
-      try {
-        const voronoiCell = voronoiPolygons.features[i];
-        if (voronoiCell) {
-          const intersection = turf.intersect(turf.featureCollection([voronoiCell, districtFeature]));
-          if (intersection) {
-            const geom = intersection.geometry;
-            if (geom.type === 'Polygon') {
-              polygonCoords = geom.coordinates[0].map(coord => [coord[1], coord[0]]);
-            } else if (geom.type === 'MultiPolygon') {
-              polygonCoords = geom.coordinates[0][0].map(coord => [coord[1], coord[0]]);
-            }
-            
-            const centroid = turf.centroid(intersection);
-            centerLat = centroid.geometry.coordinates[1];
-            centerLng = centroid.geometry.coordinates[0];
-          }
-        }
-      } catch (e) {
-        console.error("Intersection failed for", name, e);
+      if (geom.type === 'Polygon') {
+        polygonCoords = geom.coordinates.map(mapCoords);
+      } else if (geom.type === 'MultiPolygon') {
+        polygonCoords = geom.coordinates.map(poly => poly.map(mapCoords));
       }
       
-      if (polygonCoords.length > 0) {
-        finalVillages.push({ 
-          id: i, 
-          name, 
-          coords: polygonCoords, 
-          center: [centerLat, centerLng], 
-          status, 
-          prob 
-        });
+      // Calculate Centroid for the Tooltip
+      let centerLat = baurenoCenter[0];
+      let centerLng = baurenoCenter[1];
+      try {
+        const centroid = turf.centroid(feature);
+        centerLat = centroid.geometry.coordinates[1];
+        centerLng = centroid.geometry.coordinates[0];
+      } catch (e) {
+        console.error("Centroid failed for", name, e);
       }
-    }
+
+      finalVillages.push({ 
+        id: feature.properties.adm4_pcode || i, 
+        name, 
+        coords: polygonCoords, 
+        center: [centerLat, centerLng], 
+        status: status, 
+        prob 
+      });
+    });
     
     return finalVillages;
   }, []);
@@ -132,26 +110,26 @@ export default function RiskMap() {
             positions={v.coords}
             pathOptions={{ 
               color: '#ffffff',
-              weight: 2, 
-              fillColor: colorMap[v.status], 
-              fillOpacity: 0.7 
+              weight: 1.5, 
+              fillColor: colorMap[v.status] || '#10b981', 
+              fillOpacity: 0.65 
             }}
           >
             <Tooltip direction="center" permanent className="bg-transparent border-0 shadow-none text-center">
-              <div style={{ color: '#fff', textShadow: '0px 1px 3px rgba(0,0,0,0.8)', fontWeight: 800, fontSize: '11px', textAlign: 'center', lineHeight: '1.2' }}>
+              <div style={{ color: '#fff', textShadow: '0px 1px 3px rgba(0,0,0,0.8)', fontWeight: 800, fontSize: '10px', textAlign: 'center', lineHeight: '1.2' }}>
                 {v.name.toUpperCase()}<br/>
                 <span style={{ 
                   display: 'inline-block', 
-                  backgroundColor: '#0284c7', 
+                  backgroundColor: v.status === 'awas' ? '#991b1b' : (v.status === 'siaga' ? '#9a3412' : '#065f46'), 
                   color: 'white', 
                   borderRadius: '50%', 
-                  width: '20px', 
-                  height: '20px', 
-                  lineHeight: '20px', 
+                  width: '18px', 
+                  height: '18px', 
+                  lineHeight: '18px', 
                   marginTop: '4px',
                   boxShadow: '0 2px 4px rgba(0,0,0,0.4)'
                 }}>
-                  {Math.floor(v.prob / 10)}
+                  {Math.floor(v.prob)}
                 </span>
               </div>
             </Tooltip>

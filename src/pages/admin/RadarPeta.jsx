@@ -7,7 +7,7 @@ export default function RadarPeta() {
       <div className="admin-section-head">
         <div>
           <h2>Radar Peta Wilayah</h2>
-          <p>Pemantauan real-time debit Bengawan Solo & risiko banjir 23 desa.</p>
+          <p>Pemantauan real-time debit Bengawan Solo & risiko banjir 25 desa.</p>
         </div>
         <div className="layer-pills">
           <button className="active">Risiko Banjir</button>
