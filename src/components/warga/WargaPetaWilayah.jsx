@@ -69,6 +69,10 @@ export default function WargaPetaWilayah() {
   )
   const [zoomLevel, setZoomLevel] = useState(100)
 
+  const amanCount = displayVillages.filter(v => v.status === 'aman').length;
+  const waspadaCount = displayVillages.filter(v => v.status === 'waspada').length;
+  const bahayaCount = displayVillages.filter(v => v.status === 'bahaya').length;
+
   return (
     <section className="warga-section">
       <div className="warga-section-header">
@@ -96,12 +100,11 @@ export default function WargaPetaWilayah() {
         {/* Left Column: Interactive Map Box */}
         <div className="peta-map-card">
           <div className="peta-map-topbar">
-            <div className="peta-filter-pills">
-              <span className="peta-filter-pill aman">● Aman (18 desa)</span>
-              <span className="peta-filter-pill waspada">● Waspada/Sedang (5 desa)</span>
-              <span className="peta-filter-pill bahaya">● Bahaya/Tinggi (0 desa)</span>
-            </div>
             <div className="peta-status-badge">
+              <span className="peta-status-pill">● Status Normal</span>
+              <span>upd 08:42 WIB</span>
+            </div>
+          </div>
               <span className="peta-status-pill">● Status Normal</span>
               <span>upd 08:42 WIB</span>
             </div>
@@ -112,6 +115,22 @@ export default function WargaPetaWilayah() {
             <div className="peta-layer-badge">
               <span style={{ color: '#10b981' }}>●</span>
               Lapisan: Status Normal (Kondisi Terkini)
+            </div>
+
+            {/* Floating Image-like Legend */}
+            <div className="peta-image-legend">
+              <div className="legend-row-img">
+                <div className="legend-pill-img waspada">WASPADA</div>
+                <div className="legend-circle-img waspada">{waspadaCount}</div>
+              </div>
+              <div className="legend-row-img">
+                <div className="legend-pill-img aman">AMAN</div>
+                <div className="legend-circle-img aman">{amanCount}</div>
+              </div>
+              <div className="legend-row-img">
+                <div className="legend-pill-img bahaya">BAHAYA</div>
+                <div className="legend-circle-img bahaya">{bahayaCount}</div>
+              </div>
             </div>
 
             {/* Floating Navigation Controls */}
