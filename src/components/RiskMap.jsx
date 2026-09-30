@@ -3,8 +3,8 @@ import { useMemo } from 'react'
 import * as turf from '@turf/turf'
 import baurenoData from '../data/baureno.json'
 
-// Center coordinate for map view
-const baurenoCenter = [-7.1423, 112.0838]
+// Center coordinate for map view - Kecamatan Baureno, Bojonegoro
+const baurenoCenter = [-7.160, 111.830]
 
 const villageNames = [
   "Kalicari", "Baureno", "Trojalu", "Gajah", "Sraturejo", 
