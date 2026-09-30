@@ -1,5 +1,6 @@
 import { MapContainer, TileLayer, Polygon, Tooltip } from 'react-leaflet'
 import { useMemo } from 'react'
+import { Delaunay } from 'd3-delaunay'
 
 const baurenoCenter = [-7.1423, 112.0838]
 
@@ -18,42 +19,36 @@ const colorMap = {
 }
 
 export default function RiskMap() {
-  // Generate contiguous polygons that look like administrative boundaries
+  // Generate contiguous natural polygons using Voronoi diagram
   const villages = useMemo(() => {
-    const gridRows = 5;
-    const gridCols = 5;
-    const gridSize = 0.015;
-    
-    // Generate jittered vertices
-    const vertices = [];
-    // Use seeded-like random for consistent shapes on re-renders, or just let it randomize once via useMemo
-    for (let r = 0; r <= gridRows; r++) {
-      const rowVertices = [];
-      for (let c = 0; c <= gridCols; c++) {
-        let lat = baurenoCenter[0] + (r - 2.5) * gridSize;
-        let lng = baurenoCenter[1] + (c - 2.5) * gridSize;
-        
-        // Jitter inner vertices to make them look like natural borders
-        if (r > 0 && r < gridRows && c > 0 && c < gridCols) {
-          lat += (Math.random() - 0.5) * gridSize * 0.7;
-          lng += (Math.random() - 0.5) * gridSize * 0.7;
-        }
-        rowVertices.push([lat, lng]);
-      }
-      vertices.push(rowVertices);
-    }
+    // 1. Generate jittered grid points as village centers
+    const gridSize = 0.025;
+    const points = villageNames.map((_, i) => {
+      const r = Math.floor(i / 5);
+      const c = i % 5;
+      // Fixed pseudo-random seed based on index so it doesn't flicker on re-renders, 
+      // but Math.random() in useMemo is fine as it runs once per mount.
+      const lat = baurenoCenter[0] + (r - 2) * gridSize + (Math.random() - 0.5) * gridSize * 0.9;
+      const lng = baurenoCenter[1] + (c - 2) * gridSize + (Math.random() - 0.5) * gridSize * 0.9;
+      return [lat, lng];
+    });
+
+    // 2. Define bounding box for the region
+    const bounds = [
+      baurenoCenter[0] - 0.07, baurenoCenter[1] - 0.07, 
+      baurenoCenter[0] + 0.07, baurenoCenter[1] + 0.07
+    ];
+
+    // 3. Compute Voronoi cells
+    const delaunay = Delaunay.from(points);
+    const voronoi = delaunay.voronoi(bounds);
 
     return villageNames.map((name, index) => {
-      const r = Math.floor(index / gridCols);
-      const c = index % gridCols;
+      // Get the vertices for this cell
+      const polygonCoords = voronoi.cellPolygon(index);
       
-      const polygonCoords = [
-        vertices[r][c],
-        vertices[r][c+1],
-        vertices[r+1][c+1],
-        vertices[r+1][c]
-      ];
-
+      // The last point in cellPolygon is the same as the first, Leaflet handles it fine
+      
       // Assign status based on name
       let status = 'green';
       let prob = Math.floor(Math.random() * 20);
@@ -66,11 +61,14 @@ export default function RiskMap() {
         prob = 40 + Math.floor(Math.random() * 30);
       }
       
-      // Calculate center for text label
-      const centerLat = (polygonCoords[0][0] + polygonCoords[1][0] + polygonCoords[2][0] + polygonCoords[3][0]) / 4;
-      const centerLng = (polygonCoords[0][1] + polygonCoords[1][1] + polygonCoords[2][1] + polygonCoords[3][1]) / 4;
-
-      return { id: index, name, coords: polygonCoords, center: [centerLat, centerLng], status, prob };
+      return { 
+        id: index, 
+        name, 
+        coords: polygonCoords, 
+        center: points[index], 
+        status, 
+        prob 
+      };
     });
   }, []);
 
