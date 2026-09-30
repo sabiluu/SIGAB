@@ -16,13 +16,15 @@ export default function RadarPeta() {
         </div>
       </div>
 
+      <div className="admin-main-grid">
+        <div className="portal-card" style={{ padding: '16px', position: 'relative', height: '600px' }}>
+          <RiskMap />
           <div className="map-legend-bottom">
             <span><i className="red-dot" /> Tinggi / Awas (6)</span>
             <span><i className="orange-dot" /> Sedang / Siaga (8)</span>
             <span><i className="green-dot" /> Rendah / Aman (9)</span>
           </div>
         </div>
-
         <aside className="radar-detail-panel">
           <div className="portal-card danger-card">
             <small>DESA TERPILIH</small>
