@@ -1,7 +1,9 @@
 import { MapContainer, TileLayer, Polygon, Tooltip } from 'react-leaflet'
 import { useMemo } from 'react'
-import { Delaunay } from 'd3-delaunay'
+import * as turf from '@turf/turf'
+import baurenoData from '../data/baureno.json'
 
+// Center coordinate for map view
 const baurenoCenter = [-7.1423, 112.0838]
 
 const villageNames = [
@@ -19,37 +21,43 @@ const colorMap = {
 }
 
 export default function RiskMap() {
-  // Generate contiguous natural polygons using Voronoi diagram
   const villages = useMemo(() => {
-    // 1. Generate jittered grid points as village centers
-    const gridSize = 0.025;
-    const points = villageNames.map((_, i) => {
+    // 1. Extract the actual Baureno district polygon from GeoJSON
+    const districtFeature = baurenoData.features[0];
+    
+    // Calculate bounding box of the district
+    const bbox = turf.bbox(districtFeature);
+    
+    // 2. Generate village center points spread within the bounding box
+    const xRange = bbox[2] - bbox[0];
+    const yRange = bbox[3] - bbox[1];
+    const pointsArray = [];
+    
+    for (let i = 0; i < villageNames.length; i++) {
       const r = Math.floor(i / 5);
       const c = i % 5;
-      // Fixed pseudo-random seed based on index so it doesn't flicker on re-renders, 
-      // but Math.random() in useMemo is fine as it runs once per mount.
-      const lat = baurenoCenter[0] + (r - 2) * gridSize + (Math.random() - 0.5) * gridSize * 0.9;
-      const lng = baurenoCenter[1] + (c - 2) * gridSize + (Math.random() - 0.5) * gridSize * 0.9;
-      return [lat, lng];
-    });
-
-    // 2. Define bounding box for the region
-    const bounds = [
-      baurenoCenter[0] - 0.07, baurenoCenter[1] - 0.07, 
-      baurenoCenter[0] + 0.07, baurenoCenter[1] + 0.07
-    ];
-
-    // 3. Compute Voronoi cells
-    const delaunay = Delaunay.from(points);
-    const voronoi = delaunay.voronoi(bounds);
-
-    return villageNames.map((name, index) => {
-      // Get the vertices for this cell
-      const polygonCoords = voronoi.cellPolygon(index);
       
-      // The last point in cellPolygon is the same as the first, Leaflet handles it fine
+      const lng = bbox[0] + (c + 0.5) * (xRange / 5) + (Math.random() - 0.5) * (xRange / 6);
+      const lat = bbox[1] + (r + 0.5) * (yRange / 5) + (Math.random() - 0.5) * (yRange / 6);
       
-      // Assign status based on name
+      const pt = turf.point([lng, lat]);
+      if (turf.booleanPointInPolygon(pt, districtFeature)) {
+        pointsArray.push(pt);
+      } else {
+        pointsArray.push(turf.point([bbox[0] + xRange/2, bbox[1] + yRange/2]));
+      }
+    }
+    
+    const points = turf.featureCollection(pointsArray);
+
+    // 3. Compute Voronoi polygons bounded by the district bbox
+    const voronoiPolygons = turf.voronoi(points, { bbox });
+
+    // 4. Intersect each Voronoi polygon with the real district polygon!
+    const finalVillages = [];
+    
+    for (let i = 0; i < villageNames.length; i++) {
+      const name = villageNames[i];
       let status = 'green';
       let prob = Math.floor(Math.random() * 20);
       
@@ -61,15 +69,44 @@ export default function RiskMap() {
         prob = 40 + Math.floor(Math.random() * 30);
       }
       
-      return { 
-        id: index, 
-        name, 
-        coords: polygonCoords, 
-        center: points[index], 
-        status, 
-        prob 
-      };
-    });
+      let polygonCoords = [];
+      let centerLat = baurenoCenter[0];
+      let centerLng = baurenoCenter[1];
+
+      try {
+        const voronoiCell = voronoiPolygons.features[i];
+        if (voronoiCell) {
+          const intersection = turf.intersect(turf.featureCollection([voronoiCell, districtFeature]));
+          if (intersection) {
+            const geom = intersection.geometry;
+            if (geom.type === 'Polygon') {
+              polygonCoords = geom.coordinates[0].map(coord => [coord[1], coord[0]]);
+            } else if (geom.type === 'MultiPolygon') {
+              polygonCoords = geom.coordinates[0][0].map(coord => [coord[1], coord[0]]);
+            }
+            
+            const centroid = turf.centroid(intersection);
+            centerLat = centroid.geometry.coordinates[1];
+            centerLng = centroid.geometry.coordinates[0];
+          }
+        }
+      } catch (e) {
+        console.error("Intersection failed for", name, e);
+      }
+      
+      if (polygonCoords.length > 0) {
+        finalVillages.push({ 
+          id: i, 
+          name, 
+          coords: polygonCoords, 
+          center: [centerLat, centerLng], 
+          status, 
+          prob 
+        });
+      }
+    }
+    
+    return finalVillages;
   }, []);
 
   return (
@@ -84,7 +121,7 @@ export default function RiskMap() {
           display: none !important;
         }
       `}</style>
-      <MapContainer center={baurenoCenter} zoom={13} style={{ height: '100%', width: '100%', zIndex: 1 }}>
+      <MapContainer center={baurenoCenter} zoom={12} style={{ height: '100%', width: '100%', zIndex: 1 }}>
         <TileLayer
           attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -94,7 +131,7 @@ export default function RiskMap() {
             key={v.id} 
             positions={v.coords}
             pathOptions={{ 
-              color: '#ffffff', // white border between regions
+              color: '#ffffff',
               weight: 2, 
               fillColor: colorMap[v.status], 
               fillOpacity: 0.7 

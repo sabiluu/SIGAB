@@ -10,8 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@turf/turf": "^7.4.0",
     "d3-delaunay": "^6.0.4",
     "leaflet": "^1.9.4",
+    "node-fetch": "^2.7.0",
+    "osmtogeojson": "^3.0.0-beta.5",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-leaflet": "^5.0.0"
