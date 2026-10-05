@@ -138,7 +138,7 @@ async def broadcast_sos_event(
     }
     await ws_manager.broadcast("sos", ws_payload)
 
-    # Jika SOS baru, juga notify ke warga di desa ybs via alerts
+    # Jika SOS baru, notify ke warga di desa ybs via alerts
     if event_type == "sos_new":
         await ws_manager.broadcast("alerts", {
             "type": "sos_nearby",
@@ -149,6 +149,9 @@ async def broadcast_sos_event(
                 "timestamp": datetime.now().isoformat(),
             },
         })
+    else:
+        # Broadcast status update ke alerts agar pelapor bisa tracking secara real-time
+        await ws_manager.broadcast("alerts", ws_payload)
 
     # Simpan notifikasi ke database untuk semua admin
     try:

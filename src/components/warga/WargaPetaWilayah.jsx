@@ -80,9 +80,10 @@ export default function WargaPetaWilayah() {
           <div className="peta-canvas-container" style={{ padding: '0', backgroundColor: '#e5e7eb', position: 'relative', height: '500px' }}>
             <RiskMap />
             <div className="map-legend-bottom">
-              <span><i className="red-dot" /> Tinggi / Awas (8)</span>
-              <span><i className="orange-dot" /> Sedang / Siaga (8)</span>
-              <span><i className="green-dot" /> Rendah / Aman (9)</span>
+              <span><i className="red-dot" /> Sangat Tinggi / Awas</span>
+              <span><i className="orange-dot" /> Tinggi / Siaga</span>
+              <span><i className="yellow-dot" /> Sedang / Waspada</span>
+              <span><i className="green-dot" /> Rendah / Aman</span>
             </div>
           </div>
         </div>

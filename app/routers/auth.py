@@ -71,6 +71,12 @@ def handle_register(body: RegisterBody, db: Session):
             detail="Kata sandi minimal 6 karakter.",
         )
 
+    # Mencegah pendaftaran admin secara publik
+    if body.role in ("petugas", "admin") and not email.endswith("@sigab.com"):
+        raise HTTPException(
+            status_code=403,
+            detail="Pendaftaran sebagai admin tidak diizinkan melalui jalur publik.",
+        )
     norm_role = "admin" if body.role in ("petugas", "admin") else "user"
     phone = (body.phone or "081234567890").strip()
 

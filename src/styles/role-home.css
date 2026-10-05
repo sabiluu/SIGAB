@@ -74,7 +74,8 @@
 .map-legend { display: flex; align-items: center; gap: 12px; font-size: 0.75rem; color: #475569; margin-bottom: 16px; }
 .map-legend span[class$="-dot"] { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
 .red-dot { background: #ef4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
-.orange-dot { background: #f59e0b; }
+.orange-dot { background: #f97316; }
+.yellow-dot { background: #eab308; }
 .green-dot { background: #10b981; }
 .map-legend button { margin-left: auto; background: #f1f5f9; border: 1px solid #e2e8f0; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; color: #334155; cursor: pointer; transition: background 0.2s; }
 .map-legend button:hover { background: #e2e8f0; }

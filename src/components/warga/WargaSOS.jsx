@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { createSOSTicket } from '../../services/sosService';
 import wsService from '../../services/wsService';
+import { useAuth } from '../../context/AuthContext';
 import MapView from '../MapView'; // Gunakan map generik atau dummy map
 
 export default function WargaSOS({ onNavigate }) {
+  const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [ticket, setTicket] = useState(null);
@@ -40,13 +42,16 @@ export default function WargaSOS({ onNavigate }) {
   // Step 3: Listen to WS for ticket updates
   useEffect(() => {
     if (step === 3 && ticket) {
-      wsService.connect('alerts'); // warga uses alerts? Wait, tickets updates might come via alerts or a specific channel.
-      const unsub = wsService.on('sos_updated', (data) => {
-        if (data.ticket_id === ticket.id) {
-          setTicket(prev => ({ ...prev, status: data.status }));
-        }
-      });
-      return () => unsub();
+      wsService.connect('alerts');
+      const events = ['sos_verified', 'sos_dispatched', 'sos_arrived', 'sos_completed', 'sos_rejected'];
+      const unsubs = events.map(evt => 
+        wsService.on(evt, (data) => {
+          if (data.ticket_id === ticket.id) {
+            setTicket(prev => ({ ...prev, status: data.status }));
+          }
+        })
+      );
+      return () => unsubs.forEach(unsub => unsub());
     }
   }, [step, ticket]);
 
@@ -54,8 +59,8 @@ export default function WargaSOS({ onNavigate }) {
     setLoading(true);
     try {
       const payload = {
-        reporter_id: 1, // Di backend ini pakai current_user (tapi via schema reporter_id wajib). Wait, schemas/sos_ticket.py mewajibkan reporter_id? Ya.
-        village_id: 1, // Dummy village
+        reporter_id: user?.id || 1, // Akan di-override di backend
+        village_id: user?.village_id || 1, // Gunakan desa dari user
         gps_latitude: gpsLocation.lat,
         gps_longitude: gpsLocation.lng,
         gps_address: address,

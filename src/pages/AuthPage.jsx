@@ -4,9 +4,9 @@ import { login, register } from '../services/authService'
 
 const assetPathPrefix = 'https://www.figma.com/api/mcp/asset/187de7f3-3e0e-42e4-9bfe-938d4a46eeaf'
 const icons = {
-  brand: `https://www.figma.com/api/mcp/asset/d84f02db-e7d0-4c80-8d2c-7b2c55160913/375ad.svg`,
-  user: `${assetPathPrefix}/f7d97.svg`,
-  petugas: `${assetPathPrefix}/a12f6.svg`,
+  brand: `data:image/svg+xml;utf8,${encodeURIComponent('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="6" fill="#2563eb"/><path d="M4 8c1.5-1 3.5-1 5 0s3.5 1 5 0 3.5-1 5 0" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 12c1.5-1 3.5-1 5 0s3.5 1 5 0 3.5-1 5 0" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 16c1.5-1 3.5-1 5 0s3.5 1 5 0 3.5-1 5 0" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>')}`,
+  user: `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>')}`,
+  petugas: `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/></svg>')}`,
 }
 
 const registerFields = {

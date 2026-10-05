@@ -1,28 +1,29 @@
 import { MapContainer, TileLayer, Polygon, Tooltip } from 'react-leaflet'
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import * as turf from '@turf/turf'
 import baurenoVillagesData from '../data/baureno_villages_real.json'
+import { getVillages } from '../services/floodService'
 
 // Center coordinate for map view - Kecamatan Baureno, Bojonegoro
 const baurenoCenter = [-7.160, 111.830]
 
 const colorMap = {
-  awas: '#ef4444',     // Red (Bahaya/Awas)
-  siaga: '#f97316',    // Orange (Siaga)
-  aman: '#10b981'      // Green (Aman)
-}
-
-// Simple hash function to generate consistent pseudo-random numbers from strings
-function hashString(str) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash) + str.charCodeAt(i);
-    hash |= 0;
-  }
-  return Math.abs(hash);
+  awas: '#ef4444',     // Red (Sangat Tinggi/Awas)
+  tinggi: '#f97316',   // Orange (Tinggi/Siaga)
+  siaga: '#f97316',    // Fallback if needed
+  sedang: '#eab308',   // Yellow (Sedang/Waspada)
+  waspada: '#eab308',  // Fallback if needed
+  rendah: '#10b981',   // Green (Rendah/Aman)
+  aman: '#10b981'      // Fallback if needed
 }
 
 export default function RiskMap() {
+  const [dbVillages, setDbVillages] = useState([]);
+  
+  useEffect(() => {
+    getVillages().then(setDbVillages).catch(console.error);
+  }, []);
+
   const villages = useMemo(() => {
     const finalVillages = [];
     
@@ -33,24 +34,16 @@ export default function RiskMap() {
 
       const name = feature.properties.adm4_name || feature.properties.name || `Desa ${i+1}`;
       
-      // Generate consistent dummy data based on the village name
-      const seed = hashString(name);
+      let status = 'rendah';
+      let prob = 0;
       
-      let status = 'aman';
-      let prob = 10 + (seed % 20); // 10-30% baseline
-      
-      // Determine fake status based on name for a realistic presentation visualization
+      // Map to real backend data
       const nameUpper = name.toUpperCase();
+      const realVillage = dbVillages.find(v => nameUpper.includes(v.name.toUpperCase()));
       
-      // Desa yang dekat Bengawan Solo atau rawan (Merah/Awas)
-      if (["BAURENO", "PASINAN", "BUMIAYU", "NGEMPLAK", "SEMBUNGLOR", "TROJALU", "GAJAH", "SRATUREJO"].some(n => nameUpper.includes(n))) {
-        status = 'awas';
-        prob = 80 + (seed % 15); // 80-95%
-      } 
-      // Desa penyangga / siaga (Oranye/Siaga)
-      else if (["TANGGUNGAN", "SUMURAGUNG", "BANJARANYAR", "DRAJAT", "GUNUNGSARI", "KARANGDAYU", "KADUNGREJO", "LEBAKSARI"].some(n => nameUpper.includes(n))) {
-        status = 'siaga';
-        prob = 40 + (seed % 30); // 40-70%
+      if (realVillage) {
+        status = realVillage.current_risk_level || 'rendah';
+        prob = realVillage.current_probability || 0;
       }
       
       // GeoJSON is [lng, lat], Leaflet Polygon expects [lat, lng]
@@ -85,7 +78,7 @@ export default function RiskMap() {
     });
     
     return finalVillages;
-  }, []);
+  }, [dbVillages]);
 
   return (
     <div className="leaflet-map-wrapper" style={{ height: '500px', width: '100%', borderRadius: '12px', overflow: 'hidden', position: 'relative', zIndex: 1, marginTop: '16px' }}>
@@ -120,7 +113,7 @@ export default function RiskMap() {
                 {v.name.toUpperCase()}<br/>
                 <span style={{ 
                   display: 'inline-block', 
-                  backgroundColor: v.status === 'awas' ? '#991b1b' : (v.status === 'siaga' ? '#9a3412' : '#065f46'), 
+                  backgroundColor: v.status === 'awas' ? '#991b1b' : (v.status === 'siaga' ? '#9a3412' : (v.status === 'waspada' ? '#854d0e' : '#065f46')), 
                   color: 'white', 
                   borderRadius: '50%', 
                   width: '18px', 

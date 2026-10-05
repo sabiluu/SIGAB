@@ -51,3 +51,10 @@ Thumbs.db
 02_prd_v3.md
 PANDUAN_KOLABORASI.md
 TIMELINE_MINGGU_5_14_PRIVAT.md
+
+# ===== Raw Data & Scratch Scripts =====
+*.zip
+*.cjs
+src/data/idn_admin/
+src/data/border-desa/
+check_schema.py

@@ -156,7 +156,7 @@ async def assess_and_update_flood_risks(db: Session) -> Dict[str, Any]:
                 EmergencyStatus.is_emergency_active == True,
             ).first()
 
-            if risk_level in ["tinggi", "awas"] and not active_emergency:
+            if risk_level == "awas" and not active_emergency:
                 # Aktifkan emergency secara otomatis
                 emergency = EmergencyStatus(
                     village_id=village.id,
@@ -183,7 +183,7 @@ async def assess_and_update_flood_risks(db: Session) -> Dict[str, Any]:
                     is_active=True,
                 )
 
-            elif risk_level in ["rendah", "sedang"] and active_emergency:
+            elif risk_level in ["rendah", "sedang", "tinggi"] and active_emergency:
                 # Nonaktifkan emergency secara otomatis jika situasi membaik
                 active_emergency.is_emergency_active = False
                 active_emergency.deactivated_at = now

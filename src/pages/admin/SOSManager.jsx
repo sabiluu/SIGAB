@@ -1,16 +1,51 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
+import { getSOSTickets, updateSOSStatus } from '../../services/sosService'
 
 export default function SOSManager() {
-  const [selectedTicket, setSelectedTicket] = useState('EVAC-BRN-001')
+  const [selectedTicketId, setSelectedTicketId] = useState(null)
+  const [tickets, setTickets] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  const tickets = [
-    { id: 'EVAC-BRN-001', lokasi: 'Dsn. Krajan RT03', desa: 'Desa Baureno', koordinat: '-7.1984, 111.9401', jiwa: 4, rentan: 'Lansia', status: 'Baru', time: '2 mnt lalu' },
-    { id: 'EVAC-BRN-002', lokasi: 'Jl. Bengawan 12', desa: 'Desa Trojalu', koordinat: '-7.2011, 111.9455', jiwa: 7, rentan: 'Balita', status: 'Baru', time: '5 mnt lalu' },
-    { id: 'EVAC-BRN-003', lokasi: 'Dsn. Sawah RT01', desa: 'Desa Pasinan', koordinat: '-7.2098, 111.9502', jiwa: 2, rentan: '-', status: 'Baru', time: '12 mnt lalu' },
-  ]
+  useEffect(() => {
+    fetchTickets()
+  }, [])
 
-  const activeTicket = tickets.find(t => t.id === selectedTicket) || tickets[0]
+  const fetchTickets = async () => {
+    try {
+      setLoading(true)
+      const data = await getSOSTickets()
+      setTickets(data)
+      if (data.length > 0 && !selectedTicketId) {
+        setSelectedTicketId(data[0].id)
+      }
+    } catch (err) {
+      console.error('Failed to fetch tickets:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleUpdateStatus = async (id, newStatus) => {
+    try {
+      await updateSOSStatus(id, { status: newStatus })
+      fetchTickets()
+    } catch (err) {
+      alert('Gagal update status: ' + err.message)
+    }
+  }
+
+  const activeTicket = tickets.find(t => t.id === selectedTicketId) || tickets[0] || null
+
+  const getRentanText = (t) => {
+    if (!t) return '-'
+    const v = []
+    if (t.has_elderly) v.push('Lansia')
+    if (t.has_toddler) v.push('Balita')
+    if (t.has_pregnant) v.push('Ibu Hamil')
+    if (t.has_disability) v.push('Disabilitas')
+    return v.length > 0 ? v.join(', ') : '-'
+  }
 
   return (
     <AdminLayout activeMenu="sos">
@@ -20,10 +55,10 @@ export default function SOSManager() {
           <p>Kelola & tindak lanjuti permintaan evakuasi warga secara real-time.</p>
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
-          <div className="summary-mini-card">TIKET AKTIF <strong>6</strong></div>
-          <div className="summary-mini-card">JIWA MENUNGGU <strong>32</strong></div>
-          <div className="summary-mini-card">SELESAI <strong>2</strong></div>
-          <button className="add-btn">+ Tiket Manual</button>
+          <div className="summary-mini-card">TIKET AKTIF <strong>{tickets.filter(t => t.status !== 'completed' && t.status !== 'rejected').length}</strong></div>
+          <div className="summary-mini-card">JIWA MENUNGGU <strong>{tickets.filter(t => t.status !== 'completed').reduce((sum, t) => sum + (t.family_count || 0), 0)}</strong></div>
+          <div className="summary-mini-card">SELESAI <strong>{tickets.filter(t => t.status === 'completed').length}</strong></div>
+          <button className="add-btn" onClick={fetchTickets}>↻ Refresh</button>
         </div>
       </div>
 
@@ -31,10 +66,7 @@ export default function SOSManager() {
         <div className="portal-card" style={{ padding: '24px' }}>
           <div className="table-filters">
             <div className="tab-pills">
-              <button className="active">Baru</button>
-              <button>Diproses</button>
-              <button>Selesai</button>
-              <button>Semua</button>
+              <button className="active">Semua</button>
             </div>
             <div className="search-box-mini">⌕ &nbsp; Cari ID / lokasi...</div>
           </div>
@@ -50,20 +82,23 @@ export default function SOSManager() {
               </tr>
             </thead>
             <tbody>
-              {tickets.map(ticket => (
-                <tr key={ticket.id} className={selectedTicket === ticket.id ? 'selected' : ''} onClick={() => setSelectedTicket(ticket.id)}>
-                  <td className="ticket-id">{ticket.id}</td>
+              {loading ? (
+                <tr><td colSpan="5" style={{textAlign: 'center', padding: '20px'}}>Memuat data...</td></tr>
+              ) : tickets.length === 0 ? (
+                <tr><td colSpan="5" style={{textAlign: 'center', padding: '20px'}}>Tidak ada tiket SOS.</td></tr>
+              ) : tickets.map(ticket => (
+                <tr key={ticket.id} className={selectedTicketId === ticket.id ? 'selected' : ''} onClick={() => setSelectedTicketId(ticket.id)}>
+                  <td className="ticket-id">{ticket.ticket_number}</td>
                   <td>
-                    <strong>{ticket.lokasi}</strong>
-                    <small>{ticket.koordinat}</small>
+                    <strong>{ticket.gps_address || `Desa ID ${ticket.village_id}`}</strong>
+                    <br/><small>{ticket.gps_latitude}, {ticket.gps_longitude}</small>
                   </td>
-                  <td>{ticket.jiwa}</td>
-                  <td><span className="badge-baru">{ticket.status}</span></td>
+                  <td>{ticket.family_count}</td>
+                  <td><span className={`badge-baru ${ticket.status}`}>{ticket.status}</span></td>
                   <td>
                     <div className="table-actions">
-                      <button className="dispatch-btn">Dispatch</button>
-                      <button className="icon-btn">✎</button>
-                      <button className="icon-btn">🗑</button>
+                      <button className="dispatch-btn" onClick={(e) => { e.stopPropagation(); handleUpdateStatus(ticket.id, 'dispatched'); }}>Dispatch</button>
+                      <button className="icon-btn" onClick={(e) => { e.stopPropagation(); handleUpdateStatus(ticket.id, 'completed'); }}>✔️</button>
                     </div>
                   </td>
                 </tr>
@@ -72,52 +107,47 @@ export default function SOSManager() {
           </table>
         </div>
 
-        <aside className="sos-detail-panel portal-card">
-          <div className="detail-header">
-            <strong>{activeTicket.id}</strong>
-            <div className="detail-meta">
-              <span>◷ {activeTicket.time}</span>
-              <button className="text-btn">✎ Edit</button>
-            </div>
-          </div>
-
-          <div className="detail-content">
-            <h3>{activeTicket.lokasi}</h3>
-            <p>{activeTicket.desa}</p>
-
-            <div className="gps-box">
-              <small>KOORDINAT GPS</small>
-              <strong>{activeTicket.koordinat}</strong>
-            </div>
-
-            <div className="stats-row">
-              <div className="stat-box">
-                <small>Jumlah</small>
-                <strong>{activeTicket.jiwa} <small>orang</small></strong>
-              </div>
-              <div className="stat-box">
-                <small>Kelompok Rentan</small>
-                <strong>{activeTicket.rentan}</strong>
+        {activeTicket && (
+          <aside className="sos-detail-panel portal-card">
+            <div className="detail-header">
+              <strong>{activeTicket.ticket_number}</strong>
+              <div className="detail-meta">
+                <span>◷ {new Date(activeTicket.submitted_at).toLocaleTimeString()}</span>
               </div>
             </div>
 
-            <div className="fleet-section">
-              <h4>Tim Perahu Tersedia</h4>
-              {[
-                { name: 'Perahu Karet 01', status: 'Siaga', color: '#10b981' },
-                { name: 'Perahu Karet 02', status: 'Bertugas', color: '#f59e0b' },
-                { name: 'Perahu Mesin 01', status: 'Siaga', color: '#10b981' },
-              ].map((boat, idx) => (
-                <div key={idx} className="boat-card">
-                  <span>⚡ {boat.name}</span>
-                  <b style={{ color: boat.color }}>● {boat.status}</b>
+            <div className="detail-content">
+              <h3>{activeTicket.gps_address || 'Alamat tidak diketahui'}</h3>
+              <p>Desa ID: {activeTicket.village_id}</p>
+
+              <div className="gps-box">
+                <small>KOORDINAT GPS</small>
+                <strong>{activeTicket.gps_latitude}, {activeTicket.gps_longitude}</strong>
+              </div>
+
+              <div className="stats-row">
+                <div className="stat-box">
+                  <small>Jumlah</small>
+                  <strong>{activeTicket.family_count} <small>orang</small></strong>
                 </div>
-              ))}
-            </div>
+                <div className="stat-box">
+                  <small>Kelompok Rentan</small>
+                  <strong>{getRentanText(activeTicket)}</strong>
+                </div>
+              </div>
 
-            <button className="primary-action-btn">Kerahkan Perahu Sekarang</button>
-          </div>
-        </aside>
+              <div className="fleet-section">
+                <h4>Ubah Status Evakuasi</h4>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
+                  <button onClick={() => handleUpdateStatus(activeTicket.id, 'verified')} style={{padding: '8px', flex: 1}}>Verifikasi</button>
+                  <button onClick={() => handleUpdateStatus(activeTicket.id, 'dispatched')} style={{padding: '8px', flex: 1, background: '#f59e0b', color: '#fff', border: 'none'}}>Kirim Tim</button>
+                  <button onClick={() => handleUpdateStatus(activeTicket.id, 'arrived')} style={{padding: '8px', flex: 1, background: '#3b82f6', color: '#fff', border: 'none'}}>Tim Tiba</button>
+                  <button onClick={() => handleUpdateStatus(activeTicket.id, 'completed')} style={{padding: '8px', flex: 1, background: '#10b981', color: '#fff', border: 'none'}}>Selesai</button>
+                </div>
+              </div>
+            </div>
+          </aside>
+        )}
       </div>
     </AdminLayout>
   )

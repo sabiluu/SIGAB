@@ -36,7 +36,7 @@ async def create_sos_ticket(
 
     new_ticket = SOSTicket(
         ticket_number=ticket_number,
-        reporter_id=ticket.reporter_id,
+        reporter_id=current_user.id,
         village_id=ticket.village_id,
         gps_latitude=ticket.gps_latitude,
         gps_longitude=ticket.gps_longitude,
@@ -55,7 +55,7 @@ async def create_sos_ticket(
     db.refresh(new_ticket)
 
     # Push notifikasi SOS baru ke admin via WebSocket
-    reporter = db.query(User).filter(User.id == ticket.reporter_id).first()
+    reporter = db.query(User).filter(User.id == current_user.id).first()
     village = db.query(Village).filter(Village.id == ticket.village_id).first()
     await broadcast_sos_event(
         db=db,
