@@ -9,13 +9,13 @@ import WargaRiwayatKejadian from '../components/warga/WargaRiwayatKejadian'
 import WargaPanduan from '../components/warga/WargaPanduan'
 import WargaKontakDarurat from '../components/warga/WargaKontakDarurat'
 import WargaSOS from '../components/warga/WargaSOS'
+import useDashboardRealtime from '../hooks/useDashboardRealtime'
+import useGeolocation from '../hooks/useGeolocation'
+import { getSOSTickets } from '../services/sosService'
 import '../styles/role-home.css'
 import '../styles/warga-portal.css'
 
-const wargaAssetPrefix = 'https://www.figma.com/api/mcp/asset/d84f02db-e7d0-4c80-8d2c-7b2c55160913'
-const brandIcon = `${wargaAssetPrefix}/375ad.svg`
-
-function Brand({ admin = false }) {
+function Brand({ admin = false, locName = '' }) {
   return (
     <div className={`role-brand ${admin ? 'role-brand-admin' : ''}`}>
       <span className="role-brand-icon">
@@ -27,7 +27,7 @@ function Brand({ admin = false }) {
       </span>
       <span className="role-brand-text">
         <strong>SiagaBencana</strong>
-        <small>{admin ? 'Pusdalops BPBD' : 'Portal Warga • Baureno'}</small>
+        <small>{admin ? 'Pusdalops BPBD' : (locName ? `Portal Warga • ${locName}` : 'Portal Warga')}</small>
       </span>
     </div>
   )
@@ -37,11 +37,18 @@ function WargaHome() {
   const [activeTab, setActiveTab] = useState('peta')
   const [userProfile, setUserProfile] = useState({ full_name: 'Ahmad Fauzi' })
   const [isEmergencyActive, setIsEmergencyActive] = useState(false)
+  const geo = useGeolocation()
 
   useEffect(() => {
     getProfile()
       .then((res) => {
-        if (res && res.full_name) setUserProfile(res)
+        if (res && res.full_name) {
+          setUserProfile(res)
+          const targetVillageId = res.village_id || 1
+          apiFetch(`/emergency/${targetVillageId}`)
+            .then(em => setIsEmergencyActive(em.is_emergency_active))
+            .catch(() => {})
+        }
       })
       .catch(() => {})
 
@@ -77,7 +84,7 @@ function WargaHome() {
       {/* Header Sticky */}
       <header className="warga-header-wrapper">
         <div className="warga-header">
-          <Brand />
+          <Brand locName={geo.address ? geo.address.split(',')[0] : 'Baureno'} />
 
           {/* Navigation Links */}
           <nav className="warga-nav" aria-label="Navigasi Warga">
@@ -116,16 +123,49 @@ function WargaHome() {
             >
               Kontak Darurat
             </button>
+            <button
+              type="button"
+              className={`warga-nav-item ${activeTab === 'sos' ? 'active' : ''}`}
+              onClick={() => setActiveTab('sos')}
+              style={{ color: '#dc2626', fontWeight: 700 }}
+            >
+              🚨 SOS Darurat
+            </button>
           </nav>
 
           {/* Header Right Tools */}
           <div className="warga-tools">
-            <div className="warga-loc-pill">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <div 
+              className="warga-loc-pill"
+              title={geo.fullAddress || (geo.position ? `Koordinat GPS: ${geo.latitude?.toFixed(5)}, ${geo.longitude?.toFixed(5)}` : 'Klik untuk deteksi ulang GPS')}
+              onClick={geo.refresh}
+              style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+            >
+              <svg 
+                width="14" 
+                height="14" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke={geo.isRealDevice ? '#10b981' : 'currentColor'} 
+                strokeWidth="2.5"
+              >
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                 <circle cx="12" cy="10" r="3" />
               </svg>
-              <span>Baureno, Bojonegoro</span>
+              <span>{geo.loading ? 'Mencari GPS...' : (geo.address || 'Baureno, Bojonegoro')}</span>
+              {geo.isRealDevice && (
+                <span 
+                  style={{
+                    width: '7px',
+                    height: '7px',
+                    borderRadius: '50%',
+                    background: '#10b981',
+                    display: 'inline-block',
+                    boxShadow: '0 0 6px #10b981'
+                  }} 
+                  title="GPS Device Terkunci" 
+                />
+              )}
             </div>
 
             <button type="button" className="warga-bell-btn" title="Notifikasi">
@@ -157,12 +197,12 @@ function WargaHome() {
 
       {/* Main Content Area based on Tab */}
       <main className="warga-page-body">
-        {activeTab === 'beranda' && <WargaBeranda onNavigate={(tab) => setActiveTab(tab)} />}
-        {activeTab === 'peta' && <WargaPetaWilayah />}
+        {activeTab === 'beranda' && <WargaBeranda onNavigate={(tab) => setActiveTab(tab)} geo={geo} />}
+        {activeTab === 'peta' && <WargaPetaWilayah geo={geo} />}
         {activeTab === 'riwayat' && <WargaRiwayatKejadian />}
         {activeTab === 'panduan' && <WargaPanduan />}
         {activeTab === 'kontak' && <WargaKontakDarurat />}
-        {activeTab === 'sos' && <WargaSOS onNavigate={(tab) => setActiveTab(tab)} />}
+        {activeTab === 'sos' && <WargaSOS onNavigate={(tab) => setActiveTab(tab)} geo={geo} />}
       </main>
 
       {/* Footer */}
@@ -176,53 +216,45 @@ function WargaHome() {
   )
 }
 
-function Metric({ icon, status, value, unit, label }) {
-  return (
-    <article className="metric-card portal-card">
-      <div className="metric-top">
-        <span>{icon}</span>
-        <b>{status}</b>
-      </div>
-      <strong>
-        {value}
-        <small>{unit}</small>
-      </strong>
-      <p>{label}</p>
-    </article>
-  )
-}
-
-function History({ color, title, detail, date }) {
-  return (
-    <div className="history-item">
-      <i className={color} />
-      <div>
-        <strong>{title}</strong>
-        <small>{detail}</small>
-      </div>
-      <time>{date}</time>
-    </div>
-  )
-}
-
 function AdminHome() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [currentTime, setCurrentTime] = useState(new Date())
   const [isEmergency, setIsEmergency] = useState(false)
+  const [tickets, setTickets] = useState([])
+  const { data: realtimeData } = useDashboardRealtime()
+
+  const fetchTickets = () => {
+    getSOSTickets()
+      .then(res => {
+        if (Array.isArray(res)) setTickets(res)
+      })
+      .catch(() => {})
+  }
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000)
     apiFetch('/emergency/1').then(res => setIsEmergency(res.is_emergency_active)).catch(() => {})
+    fetchTickets()
+
     wsService.connect('alerts')
-    const unsub = wsService.on('emergency_status', (data) => setIsEmergency(data.is_active))
+    wsService.connect('sos')
+    const unsubAlerts = wsService.on('emergency_status', (data) => setIsEmergency(data.is_active))
+    const unsubSosNew = wsService.on('sos_new', (newTicket) => {
+      fetchTickets()
+    })
+    const unsubSosUpd = wsService.on('sos_updated', () => {
+      fetchTickets()
+    })
+
     return () => {
       clearInterval(timer)
-      unsub()
+      unsubAlerts()
+      unsubSosNew()
+      unsubSosUpd()
     }
   }, [])
 
   const toggleEmergency = async () => {
-    // Optimistic update supaya UI langsung berasa "bisa diklik"
     const nextState = !isEmergency
     setIsEmergency(nextState)
 
@@ -235,7 +267,6 @@ function AdminHome() {
     } catch(e) { 
       console.error(e)
       alert("Gagal menghubungi server: " + e.message)
-      // Revert if failed
       setIsEmergency(isEmergency)
     }
   }
@@ -247,6 +278,27 @@ function AdminHome() {
 
   const dateOptions = { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' }
   const dateStr = currentTime.toLocaleDateString('id-ID', dateOptions)
+
+  const activeTickets = tickets.filter(t => t.status !== 'completed' && t.status !== 'rejected')
+  const shelters = realtimeData?.shelters || []
+  const totalShelterCap = shelters.reduce((s, sh) => s + (sh.capacity_total || 0), 0)
+  const occupiedShelterCap = shelters.reduce((s, sh) => s + (sh.capacity_occupied || 0), 0)
+  const shelterOccPct = totalShelterCap ? Math.round((occupiedShelterCap / totalShelterCap) * 100) : 0
+
+  const dischargeVal = realtimeData?.discharge?.discharge_m3s 
+    ? Math.round(realtimeData.discharge.discharge_m3s).toLocaleString('id-ID')
+    : '1.200'
+
+  const rainVal = realtimeData?.weather?.precipitation_mm ?? 0
+
+  const getVulnerableSummary = (t) => {
+    const v = []
+    if (t.has_elderly) v.push('Lansia')
+    if (t.has_toddler) v.push('Balita')
+    if (t.has_pregnant) v.push('Ibu Hamil')
+    if (t.has_disability) v.push('Difabel')
+    return v.length > 0 ? ` • ${v.join(', ')}` : ''
+  }
 
   return (
     <main className={`portal admin-portal ${sidebarOpen ? '' : 'sidebar-closed'}`}>
@@ -266,7 +318,7 @@ function AdminHome() {
           </a>
           <a href="#sos">
             <i>▣</i> <span>Tiket SOS</span>
-            <b>12</b>
+            {activeTickets.length > 0 && <b>{activeTickets.length}</b>}
           </a>
           <a href="#posko">
             <i>♙</i> <span>Manajemen Posko</span>
@@ -311,17 +363,17 @@ function AdminHome() {
         </header>
         <div className="admin-dashboard">
           <div className="kpi-grid">
-            <Kpi icon="♜" label="RERATA DEBIT SUNGAI" value="1.842" unit="m³/s" change="+8.4%" />
-            <Kpi icon="☁" label="RERATA CURAH HUJAN" value="112" unit="mm" change="+21%" />
-            <Kpi icon="⚠" label="TIKET SOS AKTIF" value="12" unit="tiket" change="+5 baru" danger />
-            <Kpi icon="♧" label="TOTAL KAPASITAS POSKO" value="640" unit="/1.2k" change="53% terisi" />
+            <Kpi icon="♜" label="RERATA DEBIT SUNGAI" value={dischargeVal} unit="m³/s" change="Live GloFAS" />
+            <Kpi icon="☁" label="RERATA CURAH HUJAN" value={rainVal} unit="mm" change="Open-Meteo" />
+            <Kpi icon="⚠" label="TIKET SOS AKTIF" value={activeTickets.length} unit="tiket" change={`${activeTickets.length} butuh evakuasi`} danger={activeTickets.length > 0} />
+            <Kpi icon="♧" label="TOTAL KAPASITAS POSKO" value={occupiedShelterCap} unit={`/${totalShelterCap || 1200}`} change={`${shelterOccPct}% terisi`} />
           </div>
           <div className="admin-main-grid">
             <article className="risk-map portal-card">
               <div className="admin-section-head">
                 <div>
                   <h2>
-                    Peta Risiko 25 Desa <b>● Live Radar (60d)</b>
+                    Peta Risiko 25 Desa <b>● Live Radar</b>
                   </h2>
                   <p>Kecamatan Baureno — Visualisasi Spasial &amp; Sebaran Genangan Bengawan Solo</p>
                 </div>
@@ -345,34 +397,38 @@ function AdminHome() {
             <article className="sos-queue portal-card">
               <div className="admin-section-head">
                 <h2>🔴 Antrian SOS Live</h2>
-                <b>12 masuk</b>
+                <b>{activeTickets.length} antrean</b>
               </div>
-              {[
-                'EVAC-BRN-001|Dsn. Krajan RT03|4 orang • Lansia|2 mnt lalu',
-                'EVAC-BRN-002|Jl. Bengawan 12|7 orang • Balita, Hamil|5 mnt lalu',
-                'EVAC-BRN-003|Dsn. Sawah RT01|2 orang • Difabel|8 mnt lalu',
-                'EVAC-BRN-004|Ps. Baureno blok C|11 orang|11 mnt lalu',
-              ].map((ticket) => {
-                const [id, location, people, time] = ticket.split('|')
-                return (
-                  <div className="sos-ticket" key={id}>
-                    <div>
-                      <strong>{id}</strong>
-                      <time>{time}</time>
+              {activeTickets.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '30px 10px', color: '#64748b' }}>
+                  <div style={{ fontSize: '2rem', marginBottom: '8px' }}>🛡️</div>
+                  <strong>Tidak ada tiket darurat aktif</strong>
+                  <p style={{ fontSize: '0.85rem', margin: '4px 0 0' }}>Situasi warga dalam pantauan aman.</p>
+                </div>
+              ) : (
+                activeTickets.slice(0, 5).map((ticket) => {
+                  const location = ticket.gps_address || (ticket.village_name ? `Desa ${ticket.village_name}` : `Desa ID ${ticket.village_id}`)
+                  const time = ticket.submitted_at ? new Date(ticket.submitted_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : 'Baru saja'
+                  return (
+                    <div className="sos-ticket" key={ticket.id}>
+                      <div>
+                        <strong>{ticket.ticket_number}</strong>
+                        <time>{time} WIB</time>
+                      </div>
+                      <b>📍 {location}</b>
+                      <small>👥 {ticket.family_count} jiwa{getVulnerableSummary(ticket)}</small>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          window.location.hash = '#sos'
+                        }}
+                      >
+                        ♟ &nbsp; Tindak Lanjuti di Panel SOS ↗
+                      </button>
                     </div>
-                    <b>{location}</b>
-                    <small>♙ {people}</small>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        window.location.hash = '#sos'
-                      }}
-                    >
-                      ♟ &nbsp; Kerahkan Perahu
-                    </button>
-                  </div>
-                )
-              })}
+                  )
+                })
+              )}
             </article>
           </div>
         </div>

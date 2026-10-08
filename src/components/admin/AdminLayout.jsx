@@ -11,15 +11,31 @@ export default function AdminLayout({ children, activeMenu }) {
   const [currentTime, setCurrentTime] = useState(new Date())
   const [isEmergency, setIsEmergency] = useState(false)
 
+  const [sosCount, setSosCount] = useState(0)
+
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000)
     apiFetch('/emergency/1').then(res => setIsEmergency(res.is_emergency_active)).catch(() => {})
+    
+    // Fetch SOS tickets count
+    apiFetch('/sos').then(tickets => {
+      if (Array.isArray(tickets)) {
+        const active = tickets.filter(t => t.status !== 'completed' && t.status !== 'rejected').length
+        setSosCount(active)
+      }
+    }).catch(() => {})
+
     wsService.connect('alerts')
-    const unsub = wsService.on('emergency_status', (data) => setIsEmergency(data.is_active))
+    wsService.connect('sos')
+    const unsub1 = wsService.on('emergency_status', (data) => setIsEmergency(data.is_active))
+    const unsub2 = wsService.on('sos_new', () => setSosCount(prev => prev + 1))
+    const unsub3 = wsService.on('sos_completed', () => setSosCount(prev => Math.max(0, prev - 1)))
     
     return () => {
       clearInterval(timer)
-      unsub()
+      unsub1()
+      unsub2()
+      unsub3()
     }
   }, [])
 
@@ -49,7 +65,7 @@ export default function AdminLayout({ children, activeMenu }) {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: '▦', href: '#petugas' },
     { id: 'radar', label: 'Radar Peta', icon: '◉', href: '#radar' },
-    { id: 'sos', label: 'Tiket SOS', icon: '▣', href: '#sos', badge: 12 },
+    { id: 'sos', label: 'Tiket SOS', icon: '▣', href: '#sos', badge: sosCount > 0 ? sosCount : null },
     { id: 'posko', label: 'Manajemen Posko', icon: '♙', href: '#posko' }
   ]
 

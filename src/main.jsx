@@ -6,10 +6,13 @@ import './styles/landing.css'
 import './styles/auth.css'
 import './styles/role-home.css'
 import './styles/admin-custom.css'
+import { AuthProvider } from './context/AuthContext'
 import App from './App.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
+    <AuthProvider>
+      <App />
+    </AuthProvider>
   </StrictMode>,
 )

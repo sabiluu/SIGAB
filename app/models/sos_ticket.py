@@ -11,7 +11,7 @@ from ..core.database import Base
 class SOSTicket(Base):
     __tablename__ = "sos_tickets"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     ticket_number = Column(String(30), nullable=False, unique=True)
     reporter_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     village_id = Column(Integer, ForeignKey("villages.id", ondelete="CASCADE"), nullable=False)
@@ -50,3 +50,11 @@ class SOSTicket(Base):
     assigned_admin = relationship("User", foreign_keys=[assigned_admin_id], back_populates="sos_tickets_assigned")
     village = relationship("Village", back_populates="sos_tickets")
     shelter_destination = relationship("Shelter", back_populates="sos_tickets")
+
+    @property
+    def reporter_name(self):
+        return self.reporter.full_name if self.reporter else None
+
+    @property
+    def village_name(self):
+        return self.village.name if self.village else None

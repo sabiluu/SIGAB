@@ -45,9 +45,11 @@ class SOSTicketResponse(BaseModel):
     assigned_admin_id: Optional[int]
     assigned_unit: Optional[str]
     rejection_reason: Optional[str]
-    shelter_destination_id: Optional[int]
+    shelter_destination_id: Optional[int] = None
     submitted_at: datetime
     updated_at: datetime
+    reporter_name: Optional[str] = None
+    village_name: Optional[str] = None
 
     class Config:
         from_attributes = True

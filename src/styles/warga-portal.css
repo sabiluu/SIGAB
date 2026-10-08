@@ -23,22 +23,26 @@
 }
 
 .warga-header {
-  max-width: 1400px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 0 28px;
+  padding: 0 20px;
   height: 76px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 14px;
+  flex-wrap: nowrap;
 }
 
 /* Brand Logo */
 .warga-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   text-decoration: none;
   color: inherit;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .warga-brand-icon {
@@ -50,40 +54,46 @@
   align-items: center;
   justify-content: center;
   color: white;
-  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25);
+  box-shadow: 0 4px 10px rgba(37, 99, 255, 0.25);
   flex-shrink: 0;
 }
 
 .warga-brand-text {
   display: flex;
   flex-direction: column;
+  white-space: nowrap;
 }
 
 .warga-brand-text strong {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: #0f172a;
   line-height: 1.2;
+  white-space: nowrap;
 }
 
 .warga-brand-text small {
   font-size: 0.72rem;
   color: #64748b;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 /* Nav Tabs */
 .warga-nav {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .warga-nav-item {
-  padding: 8px 18px;
+  padding: 8px 14px;
   border-radius: 9999px;
-  font-size: 0.86rem;
+  font-size: 0.85rem;
   font-weight: 600;
   color: #475569;
   text-decoration: none;
@@ -91,6 +101,13 @@
   border: none;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-shrink: 0;
+  word-break: keep-all;
 }
 
 .warga-nav-item:hover {
@@ -108,11 +125,14 @@
 .warga-tools {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .warga-loc-pill {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
   background: #f8fafc;
@@ -122,10 +142,19 @@
   font-size: 0.78rem;
   color: #475569;
   font-weight: 500;
+  white-space: nowrap !important;
+  flex-shrink: 0;
+  word-break: keep-all;
+}
+
+.warga-loc-pill span {
+  white-space: nowrap !important;
+  word-break: keep-all;
 }
 
 .warga-loc-pill svg {
   color: #0284c7;
+  flex-shrink: 0;
 }
 
 .warga-bell-btn {
@@ -152,11 +181,13 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 4px 10px 4px 4px;
+  padding: 4px 12px 4px 4px;
   border-radius: 9999px;
   background: #ffffff;
   border: 1px solid #e2e8f0;
   cursor: pointer;
+  flex-shrink: 0;
+  white-space: nowrap !important;
 }
 
 .warga-user-avatar {
@@ -172,6 +203,7 @@
   font-size: 0.78rem;
   color: #2563eb;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .warga-user-avatar img {
@@ -184,18 +216,21 @@
   font-size: 0.82rem;
   font-weight: 700;
   color: #0f172a;
+  white-space: nowrap !important;
 }
 
 .warga-logout-btn {
   background: none;
   border: 1px solid #fecdd3;
   color: #e11d48;
-  padding: 6px 12px;
+  padding: 6px 14px;
   border-radius: 9999px;
   font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap !important;
+  flex-shrink: 0;
 }
 
 .warga-logout-btn:hover {

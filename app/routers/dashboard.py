@@ -31,9 +31,9 @@ def get_dashboard_stats(
     # 1. Total Warga Terdaftar (Hanya role 'user')
     total_citizens = db.query(func.count(User.id)).filter(User.role == "user").scalar() or 0
     
-    # 2. Total SOS Aktif (Status: 'pending' atau 'assigned')
+    # 2. Total SOS Aktif (Status: 'submitted', 'verified', 'dispatched', 'arrived')
     active_sos = db.query(func.count(SOSTicket.id)).filter(
-        SOSTicket.status.in_(["pending", "assigned"])
+        SOSTicket.status.in_(["submitted", "verified", "dispatched", "arrived"])
     ).scalar() or 0
     
     # 3. Total Desa Status Awas/Tinggi

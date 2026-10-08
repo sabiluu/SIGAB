@@ -43,7 +43,8 @@ export async function register(data) {
       phone: data.phone || '0800000000',
       password: data.password,
       role: backendRole,
-      village_id: null,
+      village_id: data.village_id ? parseInt(data.village_id, 10) : null,
+      nik: data.nik || null,
       avatar_url: null,
     }),
   });

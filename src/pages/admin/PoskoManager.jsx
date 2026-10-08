@@ -1,13 +1,31 @@
 import { useState, useEffect } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
-import { getShelters, updateShelterCapacity } from '../../services/shelterService'
+import { getShelters, updateShelterCapacity, createShelter, deleteShelter } from '../../services/shelterService'
+import { getVillages } from '../../services/floodService'
 
 export default function PoskoManager() {
   const [poskoList, setPoskoList] = useState([])
+  const [villages, setVillages] = useState([])
   const [loading, setLoading] = useState(true)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [newShelter, setNewShelter] = useState({
+    name: '',
+    address: '',
+    village_id: 1,
+    latitude: -7.129,
+    longitude: 112.105,
+    capacity_total: 200,
+    capacity_occupied: 0,
+    contact_person: '',
+    contact_phone: ''
+  })
 
   useEffect(() => {
     fetchPoskos()
+    getVillages().then(data => {
+      if (Array.isArray(data)) setVillages(data.slice(0, 25))
+    }).catch(() => {})
   }, [])
 
   const fetchPoskos = async () => {
@@ -33,44 +51,97 @@ export default function PoskoManager() {
     }
   }
 
+  const handleDeleteShelter = async (id, name) => {
+    if (!window.confirm(`Yakin ingin menghapus posko "${name}"?`)) return
+    try {
+      await deleteShelter(id)
+      fetchPoskos()
+    } catch (err) {
+      alert('Gagal menghapus posko: ' + err.message)
+    }
+  }
+
+  const handleAddShelter = async (e) => {
+    e.preventDefault()
+    setSubmitting(true)
+    try {
+      await createShelter({
+        ...newShelter,
+        village_id: parseInt(newShelter.village_id, 10),
+        capacity_total: parseInt(newShelter.capacity_total, 10),
+        capacity_occupied: parseInt(newShelter.capacity_occupied, 10) || 0,
+        latitude: parseFloat(newShelter.latitude),
+        longitude: parseFloat(newShelter.longitude),
+      })
+      setShowAddModal(false)
+      setNewShelter({
+        name: '',
+        address: '',
+        village_id: villages[0]?.id || 1,
+        latitude: -7.129,
+        longitude: 112.105,
+        capacity_total: 200,
+        capacity_occupied: 0,
+        contact_person: '',
+        contact_phone: ''
+      })
+      fetchPoskos()
+    } catch (err) {
+      alert('Gagal menambah posko: ' + err.message)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   const totalPosko = poskoList.length
-  const totalCapacity = poskoList.reduce((sum, p) => sum + (p.capacity_max || 0), 0)
+  const totalCapacity = poskoList.reduce((sum, p) => sum + (p.capacity_total || 0), 0)
   const totalOccupied = poskoList.reduce((sum, p) => sum + (p.capacity_occupied || 0), 0)
-  const remaining = totalCapacity - totalOccupied
+  const remaining = Math.max(0, totalCapacity - totalOccupied)
   const occupancyPct = totalCapacity ? Math.round((totalOccupied / totalCapacity) * 100) : 0
 
   return (
     <AdminLayout activeMenu="posko">
       <div className="admin-section-head">
         <div>
-          <h2>Manajemen Posko</h2>
-          <p>Atur kapasitas & kuota pengungsian tiap posko secara langsung.</p>
+          <h2>Manajemen Posko & Shelter Pengungsian</h2>
+          <p>Atur kapasitas, sisa kuota, dan sebaran posko pengungsian di Kecamatan Baureno.</p>
         </div>
-        <button className="primary-btn" onClick={fetchPoskos}>↻ Refresh</button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button className="primary-btn" onClick={() => setShowAddModal(true)} style={{ background: '#2563eb', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
+            + Tambah Posko
+          </button>
+          <button className="primary-btn" onClick={fetchPoskos}>↻ Refresh</button>
+        </div>
       </div>
 
       <div className="kpi-grid">
         <div className="kpi-card portal-card">
-          <small>TOTAL POSKO</small>
+          <small>TOTAL POSKO RESMI</small>
           <strong>{totalPosko} <small>lokasi</small></strong>
         </div>
         <div className="kpi-card portal-card">
-          <small>TERISI</small>
-          <strong>{totalOccupied} <small>/ {totalCapacity}</small></strong>
+          <small>PENGUNGSI TERDATA</small>
+          <strong>{totalOccupied} <small>/ {totalCapacity} jiwa</small></strong>
         </div>
         <div className="kpi-card portal-card">
-          <small>SISA KUOTA</small>
-          <strong>{remaining} <small>tempat</small></strong>
+          <small>SISA DAYA TAMPUNG</small>
+          <strong>{remaining} <small>jiwa</small></strong>
         </div>
         <div className="kpi-card portal-card">
-          <small>OKUPANSI</small>
-          <strong>{occupancyPct}%</strong>
+          <small>RERATA KETERISIAN</small>
+          <strong style={{ color: occupancyPct > 80 ? '#dc2626' : '#10b981' }}>{occupancyPct}%</strong>
         </div>
       </div>
 
       <div className="posko-grid">
-        {loading ? <p>Memuat data posko...</p> : poskoList.map((posko) => {
-          const pctVal = posko.capacity_max ? Math.round((posko.capacity_occupied / posko.capacity_max) * 100) : 0
+        {loading ? (
+          <p style={{ gridColumn: '1/-1', textAlign: 'center', padding: '40px' }}>Memuat data posko...</p>
+        ) : poskoList.length === 0 ? (
+          <p style={{ gridColumn: '1/-1', textAlign: 'center', padding: '40px' }}>Belum ada data posko pengungsian.</p>
+        ) : poskoList.map((posko) => {
+          const maxCap = posko.capacity_total || 100
+          const occCap = posko.capacity_occupied || 0
+          const pctVal = Math.round((occCap / maxCap) * 100)
           const pct = `${pctVal}%`
           let status = 'Tersedia'
           if (pctVal >= 100) status = 'Penuh'
@@ -81,32 +152,174 @@ export default function PoskoManager() {
               <div className="posko-card-header">
                 <div>
                   <strong>{posko.name}</strong>
-                  <small>@ {posko.address}</small>
+                  <small>📍 {posko.address}</small>
                 </div>
-                <span className={`status-badge ${status.toLowerCase().replace(' ', '-')}`}>{status}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span className={`status-badge ${status.toLowerCase().replace(' ', '-')}`}>{status}</span>
+                  <button 
+                    onClick={() => handleDeleteShelter(posko.id, posko.name)}
+                    style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1rem' }}
+                    title="Hapus posko"
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
 
               <div className="posko-stats">
-                <strong>{posko.capacity_occupied} <small>/ {posko.capacity_max}</small></strong>
-                <span className="pct">{pct}</span>
+                <strong>{occCap} <small>/ {maxCap} jiwa</small></strong>
+                <span className="pct" style={{ fontWeight: 'bold', color: pctVal >= 80 ? '#dc2626' : '#2563eb' }}>{pct}</span>
               </div>
 
-              <div className="progress-bar-bg">
-                <div className="progress-bar-fill" style={{ width: pct, background: pctVal >= 100 ? '#dc2626' : '#f59e0b' }}></div>
+              <div className="progress-bar-bg" style={{ background: '#e2e8f0', borderRadius: '4px', height: '8px', overflow: 'hidden', margin: '8px 0' }}>
+                <div 
+                  className="progress-bar-fill" 
+                  style={{ 
+                    width: `${Math.min(pctVal, 100)}%`, 
+                    background: pctVal >= 100 ? '#dc2626' : pctVal >= 80 ? '#f59e0b' : '#3b82f6',
+                    height: '100%',
+                    transition: 'width 0.3s ease'
+                  }}
+                />
               </div>
 
-              <div className="posko-footer">
-                <span>PIC: {posko.pic_name || '-'}</span>
-                <div className="stepper">
-                  <button onClick={() => handleUpdateCapacity(posko.id, (posko.capacity_occupied || 0) - 5, posko.capacity_max)}>-</button>
-                  <span>±5</span>
-                  <button onClick={() => handleUpdateCapacity(posko.id, (posko.capacity_occupied || 0) + 5, posko.capacity_max)}>+</button>
+              <div className="posko-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
+                <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                  <span>PIC: <strong>{posko.contact_person || 'Petugas Posko'}</strong></span>
+                  {posko.contact_phone && <div>📞 {posko.contact_phone}</div>}
+                </div>
+                <div className="stepper" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <button 
+                    onClick={() => handleUpdateCapacity(posko.id, occCap - 5, maxCap)}
+                    style={{ padding: '4px 10px', borderRadius: '4px', border: '1px solid #cbd5e1', cursor: 'pointer' }}
+                    title="Kurangi 5 jiwa"
+                  >
+                    -5
+                  </button>
+                  <button 
+                    onClick={() => handleUpdateCapacity(posko.id, occCap + 5, maxCap)}
+                    style={{ padding: '4px 10px', borderRadius: '4px', border: '1px solid #cbd5e1', cursor: 'pointer', background: '#f8fafc' }}
+                    title="Tambah 5 jiwa"
+                  >
+                    +5
+                  </button>
                 </div>
               </div>
             </div>
           )
         })}
       </div>
+
+      {/* Modal Tambah Posko */}
+      {showAddModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
+          <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '500px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ margin: 0 }}>Tambah Posko Pengungsian</h3>
+              <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
+            </div>
+            <form onSubmit={handleAddShelter}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '4px' }}>Nama Posko</label>
+                  <input 
+                    type="text" 
+                    required 
+                    placeholder="Contoh: Balai Desa Baureno"
+                    value={newShelter.name}
+                    onChange={e => setNewShelter({ ...newShelter, name: e.target.value })}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '4px' }}>Alamat Lengkap</label>
+                  <input 
+                    type="text" 
+                    required 
+                    placeholder="Contoh: Jl. Raya Baureno No. 12"
+                    value={newShelter.address}
+                    onChange={e => setNewShelter({ ...newShelter, address: e.target.value })}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '4px' }}>Desa</label>
+                  <select 
+                    value={newShelter.village_id}
+                    onChange={e => setNewShelter({ ...newShelter, village_id: e.target.value })}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                  >
+                    {villages.map(v => (
+                      <option key={v.id} value={v.id}>{v.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '4px' }}>Kapasitas Total</label>
+                    <input 
+                      type="number" 
+                      min="1"
+                      required 
+                      value={newShelter.capacity_total}
+                      onChange={e => setNewShelter({ ...newShelter, capacity_total: e.target.value })}
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '4px' }}>Terisi Awal</label>
+                    <input 
+                      type="number" 
+                      min="0"
+                      value={newShelter.capacity_occupied}
+                      onChange={e => setNewShelter({ ...newShelter, capacity_occupied: e.target.value })}
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                    />
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '4px' }}>Penanggung Jawab (PIC)</label>
+                    <input 
+                      type="text" 
+                      placeholder="Nama petugas"
+                      value={newShelter.contact_person}
+                      onChange={e => setNewShelter({ ...newShelter, contact_person: e.target.value })}
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '4px' }}>Nomor Telepon</label>
+                    <input 
+                      type="tel" 
+                      placeholder="08123456789"
+                      value={newShelter.contact_phone}
+                      onChange={e => setNewShelter({ ...newShelter, contact_phone: e.target.value })}
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                    />
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
+                  <button 
+                    type="button" 
+                    onClick={() => setShowAddModal(false)}
+                    style={{ flex: 1, padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer' }}
+                  >
+                    Batal
+                  </button>
+                  <button 
+                    type="submit" 
+                    disabled={submitting}
+                    style={{ flex: 1, padding: '10px', borderRadius: '6px', border: 'none', background: '#2563eb', color: '#fff', fontWeight: 'bold', cursor: 'pointer' }}
+                  >
+                    {submitting ? 'Menyimpan...' : 'Simpan Posko'}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   )
 }

@@ -28,6 +28,12 @@ export async function apiFetch(endpoint, options = {}) {
     const payload = contentType.includes('application/json') ? await response.json() : await response.text();
 
     if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('access_token');
+        if (typeof window !== 'undefined' && window.location.hash && !window.location.hash.startsWith('#masuk') && !window.location.hash.startsWith('#daftar') && window.location.hash !== '') {
+          window.location.hash = '#masuk';
+        }
+      }
       const message = typeof payload === 'object' ? payload.detail : payload;
       throw new ApiError(message || `HTTP ${response.status}`, response.status);
     }

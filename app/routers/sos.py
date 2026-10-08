@@ -23,9 +23,10 @@ async def create_sos_ticket(
     current_user = Depends(get_current_active_user)
 ):
     """Warga membuat tiket SOS baru."""
-    # Generate simple ticket number based on timestamp
-    timestamp_str = datetime.now().strftime("%Y%m%d%H%M%S")
-    ticket_number = f"SOS-{timestamp_str}"
+    # Generate ticket number in format EVAC-BRN-YYYY-MMDD-SEQ per PRD specification
+    today_str = datetime.now().strftime("%Y-%m%d")
+    today_count = db.query(SOSTicket).filter(SOSTicket.ticket_number.like(f"EVAC-BRN-{today_str}-%")).count()
+    ticket_number = f"EVAC-BRN-{today_str}-{(today_count + 1):03d}"
     
     # Kalkulasi priority_score
     priority_score = ticket.family_count * 2

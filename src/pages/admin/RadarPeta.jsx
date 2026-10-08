@@ -1,24 +1,64 @@
+import { useState } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
 import RiskMap from '../../components/RiskMap'
+import useDashboardRealtime from '../../hooks/useDashboardRealtime'
 
 export default function RadarPeta() {
+  const { data } = useDashboardRealtime()
+  const [selectedVillageName, setSelectedVillageName] = useState('Baureno')
+
+  const villages = data?.villages || []
+  const sortedPriority = [...villages].sort((a, b) => b.probability - a.probability).slice(0, 6)
+
+  const currentVillage = villages.find(v => 
+    v.name.toLowerCase().includes(selectedVillageName.toLowerCase()) || 
+    selectedVillageName.toLowerCase().includes(v.name.toLowerCase())
+  ) || villages[0] || {
+    name: 'Baureno',
+    risk_level: 'awas',
+    probability: 82,
+    elevation_index: 18.5
+  }
+
+  const dischargeVal = data?.discharge?.discharge_m3s 
+    ? Math.round(data.discharge.discharge_m3s).toLocaleString('id-ID')
+    : '1.200'
+
+  const rainVal = data?.weather?.precipitation_mm ?? 0
+
+  const handleSelectVillage = (villageObj) => {
+    if (villageObj && villageObj.name) {
+      setSelectedVillageName(villageObj.name.replace(/^Desa\s+/i, ''))
+    }
+  }
+
+  const riskBadgeClass = {
+    awas: 'badge-awas',
+    tinggi: 'badge-siaga',
+    siaga: 'badge-siaga',
+    sedang: 'badge-waspada',
+    waspada: 'badge-waspada',
+    rendah: 'badge-aman',
+    aman: 'badge-aman'
+  }[currentVillage.risk_level] || 'badge-aman'
+
   return (
     <AdminLayout activeMenu="radar">
       <div className="admin-section-head">
         <div>
-          <h2>Radar Peta Wilayah</h2>
-          <p>Pemantauan real-time debit Bengawan Solo & risiko banjir 25 desa.</p>
+          <h2>Radar Peta Wilayah & Geospasial</h2>
+          <p>Pemantauan debit Sungai Bengawan Solo & risiko banjir 25 desa di Kecamatan Baureno.</p>
         </div>
         <div className="layer-pills">
           <button className="active">Risiko Banjir</button>
-          <button>Debit Sungai</button>
-          <button>Kepadatan Warga</button>
+          <button onClick={() => window.location.hash = '#posko'}>Posko Evakuasi</button>
+          <button onClick={() => window.location.hash = '#sos'}>Antrian SOS</button>
         </div>
       </div>
 
       <div className="admin-main-grid">
-        <div className="portal-card" style={{ padding: '16px', position: 'relative', height: '600px' }}>
-          <RiskMap />
+        <div className="portal-card" style={{ padding: '16px', position: 'relative', height: '620px' }}>
+          <RiskMap onSelectVillage={handleSelectVillage} selectedVillageName={selectedVillageName} />
           <div className="map-legend-bottom">
             <span><i className="red-dot" /> Sangat Tinggi / Awas</span>
             <span><i className="orange-dot" /> Tinggi / Siaga</span>
@@ -28,40 +68,53 @@ export default function RadarPeta() {
         </div>
         <aside className="radar-detail-panel">
           <div className="portal-card danger-card">
-            <small>DESA TERPILIH</small>
-            <h2>Baureno</h2>
-            <span className="badge-awas">AWAS</span>
+            <small>DESA TERPILIH (KLIK PETA / DAFTAR)</small>
+            <h2>Desa {currentVillage.name.replace(/^Desa\s+/i, '')}</h2>
+            <span className={riskBadgeClass}>{currentVillage.risk_level.toUpperCase()}</span>
           </div>
 
           <div className="metrics-2x2">
             <div className="portal-card metric-box">
-              <small>TMA</small>
-              <strong>4.8 <small>mdpl</small></strong>
+              <small>PROBABILITAS</small>
+              <strong>{Math.round(currentVillage.probability)} <small>%</small></strong>
             </div>
             <div className="portal-card metric-box">
-              <small>DEBIT</small>
-              <strong>3.900 <small>m³/s</small></strong>
+              <small>DEBIT SUNGAI</small>
+              <strong>{dischargeVal} <small>m³/s</small></strong>
             </div>
             <div className="portal-card metric-box">
-              <small>POPULASI</small>
-              <strong>6.800 <small>jiwa</small></strong>
+              <small>CURAH HUJAN</small>
+              <strong>{rainVal} <small>mm</small></strong>
             </div>
             <div className="portal-card metric-box">
-              <small>SKOR RISIKO</small>
-              <strong>82%</strong>
+              <small>ELEVASI TANAH</small>
+              <strong>{currentVillage.elevation_index ? Number(currentVillage.elevation_index).toFixed(1) : '18'} <small>mdpl</small></strong>
             </div>
           </div>
 
           <div className="portal-card priority-list">
-            <h4>Prioritas Tertinggi</h4>
-            <ul>
-              <li><span>Baureno</span> <strong>TMA 4.8</strong></li>
-              <li><span>Trojalu</span> <strong>TMA 4.5</strong></li>
-              <li><span>Gajah</span> <strong>TMA 4.6</strong></li>
-              <li><span>Kalisari</span> <strong>TMA 4.4</strong></li>
-              <li><span>Sraturejo</span> <strong>TMA 4.3</strong></li>
-              <li><span>Tulungrejo</span> <strong>TMA 4.2</strong></li>
-            </ul>
+            <h4>Prioritas Risiko Tertinggi</h4>
+            {sortedPriority.length === 0 ? (
+              <p style={{ fontSize: '0.85rem', color: '#64748b', padding: '10px' }}>Memuat daftar risiko desa...</p>
+            ) : (
+              <ul>
+                {sortedPriority.map((v) => (
+                  <li 
+                    key={v.id} 
+                    onClick={() => setSelectedVillageName(v.name.replace(/^Desa\s+/i, ''))}
+                    style={{ 
+                      cursor: 'pointer', 
+                      background: v.name.toLowerCase().includes(selectedVillageName.toLowerCase()) ? '#eff6ff' : 'transparent',
+                      padding: '4px 8px',
+                      borderRadius: '4px'
+                    }}
+                  >
+                    <span>{v.name.replace(/^Desa\s+/i, '')}</span> 
+                    <strong>{Math.round(v.probability)}% ({v.risk_level.toUpperCase()})</strong>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </aside>
       </div>

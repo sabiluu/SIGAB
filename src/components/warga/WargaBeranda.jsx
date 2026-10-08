@@ -1,6 +1,20 @@
 import useDashboardRealtime from '../../hooks/useDashboardRealtime';
 
-export default function WargaBeranda({ onNavigate }) {
+// Hitung jarak Haversine (km)
+function getDistanceKm(lat1, lon1, lat2, lon2) {
+  if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+  const R = 6371; // Radius bumi dalam km
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+export default function WargaBeranda({ onNavigate, geo }) {
   const { data, loading, error } = useDashboardRealtime();
 
   if (loading) return <div style={{ padding: '20px', textAlign: 'center' }}>Memuat data realtime...</div>;
@@ -18,8 +32,28 @@ export default function WargaBeranda({ onNavigate }) {
   const circumference = Math.PI * radius;
   const strokeDashoffset = circumference - (Math.min(prob, 100) / 100) * circumference;
 
-  // Data Posko Terdekat (Sementara ambil shelter pertama dari realtime API)
-  const shelter = data?.shelters?.[0];
+  // Temukan Posko Terdekat dari Koordinat GPS Nyata Pengguna
+  const shelters = data?.shelters || [];
+  let nearestShelter = shelters[0];
+  let nearestDistance = null;
+
+  if (geo?.latitude && geo?.longitude && shelters.length > 0) {
+    let minD = Infinity;
+    shelters.forEach(s => {
+      if (s.latitude && s.longitude) {
+        const d = getDistanceKm(geo.latitude, geo.longitude, parseFloat(s.latitude), parseFloat(s.longitude));
+        if (d !== null && d < minD) {
+          minD = d;
+          nearestShelter = s;
+        }
+      }
+    });
+    if (minD !== Infinity) {
+      nearestDistance = minD.toFixed(1);
+    }
+  }
+
+  const shelter = nearestShelter;
   const shelterName = shelter?.name || 'Posko SDN Baureno 2';
   const shelterAddress = shelter?.address || 'Jl. Raya Baureno No.14';
   const shelterCapTotal = shelter?.capacity_total || 120;
@@ -146,24 +180,22 @@ export default function WargaBeranda({ onNavigate }) {
               <h2>Fitur Darurat &amp; Evakuasi</h2>
               <p>
                 {isAman 
-                  ? 'Nonaktif selama kondisi AMAN untuk menghindari kepanikan dan pemanggilan palsu.'
-                  : 'Sistem Darurat AKTIF. Gunakan hanya jika Anda benar-benar membutuhkan bantuan evakuasi darurat.'}
+                  ? 'Kondisi umum normal. Tombol evakuasi darurat tetap disiagakan 24/7 jika Anda mengalami ancaman lokal.'
+                  : 'Sistem Darurat AKTIF. Segera amankan diri dan kirimkan permohonan evakuasi jika membutuhkan pertolongan.'}
               </p>
             </div>
-            <b>{isAman ? 'Nonaktif (Aman)' : 'AKTIF (Darurat)'}</b>
+            <b>{isAman ? '● Siaga 24 Jam' : '🚨 AKTIF (Darurat)'}</b>
           </div>
           <div className="disabled-actions">
-            {!isAman && (
-              <button 
-                type="button" 
-                onClick={() => onNavigate('sos')}
-                style={{ background: '#dc2626', color: 'white', fontWeight: 'bold' }}
-              >
-                🚨 &nbsp; MINTA EVAKUASI (SOS)
-              </button>
-            )}
+            <button 
+              type="button" 
+              onClick={() => onNavigate('sos')}
+              style={{ background: '#dc2626', color: 'white', fontWeight: 'bold' }}
+            >
+              🚨 &nbsp; MINTA EVAKUASI (SOS)
+            </button>
             <button type="button" onClick={() => onNavigate('peta')}>
-              ▧ &nbsp; Buka Peta Risiko 25 Desa
+              ▧ &nbsp; Peta Risiko &amp; Rute Evakuasi
             </button>
             <button type="button" onClick={() => onNavigate('panduan')}>
               📖 &nbsp; Pelajari Panduan Siaga Bencana
@@ -196,7 +228,9 @@ export default function WargaBeranda({ onNavigate }) {
             <b>Standby</b>
           </div>
           <strong>{shelterName}</strong>
-          <p>⌖ {shelter?.address ? 'Sesuai Peta' : '1.2 km'} · {shelterAddress}</p>
+          <p>
+            ⌖ {nearestDistance ? `${nearestDistance} km dari lokasi Anda` : (shelter?.address ? 'Sesuai Peta' : '1.2 km')} · {shelterAddress}
+          </p>
           <div className="capacity-label">
             <span>Kapasitas (Terisi {shelterCapOcc})</span>
             <strong>{shelterCapTotal} orang</strong>
@@ -204,6 +238,24 @@ export default function WargaBeranda({ onNavigate }) {
           <div className="capacity-track">
             <i style={{ width: `${Math.min(shelterOccPerc, 100)}%`, background: shelterOccPerc > 80 ? '#ef4444' : '#3b82f6', transition: 'width 1s ease-in-out' }} />
           </div>
+          <button
+            type="button"
+            onClick={() => onNavigate('peta')}
+            style={{
+              width: '100%',
+              marginTop: '12px',
+              padding: '8px',
+              background: '#2563eb',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              fontWeight: 600,
+              fontSize: '12px',
+              cursor: 'pointer'
+            }}
+          >
+            🗺️ Lihat Rute ke Posko Ini
+          </button>
         </article>
 
         <article className="portal-card history-card">
@@ -244,5 +296,5 @@ export default function WargaBeranda({ onNavigate }) {
         </article>
       </aside>
     </div>
-  )
+  );
 }
