@@ -262,7 +262,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo }) {
 
     canvas.toBlob((blob) => {
       if (blob) {
-        const file = new File([blob], `sos_jepret_${Date.now()}.jpg`, { type: 'image/jpeg' });
+        const file = new File([blob], `sos_camera_${Date.now()}.jpg`, { type: 'image/jpeg' });
         setPhotoFile(file);
       }
     }, 'image/jpeg', 0.85);
@@ -573,18 +573,18 @@ export default function WargaSOS({ onNavigate, geo: externalGeo }) {
                 </label>
               </div>
 
-              {/* UPLOAD / NGEFOTO SITUASI BANJIR */}
+              {/* DOKUMENTASI FOTO SITUASI BANJIR */}
               <div style={{ marginBottom: '20px', background: '#f8fafc', padding: '16px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
                   <label style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span>📸</span> Foto Situasi / Banjir Saat Ini (Opsional)
+                    <span>📸</span> Foto Situasi Genangan / Banjir (Opsional)
                   </label>
                   <span style={{ fontSize: '11px', color: '#166534', background: '#dcfce7', padding: '2px 8px', borderRadius: '10px', fontWeight: 700 }}>
                     Sangat Dianjurkan
                   </span>
                 </div>
                 <p style={{ margin: '0 0 12px 0', color: '#64748b', fontSize: '12px', lineHeight: 1.4 }}>
-                  Ngefoto ketinggian air atau lingkungan sekitar rumah membantu petugas BPBD menyiapkan armada perahu dan rute evakuasi yang tepat.
+                  Dokumentasi visual ketinggian air dan kondisi lingkungan sekitar membantu tim BPBD menyiapkan armada penyelamat serta menentukan rute evakuasi yang tepat.
                 </p>
 
                 {/* Input File Tersembunyi */}
@@ -644,9 +644,9 @@ export default function WargaSOS({ onNavigate, geo: externalGeo }) {
                           alignItems: 'center',
                           gap: '6px'
                         }}
-                        title="Balik ke kamera depan/belakang"
+                        title="Beralih kamera depan/belakang"
                       >
-                        🔄 Putar Kamera
+                        🔄 Beralih Kamera
                       </button>
                     </div>
 
@@ -693,7 +693,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo }) {
                         }}
                         onMouseDown={e => e.currentTarget.style.transform = 'scale(0.92)'}
                         onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
-                        title="Klik untuk menjepret foto sekarang"
+                        title="Ambil foto situasi sekarang"
                       >
                         <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '20px' }}>
                           📸
@@ -745,7 +745,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo }) {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '10px',
+                        gap: '12px',
                         boxShadow: '0 4px 12px rgba(220, 38, 38, 0.25)',
                         marginBottom: '10px',
                         transition: 'transform 0.15s'
@@ -756,17 +756,17 @@ export default function WargaSOS({ onNavigate, geo: externalGeo }) {
                       <span style={{ fontSize: '26px' }}>📸</span>
                       <div style={{ textAlign: 'left' }}>
                         <strong style={{ display: 'block', fontSize: '14px', letterSpacing: '0.02em' }}>
-                          BUKA KAMERA &amp; JEPRET LANGSUNG
+                          AMBIL FOTO DENGAN KAMERA
                         </strong>
                         <small style={{ fontSize: '11px', opacity: 0.9 }}>
-                          Ngefoto langsung situasi banjir via kamera perangkat
+                          Dokumentasikan kondisi banjir secara langsung melalui kamera perangkat
                         </small>
                       </div>
                     </button>
 
                     <div style={{ textAlign: 'center', margin: '4px 0 8px' }}>
                       <span style={{ fontSize: '11px', color: '#94a3b8', background: '#f8fafc', padding: '2px 8px' }}>
-                        atau jika sudah ada foto:
+                        atau unggah dari penyimpanan:
                       </span>
                     </div>
 
@@ -789,8 +789,8 @@ export default function WargaSOS({ onNavigate, geo: externalGeo }) {
                         gap: '8px'
                       }}
                     >
-                      <span>🖼️</span>
-                      <span>Pilih Foto dari Galeri / Berkas</span>
+                      <span>📁</span>
+                      <span>Pilih Foto dari Galeri / Dokumen</span>
                     </button>
                   </div>
                 ) : (
@@ -803,7 +803,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo }) {
                     />
                     <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '10px 14px', background: 'rgba(15, 23, 42, 0.85)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'white', fontSize: '12px' }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}>
-                        <span style={{ color: '#4ade80', fontSize: '16px' }}>✓</span> Foto Berhasil Dijepret &amp; Terkunci
+                        <span style={{ color: '#4ade80', fontSize: '16px' }}>✓</span> Foto Berhasil Dilampirkan
                       </span>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <button
@@ -811,7 +811,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo }) {
                           onClick={() => startLiveCamera(cameraFacing)}
                           style={{ background: '#2563eb', border: 'none', color: 'white', padding: '5px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: 700 }}
                         >
-                          📷 Jepret Ulang
+                          📷 Ambil Ulang
                         </button>
                         <button
                           type="button"
