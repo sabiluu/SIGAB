@@ -34,7 +34,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-button, a {
+button, a, input, select, textarea {
   font: inherit;
 }
 

@@ -9,8 +9,11 @@ import WargaRiwayatKejadian from '../components/warga/WargaRiwayatKejadian'
 import WargaPanduan from '../components/warga/WargaPanduan'
 import WargaKontakDarurat from '../components/warga/WargaKontakDarurat'
 import WargaSOS from '../components/warga/WargaSOS'
+import VillageStatsTable from '../components/dashboard/VillageStatsTable'
 import useDashboardRealtime from '../hooks/useDashboardRealtime'
 import useGeolocation from '../hooks/useGeolocation'
+import useRealtimeNotifications from '../hooks/useRealtimeNotifications'
+import { playSosAlertTone } from '../utils/audioAlarm'
 import { getSOSTickets } from '../services/sosService'
 import '../styles/role-home.css'
 import '../styles/warga-portal.css'
@@ -34,16 +37,55 @@ function Brand({ admin = false, locName = '' }) {
 }
 
 function WargaHome() {
-  const [activeTab, setActiveTab] = useState('peta')
+  const [activeTab, setActiveTab] = useState('beranda')
   const [userProfile, setUserProfile] = useState({ full_name: 'Ahmad Fauzi' })
+  const [selectedVillageId, setSelectedVillageId] = useState(null)
   const [isEmergencyActive, setIsEmergencyActive] = useState(false)
+  const [showNotifDropdown, setShowNotifDropdown] = useState(false)
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false)
+  const [showProfileModal, setShowProfileModal] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const geo = useGeolocation()
+
+  const { 
+    notifications, 
+    unreadCount, 
+    markAsRead, 
+    markAllAsRead, 
+    clearAll 
+  } = useRealtimeNotifications('alerts')
+
+  // Sample default notifications if empty so citizen always has guidance
+  const defaultNotifs = [
+    {
+      id: 'def-1',
+      type: 'flood_alert',
+      title: 'Pemantauan Debit Bengawan Solo',
+      message: 'Debit Bengawan Solo terpantau stabil pada 1.200 m³/s. Pantau terus status dusun Anda.',
+      timestamp: new Date().toISOString(),
+      read: false
+    },
+    {
+      id: 'def-2',
+      type: 'info',
+      title: 'Posko Siaga Baureno Siap 24 Jam',
+      message: 'Posko Utama SDN 1 Baureno dan Balai Desa Gunungsari siap beroperasi.',
+      timestamp: new Date(Date.now() - 3600000).toISOString(),
+      read: true
+    }
+  ]
+
+  const displayNotifs = notifications.length > 0 ? notifications : defaultNotifs
+  const activeUnread = notifications.length > 0 ? unreadCount : 1
 
   useEffect(() => {
     getProfile()
       .then((res) => {
         if (res && res.full_name) {
           setUserProfile(res)
+          if (res.village_id) {
+            setSelectedVillageId(res.village_id)
+          }
           const targetVillageId = res.village_id || 1
           apiFetch(`/emergency/${targetVillageId}`)
             .then(em => setIsEmergencyActive(em.is_emergency_active))
@@ -61,23 +103,38 @@ function WargaHome() {
     return () => unsub()
   }, [])
 
+  const handleSelectTab = (tab) => {
+    setActiveTab(tab)
+    setMobileMenuOpen(false)
+    if (tab === 'peta') {
+      setTimeout(() => {
+        const el = document.getElementById('peta-wilayah-section')
+        if (el) el.scrollIntoView({ behavior: 'smooth' })
+      }, 80)
+    } else if (tab === 'beranda') {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+
   return (
     <div className="warga-container">
       {/* Emergency Banner */}
       {isEmergencyActive && (
-        <div style={{ background: '#dc2626', color: 'white', padding: '12px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 'bold' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ width: '8px', height: '8px', background: 'white', borderRadius: '50%', display: 'inline-block', animation: 'pulse 2s infinite' }}></span>
-            <span>BANJIR PARAH — EVAKUASI SEKARANG</span>
-            <span style={{ fontWeight: 'normal', opacity: 0.9, fontSize: '0.85rem' }}>Baureno • Level 4 • 09:15 WIB</span>
+        <div style={{ background: '#dc2626', color: 'white', padding: '12px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 'bold', flexWrap: 'wrap', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ width: '10px', height: '10px', background: 'white', borderRadius: '50%', display: 'inline-block', animation: 'notifPulse 1.5s infinite' }} />
+            <span>🚨 BANJIR PARAH — SEGERA EVAKUASI</span>
+            <span style={{ fontWeight: 'normal', opacity: 0.9, fontSize: '0.85rem' }}>Baureno • Siaga Level 4 • Live Pusdalops</span>
           </div>
-          <button 
-            style={{ background: 'white', color: '#dc2626', border: 'none', padding: '6px 16px', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
-            onClick={() => setActiveTab('sos')}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-            MINTA BANTUAN SOS
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button 
+              style={{ background: 'white', color: '#dc2626', border: 'none', padding: '6px 16px', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+              onClick={() => handleSelectTab('sos')}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+              MINTA BANTUAN SOS
+            </button>
+          </div>
         </div>
       )}
 
@@ -91,42 +148,35 @@ function WargaHome() {
             <button
               type="button"
               className={`warga-nav-item ${activeTab === 'beranda' ? 'active' : ''}`}
-              onClick={() => setActiveTab('beranda')}
+              onClick={() => handleSelectTab('beranda')}
             >
               Beranda
             </button>
             <button
               type="button"
-              className={`warga-nav-item ${activeTab === 'peta' ? 'active' : ''}`}
-              onClick={() => setActiveTab('peta')}
-            >
-              Peta Wilayah
-            </button>
-            <button
-              type="button"
               className={`warga-nav-item ${activeTab === 'riwayat' ? 'active' : ''}`}
-              onClick={() => setActiveTab('riwayat')}
+              onClick={() => handleSelectTab('riwayat')}
             >
               Riwayat Kejadian
             </button>
             <button
               type="button"
               className={`warga-nav-item ${activeTab === 'panduan' ? 'active' : ''}`}
-              onClick={() => setActiveTab('panduan')}
+              onClick={() => handleSelectTab('panduan')}
             >
               Panduan
             </button>
             <button
               type="button"
               className={`warga-nav-item ${activeTab === 'kontak' ? 'active' : ''}`}
-              onClick={() => setActiveTab('kontak')}
+              onClick={() => handleSelectTab('kontak')}
             >
               Kontak Darurat
             </button>
             <button
               type="button"
               className={`warga-nav-item ${activeTab === 'sos' ? 'active' : ''}`}
-              onClick={() => setActiveTab('sos')}
+              onClick={() => handleSelectTab('sos')}
               style={{ color: '#dc2626', fontWeight: 700 }}
             >
               🚨 SOS Darurat
@@ -168,41 +218,359 @@ function WargaHome() {
               )}
             </div>
 
-            <button type="button" className="warga-bell-btn" title="Notifikasi">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-              </svg>
-            </button>
+            {/* Notification Dropdown */}
+            <div className="notif-dropdown-wrapper">
+              <button 
+                type="button" 
+                className="warga-bell-btn" 
+                title="Notifikasi & Peringatan"
+                onClick={() => {
+                  setShowNotifDropdown(!showNotifDropdown)
+                  setShowProfileDropdown(false)
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+                {activeUnread > 0 && <span className="notif-badge-count">{activeUnread}</span>}
+              </button>
 
-            <div className="warga-user-pill" title="Profil Pengguna">
-              <div className="warga-user-avatar">
-                <img
-                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
-                  alt={userProfile.full_name}
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none'
-                  }}
-                />
-              </div>
-              <span className="warga-user-name">{userProfile.full_name || 'Ahmad Fauzi'}</span>
+              {showNotifDropdown && (
+                <div className="notif-panel">
+                  <div className="notif-panel-header">
+                    <h4>Pemberitahuan ({displayNotifs.length})</h4>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button type="button" onClick={() => markAllAsRead()}>Tandai Dibaca</button>
+                      <button type="button" onClick={() => clearAll()} style={{ color: '#94a3b8' }}>Bersihkan</button>
+                    </div>
+                  </div>
+                  <div className="notif-panel-body">
+                    {displayNotifs.length === 0 ? (
+                      <div className="notif-empty">
+                        <div className="notif-empty-icon">🔔</div>
+                        <strong>Tidak ada notifikasi</strong>
+                        <p style={{ margin: '4px 0 0', fontSize: '0.78rem' }}>Semua peringatan telah dibaca.</p>
+                      </div>
+                    ) : (
+                      displayNotifs.map((item) => (
+                        <div 
+                          key={item.id} 
+                          className={`notif-item ${!item.read ? 'unread' : ''}`}
+                          onClick={() => {
+                            markAsRead(item.id)
+                            if (item.type?.includes('sos')) handleSelectTab('sos')
+                            else if (item.type?.includes('flood') || item.type?.includes('emergency')) handleSelectTab('peta')
+                            setShowNotifDropdown(false)
+                          }}
+                        >
+                          <div className={`notif-item-icon ${item.type?.includes('flood') ? 'flood' : item.type?.includes('sos') ? 'sos' : 'info'}`}>
+                            {item.type?.includes('flood') ? '🌊' : item.type?.includes('sos') ? '🚨' : '📢'}
+                          </div>
+                          <div className="notif-item-content">
+                            <div className="notif-item-title">{item.title}</div>
+                            <div className="notif-item-msg">{item.message}</div>
+                            <div className="notif-item-time">
+                              {new Date(item.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
-            <button type="button" onClick={logout} className="warga-logout-btn" title="Keluar">
-              Keluar
+            {/* User Profile Pill & Dropdown */}
+            <div className="profile-dropdown-wrapper">
+              <div 
+                className="warga-user-pill" 
+                title="Profil Pengguna"
+                onClick={() => {
+                  setShowProfileDropdown(!showProfileDropdown)
+                  setShowNotifDropdown(false)
+                }}
+                style={{ cursor: 'pointer' }}
+              >
+                <div className="warga-user-avatar">
+                  <img
+                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
+                    alt={userProfile.full_name}
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none'
+                    }}
+                  />
+                </div>
+                <span className="warga-user-name">{userProfile.full_name || 'Ahmad Fauzi'}</span>
+                <span style={{ fontSize: '10px', color: '#64748b', marginLeft: '4px' }}>▾</span>
+              </div>
+
+              {showProfileDropdown && (
+                <div className="profile-dropdown">
+                  <div className="profile-dropdown-header">
+                    <strong>{userProfile.full_name || 'Ahmad Fauzi'}</strong>
+                    <small>{userProfile.nik ? `NIK: ${userProfile.nik}` : 'Warga Terdaftar'}</small>
+                    <div style={{ fontSize: '0.72rem', color: '#2563eb', marginTop: '4px', fontWeight: 600 }}>
+                      📍 {geo.address ? geo.address.split(',')[0] : 'Desa Baureno'}
+                    </div>
+                  </div>
+                  <div className="profile-dropdown-body">
+                    <button 
+                      type="button" 
+                      className="profile-dropdown-item"
+                      onClick={() => {
+                        setShowProfileModal(true)
+                        setShowProfileDropdown(false)
+                      }}
+                    >
+                      <span>👤</span> Data Rumah Tangga &amp; NIK
+                    </button>
+                    <button 
+                      type="button" 
+                      className="profile-dropdown-item"
+                      onClick={() => {
+                        handleSelectTab('peta')
+                        setShowProfileDropdown(false)
+                      }}
+                    >
+                      <span>🗺️</span> Peta Risiko &amp; Posko
+                    </button>
+                    <button 
+                      type="button" 
+                      className="profile-dropdown-item"
+                      onClick={() => {
+                        handleSelectTab('panduan')
+                        setShowProfileDropdown(false)
+                      }}
+                    >
+                      <span>📖</span> Panduan Evakuasi
+                    </button>
+                    <button 
+                      type="button" 
+                      className="profile-dropdown-item"
+                      onClick={() => {
+                        handleSelectTab('kontak')
+                        setShowProfileDropdown(false)
+                      }}
+                    >
+                      <span>☎️</span> Kontak Darurat BPBD
+                    </button>
+                    <button 
+                      type="button" 
+                      className="profile-dropdown-item danger"
+                      onClick={logout}
+                    >
+                      <span>⎋</span> Keluar
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Mobile Hamburger Button */}
+            <button 
+              type="button" 
+              className="warga-hamburger" 
+              onClick={() => setMobileMenuOpen(true)}
+              aria-label="Menu Navigasi Mobile"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
             </button>
           </div>
         </div>
       </header>
 
+      {/* Mobile Drawer Navigation */}
+      <div 
+        className={`mobile-nav-overlay ${mobileMenuOpen ? 'show' : ''}`} 
+        onClick={() => setMobileMenuOpen(false)}
+      >
+        <div className="mobile-nav-drawer" onClick={(e) => e.stopPropagation()}>
+          <div className="mobile-nav-header">
+            <Brand locName={geo.address ? geo.address.split(',')[0] : 'Baureno'} />
+            <button type="button" className="mobile-nav-close" onClick={() => setMobileMenuOpen(false)}>
+              ✕
+            </button>
+          </div>
+          <div style={{ padding: '12px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: '0.8rem', color: '#475569' }}>
+            <div><strong>{userProfile.full_name || 'Ahmad Fauzi'}</strong></div>
+            <div style={{ fontSize: '0.72rem', color: '#64748b' }}>📍 {geo.address || 'Kecamatan Baureno'}</div>
+          </div>
+          <div className="mobile-nav-list">
+            <button 
+              type="button" 
+              className={`mobile-nav-item ${activeTab === 'beranda' ? 'active' : ''}`}
+              onClick={() => handleSelectTab('beranda')}
+            >
+              🏠 Beranda
+            </button>
+            <button 
+              type="button" 
+              className={`mobile-nav-item ${activeTab === 'riwayat' ? 'active' : ''}`}
+              onClick={() => handleSelectTab('riwayat')}
+            >
+              📜 Riwayat Kejadian
+            </button>
+            <button 
+              type="button" 
+              className={`mobile-nav-item ${activeTab === 'panduan' ? 'active' : ''}`}
+              onClick={() => handleSelectTab('panduan')}
+            >
+              📖 Panduan Kesiapsiagaan
+            </button>
+            <button 
+              type="button" 
+              className={`mobile-nav-item ${activeTab === 'kontak' ? 'active' : ''}`}
+              onClick={() => handleSelectTab('kontak')}
+            >
+              ☎️ Kontak Darurat
+            </button>
+            <button 
+              type="button" 
+              className={`mobile-nav-item sos ${activeTab === 'sos' ? 'active' : ''}`}
+              onClick={() => handleSelectTab('sos')}
+            >
+              🚨 Minta Bantuan SOS
+            </button>
+          </div>
+          <div className="mobile-nav-footer">
+            <button 
+              type="button" 
+              onClick={logout} 
+              className="warga-logout-btn" 
+              style={{ width: '100%', justifyContent: 'center' }}
+            >
+              ⎋ Keluar Akun
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* User Profile Modal */}
+      {showProfileModal && (
+        <div 
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px'
+          }}
+          onClick={() => setShowProfileModal(false)}
+        >
+          <div 
+            style={{
+              background: '#ffffff',
+              borderRadius: '16px',
+              maxWidth: '520px',
+              width: '100%',
+              padding: '24px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              position: 'relative'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '14px', marginBottom: '16px' }}>
+              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>
+                Profil Warga &amp; Rumah Tangga
+              </h3>
+              <button 
+                type="button" 
+                onClick={() => setShowProfileModal(false)}
+                style={{ border: 'none', background: '#f1f5f9', width: '32px', height: '32px', borderRadius: '8px', cursor: 'pointer', fontSize: '16px' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '20px', background: '#f8fafc', padding: '14px', borderRadius: '12px' }}>
+              <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#2563eb', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', fontWeight: 800 }}>
+                {userProfile.full_name ? userProfile.full_name.charAt(0) : 'W'}
+              </div>
+              <div>
+                <strong style={{ display: 'block', fontSize: '1.05rem', color: '#0f172a' }}>
+                  {userProfile.full_name || 'Ahmad Fauzi'}
+                </strong>
+                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                  NIK: {userProfile.nik || '3522141508890002'} • {userProfile.phone_number || '0812-3456-7890'}
+                </span>
+                <div style={{ display: 'inline-block', marginTop: '4px', fontSize: '0.72rem', background: '#dcfce7', color: '#166534', padding: '2px 8px', borderRadius: '10px', fontWeight: 700 }}>
+                  ✓ Terverifikasi BPBD
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '0.85rem' }}>
+              <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px' }}>
+                <span style={{ color: '#64748b', fontSize: '0.75rem', display: 'block' }}>Kecamatan &amp; Desa</span>
+                <strong>Kec. Baureno</strong>
+                <div style={{ fontSize: '0.8rem', color: '#334155' }}>Desa Baureno</div>
+              </div>
+              <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px' }}>
+                <span style={{ color: '#64748b', fontSize: '0.75rem', display: 'block' }}>Anggota Keluarga</span>
+                <strong>{userProfile.family_count || 4} Jiwa</strong>
+                <div style={{ fontSize: '0.8rem', color: '#334155' }}>Prioritas Evakuasi: Standar</div>
+              </div>
+              <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px' }}>
+                <span style={{ color: '#64748b', fontSize: '0.75rem', display: 'block' }}>Kelompok Rentan</span>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '4px' }}>
+                  <span style={{ background: '#fee2e2', color: '#991b1b', padding: '2px 6px', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 600 }}>1 Lansia</span>
+                  <span style={{ background: '#fef3c7', color: '#92400e', padding: '2px 6px', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 600 }}>1 Balita</span>
+                </div>
+              </div>
+              <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px' }}>
+                <span style={{ color: '#64748b', fontSize: '0.75rem', display: 'block' }}>Koordinat Terdaftar</span>
+                <strong>-7.1425, 112.0841</strong>
+                <div style={{ fontSize: '0.75rem', color: '#10b981' }}>✓ GPS Akurat (3m)</div>
+              </div>
+            </div>
+
+            <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setShowProfileModal(false)}
+                style={{
+                  padding: '8px 18px',
+                  borderRadius: '8px',
+                  background: '#2563eb',
+                  color: 'white',
+                  border: 'none',
+                  fontWeight: 600,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Content Area based on Tab */}
       <main className="warga-page-body">
-        {activeTab === 'beranda' && <WargaBeranda onNavigate={(tab) => setActiveTab(tab)} geo={geo} />}
-        {activeTab === 'peta' && <WargaPetaWilayah geo={geo} />}
+        {(activeTab === 'beranda' || activeTab === 'peta') && (
+          <WargaBeranda 
+            onNavigate={(tab) => handleSelectTab(tab)} 
+            geo={geo} 
+            userProfile={userProfile} 
+            selectedVillageId={selectedVillageId}
+            onSelectVillageId={setSelectedVillageId}
+            initialScrollToMap={activeTab === 'peta'}
+          />
+        )}
         {activeTab === 'riwayat' && <WargaRiwayatKejadian />}
         {activeTab === 'panduan' && <WargaPanduan />}
         {activeTab === 'kontak' && <WargaKontakDarurat />}
-        {activeTab === 'sos' && <WargaSOS onNavigate={(tab) => setActiveTab(tab)} geo={geo} />}
+        {activeTab === 'sos' && <WargaSOS onNavigate={(tab) => handleSelectTab(tab)} geo={geo} />}
       </main>
 
       {/* Footer */}
@@ -239,7 +607,8 @@ function AdminHome() {
     wsService.connect('alerts')
     wsService.connect('sos')
     const unsubAlerts = wsService.on('emergency_status', (data) => setIsEmergency(data.is_active))
-    const unsubSosNew = wsService.on('sos_new', (newTicket) => {
+    const unsubSosNew = wsService.on('sos_new', () => {
+      playSosAlertTone()
       fetchTickets()
     })
     const unsubSosUpd = wsService.on('sos_updated', () => {
@@ -431,6 +800,9 @@ function AdminHome() {
               )}
             </article>
           </div>
+
+          {/* Tabel Statistik Risiko 25 Desa */}
+          <VillageStatsTable onSelectVillage={() => { window.location.hash = '#radar' }} />
         </div>
       </section>
     </main>

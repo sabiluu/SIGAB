@@ -9,6 +9,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 from sqlalchemy.orm import Session
 import asyncio
 
+from datetime import datetime
 from .database import SessionLocal
 from ..services.flood_engine import assess_and_update_flood_risks
 
@@ -42,17 +43,18 @@ async def run_flood_engine_job():
 
 def start_scheduler():
     """Mulai scheduler saat aplikasi startup."""
-    # Jadwalkan Flood Engine berjalan setiap 30 menit
+    # Jadwalkan Flood Engine berjalan setiap 30 menit dan eksekusi langsung saat startup
     scheduler.add_job(
         run_flood_engine_job,
         trigger=IntervalTrigger(minutes=30),
         id="flood_engine_job",
         name="Update Probabilitas Banjir Periodik",
+        next_run_time=datetime.now(),
         replace_existing=True,
     )
     
     scheduler.start()
-    logger.info("[Scheduler] APScheduler berhasil dimulai. Flood Engine dijadwalkan berjalan setiap 30 menit.")
+    logger.info("[Scheduler] APScheduler berhasil dimulai. Flood Engine dijadwalkan berjalan setiap 30 menit (dan dijalankan langsung saat startup).")
 
 def stop_scheduler():
     """Hentikan scheduler saat aplikasi shutdown."""

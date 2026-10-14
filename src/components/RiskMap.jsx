@@ -1,12 +1,16 @@
 import { MapContainer, TileLayer, Polygon, Tooltip, Marker, Popup, Polyline, useMap } from 'react-leaflet'
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
 import L from 'leaflet'
 import * as turf from '@turf/turf'
 import baurenoVillagesData from '../data/baureno_villages_real.json'
 import { getVillages } from '../services/floodService'
 
-// Center coordinate for map view - Kecamatan Baureno, Bojonegoro
-const baurenoCenter = [-7.160, 111.830]
+// Center coordinate & boundary bounds for map view - Kecamatan Baureno, Bojonegoro
+export const baurenoCenter = [-7.125, 112.104]
+export const baurenoBounds = [
+  [-7.168, 112.042], // South-West
+  [-7.065, 112.166]  // North-East
+]
 
 const colorMap = {
   awas: '#ef4444',     // Red (Sangat Tinggi/Awas)
@@ -58,20 +62,44 @@ const userLocationIcon = L.divIcon({
   popupAnchor: [0, -14],
 });
 
-function MapController({ center, zoom, bounds }) {
+function MapController({ bounds, recenterTrigger }) {
   const map = useMap();
+  const initialFitDone = useRef(false);
+
+  // Initial fit to Baureno bounds on mount so all 25 villages are nicely visible
+  useEffect(() => {
+    if (!initialFitDone.current) {
+      try {
+        map.fitBounds(baurenoBounds, { padding: [25, 25] });
+        initialFitDone.current = true;
+      } catch (e) {
+        console.error("Initial fitBounds error:", e);
+      }
+    }
+  }, [map]);
+
+  // Route bounds fit (highest priority when route is active)
   useEffect(() => {
     if (bounds && bounds.length > 0) {
       try {
         map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
       } catch (e) {
-        console.error("MapController fitBounds error:", e);
+        console.error("Route fitBounds error:", e);
       }
-    } else if (center) {
-      map.panTo(center);
-      if (zoom) map.setZoom(zoom);
     }
-  }, [center, zoom, bounds, map]);
+  }, [bounds, map]);
+
+  // Recenter trigger (button "Tampilkan Seluruh Baureno")
+  useEffect(() => {
+    if (recenterTrigger) {
+      try {
+        map.fitBounds(baurenoBounds, { padding: [25, 25] });
+      } catch (e) {
+        map.setView(baurenoCenter, 12);
+      }
+    }
+  }, [recenterTrigger, map]);
+
   return null;
 }
 
@@ -144,6 +172,8 @@ export default function RiskMap({
     return finalVillages;
   }, [dbVillages]);
 
+  const [recenterTrigger, setRecenterTrigger] = useState(0);
+
   // Compute bounding box if route is active
   const mapBounds = useMemo(() => {
     if (routeCoordinates && routeCoordinates.length > 1) {
@@ -151,6 +181,17 @@ export default function RiskMap({
     }
     return null;
   }, [routeCoordinates]);
+
+  // Find center of selected village to smoothly fly to it
+  const targetVillageCenter = useMemo(() => {
+    if (!selectedVillageName) return null;
+    const clean = selectedVillageName.replace(/^Desa\s+/i, '').trim().toLowerCase();
+    const found = villages.find(v => {
+      const vClean = v.name.replace(/^Desa\s+/i, '').trim().toLowerCase();
+      return vClean === clean || vClean.includes(clean) || clean.includes(vClean);
+    });
+    return found ? found.center : null;
+  }, [villages, selectedVillageName]);
 
   return (
     <div className="leaflet-map-wrapper" style={{ height, width: '100%', borderRadius: '12px', overflow: 'hidden', position: 'relative', zIndex: 1, marginTop: '12px' }}>
@@ -169,13 +210,47 @@ export default function RiskMap({
           100% { transform: scale(2.2); opacity: 0; }
         }
       `}</style>
-      <MapContainer center={baurenoCenter} zoom={12} style={{ height: '100%', width: '100%', zIndex: 1 }}>
+
+      {/* Quick action button: Recenter Baureno */}
+      <div style={{ position: 'absolute', top: '10px', right: '10px', zIndex: 1000 }}>
+        <button
+          type="button"
+          onClick={() => setRecenterTrigger(prev => prev + 1)}
+          style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            color: '#1e3a8a',
+            border: '1px solid #cbd5e1',
+            borderRadius: '8px',
+            padding: '6px 12px',
+            fontSize: '12px',
+            fontWeight: 700,
+            cursor: 'pointer',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            backdropFilter: 'blur(4px)',
+            transition: 'all 0.15s ease'
+          }}
+          title="Pusatkan kembali peta ke seluruh wilayah Kecamatan Baureno"
+        >
+          <span>🎯</span> Tampilkan Seluruh Baureno
+        </button>
+      </div>
+
+      <MapContainer 
+        center={baurenoCenter} 
+        zoom={12} 
+        bounds={baurenoBounds}
+        boundsOptions={{ padding: [25, 25] }}
+        style={{ height: '100%', width: '100%', zIndex: 1 }}
+      >
         <TileLayer
           attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        <MapController bounds={mapBounds} />
+        <MapController bounds={mapBounds} recenterTrigger={recenterTrigger} />
 
         {/* 1. Village Risk Polygons */}
         {villages.map(v => {

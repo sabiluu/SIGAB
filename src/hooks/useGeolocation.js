@@ -3,12 +3,12 @@
  * lengkap dengan reverse geocoding nama wilayah aktual (Kecamatan, Kabupaten/Kota).
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
-// Fallback jika GPS dimatikan atau diblokir
+// Fallback jika GPS dimatikan atau diblokir (Pusat Kecamatan Baureno, Bojonegoro)
 const DEFAULT_COORDS = {
-  latitude: -7.160,
-  longitude: 111.830,
+  latitude: -7.1282,
+  longitude: 112.1039,
   accuracy: 100,
 };
 
@@ -19,7 +19,16 @@ export function useGeolocation() {
   const cached = (() => {
     try {
       const saved = localStorage.getItem('sigab_device_location');
-      return saved ? JSON.parse(saved) : null;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Hapus jika koordinat adalah data Bojonegoro Kota lama (longitude < 111.95)
+        if (parsed?.position?.longitude && parsed.position.longitude < 111.95) {
+          localStorage.removeItem('sigab_device_location');
+          return null;
+        }
+        return parsed;
+      }
+      return null;
     } catch {
       return null;
     }
@@ -30,9 +39,20 @@ export function useGeolocation() {
   const [fullAddress, setFullAddress] = useState(cached?.fullAddress || '');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(!cached);
+  const lastGeocodeRef = useRef({ lat: 0, lon: 0, time: 0 });
 
-  // Fungsi reverse geocoding ke OpenStreetMap Nominatim
+  // Fungsi reverse geocoding ke OpenStreetMap Nominatim dengan throttling
   const reverseGeocode = useCallback(async (lat, lon) => {
+    const now = Date.now();
+    const last = lastGeocodeRef.current;
+    const distDiff = Math.abs(lat - last.lat) + Math.abs(lon - last.lon);
+    
+    // Hanya panggil API jika berjarak signifikan (> ~100m) atau sudah > 30 detik
+    if (distDiff < 0.001 && now - last.time < 30000) {
+      return;
+    }
+    lastGeocodeRef.current = { lat, lon, time: now };
+
     try {
       const res = await fetch(
         `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`,
@@ -70,8 +90,7 @@ export function useGeolocation() {
       } catch (e) {
         console.warn('Failed to save location to localStorage', e);
       }
-    } catch (e) {
-      console.warn('Reverse geocoding error:', e);
+    } catch {
       // Fallback label dengan koordinat
       setAddress(`${lat.toFixed(4)}, ${lon.toFixed(4)}`);
     }

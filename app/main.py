@@ -55,6 +55,13 @@ app.include_router(emergency_router)
 app.include_router(dashboard_router)
 
 
+import os
+from fastapi.staticfiles import StaticFiles
+
+# Ensure upload directory exists
+os.makedirs("uploads/sos", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
 @app.get("/", tags=["Root"])
 def root():
     return {"message": "SiagaBencana API is running 🚀"}

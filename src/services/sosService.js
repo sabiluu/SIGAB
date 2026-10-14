@@ -32,3 +32,13 @@ export async function updateSOSStatus(id, updateData) {
     body: JSON.stringify(updateData),
   });
 }
+
+export async function uploadSOSPhoto(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  return apiFetch('/sos/upload-photo', {
+    method: 'POST',
+    body: formData,
+  });
+}
+

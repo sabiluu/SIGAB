@@ -58,12 +58,20 @@ export default function RadarPeta() {
 
       <div className="admin-main-grid">
         <div className="portal-card" style={{ padding: '16px', position: 'relative', height: '620px' }}>
-          <RiskMap onSelectVillage={handleSelectVillage} selectedVillageName={selectedVillageName} />
+          <RiskMap 
+            onSelectVillage={handleSelectVillage} 
+            selectedVillageName={selectedVillageName} 
+            shelters={data?.shelters || []}
+            height="550px"
+          />
           <div className="map-legend-bottom">
             <span><i className="red-dot" /> Sangat Tinggi / Awas</span>
             <span><i className="orange-dot" /> Tinggi / Siaga</span>
             <span><i className="yellow-dot" /> Sedang / Waspada</span>
             <span><i className="green-dot" /> Rendah / Aman</span>
+            <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ fontSize: '13px' }}>🏠</span> Posko Evakuasi
+            </span>
           </div>
         </div>
         <aside className="radar-detail-panel">

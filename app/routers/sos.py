@@ -15,6 +15,37 @@ router = APIRouter(prefix="/sos", tags=["SOS"])
 
 from ..core.deps import get_current_admin_user, get_current_active_user
 from ..services.notifier import broadcast_sos_event
+from fastapi import File, UploadFile
+import os
+import uuid
+
+@router.post("/upload-photo")
+async def upload_sos_photo(
+    file: UploadFile = File(...),
+    current_user = Depends(get_current_active_user)
+):
+    """Unggah foto situasi banjir / kondisi saat ini untuk laporan SOS."""
+    allowed_types = ["image/jpeg", "image/png", "image/webp", "image/jpg"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="Format file tidak didukung. Harap unggah foto format JPG, PNG, atau WEBP.")
+    
+    ext = os.path.splitext(file.filename or "")[1].lower()
+    if not ext or ext not in [".jpg", ".jpeg", ".png", ".webp"]:
+        ext = ".jpg"
+    filename = f"sos_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}{ext}"
+    
+    upload_dir = "uploads/sos"
+    os.makedirs(upload_dir, exist_ok=True)
+    file_path = os.path.join(upload_dir, filename)
+    
+    contents = await file.read()
+    if len(contents) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Ukuran foto maksimal 10MB.")
+        
+    with open(file_path, "wb") as f:
+        f.write(contents)
+        
+    return {"photo_url": f"/uploads/sos/{filename}"}
 
 @router.post("", response_model=SOSTicketResponse)
 async def create_sos_ticket(

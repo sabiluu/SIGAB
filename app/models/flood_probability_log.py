@@ -3,7 +3,7 @@ Model FloodProbabilityLog — tabel 'flood_probability_logs'.
 Log historis kalkulasi probabilitas banjir per desa.
 """
 
-from sqlalchemy import Column, Integer, BigInteger, String, Enum, DateTime, DECIMAL, ForeignKey, func
+from sqlalchemy import Column, Integer, String, Enum, DateTime, DECIMAL, ForeignKey, func
 from sqlalchemy.orm import relationship
 from ..core.database import Base
 
@@ -11,7 +11,7 @@ from ..core.database import Base
 class FloodProbabilityLog(Base):
     __tablename__ = "flood_probability_logs"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     village_id = Column(Integer, ForeignKey("villages.id", ondelete="CASCADE"), nullable=False)
     probability_score = Column(DECIMAL(5, 2), nullable=False)
     discharge_score = Column(DECIMAL(5, 2), nullable=False)

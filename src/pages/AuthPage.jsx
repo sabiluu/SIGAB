@@ -119,7 +119,7 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
                   <label className="auth-field"><input name="nik" type="text" placeholder="NIK (16 digit)" required minLength={16} maxLength={16} /></label>
                   <label className="auth-field"><input name="phone" type="tel" placeholder="Nomor telepon (WhatsApp)" required /></label>
                   <label className="auth-field">
-                    <select name="village_id" required defaultValue="" style={{ width: '100%', padding: '12px 14px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#fff', fontSize: '0.95rem' }}>
+                    <select name="village_id" required defaultValue="">
                       <option value="" disabled>Pilih Desa Domisili (Kec. Baureno)</option>
                       {villages.map((v) => (
                         <option key={v.id} value={v.id}>Desa {v.name}</option>
