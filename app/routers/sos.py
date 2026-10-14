@@ -19,33 +19,118 @@ from fastapi import File, UploadFile
 import os
 import uuid
 
+# === Konstanta Upload ===
+ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/jpg"}
+ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
+MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
+UPLOAD_DIR_SOS = "uploads/sos"
+CHUNK_SIZE = 1024 * 64  # 64 KB per chunk
+
+
+async def _save_upload_file(file: UploadFile, sub_dir: str = UPLOAD_DIR_SOS) -> str:
+    """
+    Helper internal: validasi & simpan satu file upload.
+    Membaca file secara streaming (chunk) agar tidak memuat seluruh file
+    ke memori sekaligus. Mengembalikan URL relatif file yang tersimpan.
+    """
+    # 1. Validasi content type
+    if file.content_type not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Format file '{file.filename}' tidak didukung. "
+                   "Harap unggah foto format JPG, PNG, atau WEBP.",
+        )
+
+    # 2. Tentukan ekstensi file
+    ext = os.path.splitext(file.filename or "")[1].lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        ext = ".jpg"
+
+    # 3. Generate nama file unik
+    filename = (
+        f"sos_{datetime.now().strftime('%Y%m%d_%H%M%S')}_"
+        f"{uuid.uuid4().hex[:8]}{ext}"
+    )
+
+    # 4. Pastikan direktori upload ada
+    os.makedirs(sub_dir, exist_ok=True)
+    file_path = os.path.join(sub_dir, filename)
+
+    # 5. Tulis file secara streaming dengan validasi ukuran
+    total_size = 0
+    try:
+        with open(file_path, "wb") as f:
+            while True:
+                chunk = await file.read(CHUNK_SIZE)
+                if not chunk:
+                    break
+                total_size += len(chunk)
+                if total_size > MAX_FILE_SIZE_BYTES:
+                    # Hapus file yang sudah ditulis sebagian
+                    f.close()
+                    os.remove(file_path)
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Ukuran file '{file.filename}' melebihi batas "
+                               f"maksimal {MAX_FILE_SIZE_BYTES // (1024 * 1024)}MB.",
+                    )
+                f.write(chunk)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        # Bersihkan file jika ada error tak terduga
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Gagal menyimpan file: {str(exc)}",
+        )
+
+    return f"/uploads/sos/{filename}"
+
+
 @router.post("/upload-photo")
 async def upload_sos_photo(
-    file: UploadFile = File(...),
-    current_user = Depends(get_current_active_user)
+    file: UploadFile = File(..., description="Foto situasi darurat (JPG/PNG/WEBP, maks 10MB)"),
+    current_user=Depends(get_current_active_user),
 ):
-    """Unggah foto situasi banjir / kondisi saat ini untuk laporan SOS."""
-    allowed_types = ["image/jpeg", "image/png", "image/webp", "image/jpg"]
-    if file.content_type not in allowed_types:
-        raise HTTPException(status_code=400, detail="Format file tidak didukung. Harap unggah foto format JPG, PNG, atau WEBP.")
+    """
+    Unggah satu foto situasi banjir / kondisi darurat untuk laporan SOS.
     
-    ext = os.path.splitext(file.filename or "")[1].lower()
-    if not ext or ext not in [".jpg", ".jpeg", ".png", ".webp"]:
-        ext = ".jpg"
-    filename = f"sos_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}{ext}"
+    - **Format**: JPG, PNG, WEBP
+    - **Ukuran maksimal**: 10 MB
+    - **Response**: URL foto yang bisa dipakai di field `photo_url` saat membuat tiket SOS.
+    """
+    photo_url = await _save_upload_file(file)
+    return {"photo_url": photo_url}
+
+
+@router.post("/upload-photos")
+async def upload_sos_photos(
+    files: list[UploadFile] = File(..., description="Beberapa foto situasi darurat (JPG/PNG/WEBP, maks 10MB per file, maks 5 file)"),
+    current_user=Depends(get_current_active_user),
+):
+    """
+    Unggah beberapa foto situasi darurat sekaligus (multipart form-data).
     
-    upload_dir = "uploads/sos"
-    os.makedirs(upload_dir, exist_ok=True)
-    file_path = os.path.join(upload_dir, filename)
-    
-    contents = await file.read()
-    if len(contents) > 10 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail="Ukuran foto maksimal 10MB.")
-        
-    with open(file_path, "wb") as f:
-        f.write(contents)
-        
-    return {"photo_url": f"/uploads/sos/{filename}"}
+    - **Format**: JPG, PNG, WEBP
+    - **Ukuran maksimal**: 10 MB per file
+    - **Jumlah maksimal**: 5 file
+    - **Response**: Array URL foto yang bisa dipakai di laporan SOS.
+    """
+    MAX_FILES = 5
+    if len(files) > MAX_FILES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Maksimal {MAX_FILES} foto per unggahan.",
+        )
+
+    photo_urls = []
+    for file in files:
+        url = await _save_upload_file(file)
+        photo_urls.append(url)
+
+    return {"photo_urls": photo_urls, "count": len(photo_urls)}
 
 @router.post("", response_model=SOSTicketResponse)
 async def create_sos_ticket(
@@ -54,6 +139,34 @@ async def create_sos_ticket(
     current_user = Depends(get_current_active_user)
 ):
     """Warga membuat tiket SOS baru."""
+    # --- Validasi: Desa harus berstatus darurat aktif ---
+    from ..models.emergency_status import EmergencyStatus
+
+    village = db.query(Village).filter(Village.id == ticket.village_id).first()
+    if not village:
+        raise HTTPException(
+            status_code=404,
+            detail="Desa tidak ditemukan.",
+        )
+
+    active_emergency = (
+        db.query(EmergencyStatus)
+        .filter(
+            EmergencyStatus.village_id == ticket.village_id,
+            EmergencyStatus.is_emergency_active == True,
+        )
+        .first()
+    )
+    if not active_emergency:
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                f"Tiket SOS tidak dapat dibuat. "
+                f"Desa {village.name} belum berstatus darurat aktif. "
+                f"Hubungi admin untuk mengaktifkan mode darurat terlebih dahulu."
+            ),
+        )
+
     # Generate ticket number in format EVAC-BRN-YYYY-MMDD-SEQ per PRD specification
     today_str = datetime.now().strftime("%Y-%m%d")
     today_count = db.query(SOSTicket).filter(SOSTicket.ticket_number.like(f"EVAC-BRN-{today_str}-%")).count()
@@ -88,7 +201,6 @@ async def create_sos_ticket(
 
     # Push notifikasi SOS baru ke admin via WebSocket
     reporter = db.query(User).filter(User.id == current_user.id).first()
-    village = db.query(Village).filter(Village.id == ticket.village_id).first()
     await broadcast_sos_event(
         db=db,
         event_type="sos_new",

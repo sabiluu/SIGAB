@@ -24,7 +24,116 @@ from ..models.notification import Notification
 from ..services.notifier import broadcast_emergency_status, broadcast_flood_alert, create_emergency_notifications
 from ..services.ws_manager import ws_manager
 
+from fastapi import File, UploadFile
+import uuid
+
 router = APIRouter(prefix="/emergency", tags=["Emergency Status"])
+
+# === Konstanta Upload Foto Darurat ===
+ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/jpg"}
+ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
+MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
+UPLOAD_DIR_EMERGENCY = "uploads/emergency"
+CHUNK_SIZE = 1024 * 64  # 64 KB per chunk
+
+
+async def _save_emergency_photo(file: UploadFile) -> str:
+    """
+    Helper internal: validasi & simpan foto situasi darurat.
+    Membaca secara streaming agar tidak membebani memori.
+    """
+    if file.content_type not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Format file '{file.filename}' tidak didukung. "
+                   "Harap unggah foto format JPG, PNG, atau WEBP.",
+        )
+
+    ext = os.path.splitext(file.filename or "")[1].lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        ext = ".jpg"
+
+    filename = (
+        f"emergency_{datetime.now().strftime('%Y%m%d_%H%M%S')}_"
+        f"{uuid.uuid4().hex[:8]}{ext}"
+    )
+
+    os.makedirs(UPLOAD_DIR_EMERGENCY, exist_ok=True)
+    file_path = os.path.join(UPLOAD_DIR_EMERGENCY, filename)
+
+    total_size = 0
+    try:
+        with open(file_path, "wb") as f:
+            while True:
+                chunk = await file.read(CHUNK_SIZE)
+                if not chunk:
+                    break
+                total_size += len(chunk)
+                if total_size > MAX_FILE_SIZE_BYTES:
+                    f.close()
+                    os.remove(file_path)
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"Ukuran file '{file.filename}' melebihi batas "
+                               f"maksimal {MAX_FILE_SIZE_BYTES // (1024 * 1024)}MB.",
+                    )
+                f.write(chunk)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Gagal menyimpan file: {str(exc)}",
+        )
+
+    return f"/uploads/emergency/{filename}"
+
+
+@router.post("/upload-photo")
+async def upload_emergency_photo(
+    file: UploadFile = File(..., description="Foto situasi darurat (JPG/PNG/WEBP, maks 10MB)"),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Unggah foto situasi darurat (kondisi banjir, kerusakan, dll).
+    
+    - **Format**: JPG, PNG, WEBP
+    - **Ukuran maksimal**: 10 MB
+    - **Response**: URL foto yang tersimpan di server.
+    """
+    photo_url = await _save_emergency_photo(file)
+    return {"photo_url": photo_url, "uploaded_by": current_user.id}
+
+
+@router.post("/upload-photos")
+async def upload_emergency_photos(
+    files: list[UploadFile] = File(..., description="Beberapa foto situasi darurat (maks 5 file, maks 10MB per file)"),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Unggah beberapa foto situasi darurat sekaligus (multipart form-data).
+    
+    - **Format**: JPG, PNG, WEBP
+    - **Ukuran maksimal**: 10 MB per file
+    - **Jumlah maksimal**: 5 file
+    - **Response**: Array URL foto yang tersimpan.
+    """
+    MAX_FILES = 5
+    if len(files) > MAX_FILES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Maksimal {MAX_FILES} foto per unggahan.",
+        )
+
+    photo_urls = []
+    for file in files:
+        url = await _save_emergency_photo(file)
+        photo_urls.append(url)
+
+    return {"photo_urls": photo_urls, "count": len(photo_urls), "uploaded_by": current_user.id}
+
 
 
 # --- Schemas ---

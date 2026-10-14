@@ -42,3 +42,25 @@ class ShelterResponse(ShelterBase):
 
     class Config:
         from_attributes = True
+
+
+class NearbyAvailableShelterResponse(BaseModel):
+    """Schema untuk endpoint filter posko terdekat yang masih tersedia kuotanya."""
+    id: int
+    name: str
+    address: str
+    village_id: int
+    latitude: Decimal
+    longitude: Decimal
+    capacity_total: int
+    capacity_occupied: int
+    capacity_available: int
+    occupancy_percent: float
+    is_active: bool
+    contact_person: Optional[str] = None
+    contact_phone: Optional[str] = None
+    distance_km: float
+    distance_meters: float
+
+    class Config:
+        from_attributes = True

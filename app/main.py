@@ -58,8 +58,9 @@ app.include_router(dashboard_router)
 import os
 from fastapi.staticfiles import StaticFiles
 
-# Ensure upload directory exists
+# Ensure upload directories exist
 os.makedirs("uploads/sos", exist_ok=True)
+os.makedirs("uploads/emergency", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 @app.get("/", tags=["Root"])
