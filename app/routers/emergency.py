@@ -23,6 +23,7 @@ from ..models.user import User
 from ..models.notification import Notification
 from ..services.notifier import broadcast_emergency_status, broadcast_flood_alert, create_emergency_notifications
 from ..services.ws_manager import ws_manager
+from ..services.audit_service import record_emergency_action
 
 from fastapi import File, UploadFile
 import uuid
@@ -309,6 +310,17 @@ async def activate_emergency(
         is_active=True,
         trigger_name=current_admin.full_name
     )
+
+    # Catat Audit Log
+    record_emergency_action(
+        db=db,
+        admin=current_admin,
+        village_id=village.id,
+        village_name=village.name,
+        is_active=True,
+        notes=body.notes or f"Diaktifkan manual oleh {current_admin.full_name}",
+    )
+
     db.commit()
     db.refresh(emergency)
 
@@ -368,6 +380,17 @@ async def deactivate_emergency(
         is_active=False,
         trigger_name=current_admin.full_name
     )
+
+    # Catat Audit Log
+    record_emergency_action(
+        db=db,
+        admin=current_admin,
+        village_id=village.id,
+        village_name=village.name,
+        is_active=False,
+        notes=body.notes or f"Dinonaktifkan oleh {current_admin.full_name}",
+    )
+
     db.commit()
     db.refresh(active)
 

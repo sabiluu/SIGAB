@@ -6,6 +6,8 @@
  *   - Ping/pong keep-alive
  *   - Event listener pattern
  *   - Channel switching (alerts / sos)
+ *   - Filter per desa/wilayah (village_id) pada channel 'alerts'
+ *   - Update village_id secara dinamis tanpa reconnect
  */
 
 const WS_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000')
@@ -22,20 +24,50 @@ class WebSocketService {
     this._reconnectAttempts = {};
     this._pingTimers = {};
     this._intentionallyClosed = {};
+    this._channelOptions = {};  // channel -> { villageId, userId, role }
   }
 
   /**
    * Terhubung ke WebSocket channel.
-   * @param {'alerts' | 'sos'} channel 
+   * @param {'alerts' | 'sos' | 'dashboard'} channel 
+   * @param {Object} [options] - Opsi koneksi
+   * @param {number} [options.villageId] - ID desa untuk filter alert (channel 'alerts')
+   * @param {number} [options.userId] - ID user untuk tracking
+   * @param {string} [options.role] - Role user ('user' | 'admin')
    */
-  connect(channel = 'alerts') {
+  connect(channel = 'alerts', options = {}) {
     if (this._connections[channel]?.readyState === WebSocket.OPEN) {
       console.log(`[WS] Already connected to '${channel}'`);
       return;
     }
 
+    // Simpan options untuk digunakan saat reconnect
+    if (Object.keys(options).length > 0) {
+      this._channelOptions[channel] = options;
+    }
+    const savedOptions = this._channelOptions[channel] || {};
+
     this._intentionallyClosed[channel] = false;
-    const url = `${WS_BASE_URL}/ws/${channel}`;
+
+    // Build URL dengan query params untuk filter village
+    let url = `${WS_BASE_URL}/ws/${channel}`;
+    const params = new URLSearchParams();
+
+    if (savedOptions.villageId) {
+      params.set('village_id', savedOptions.villageId.toString());
+    }
+    if (savedOptions.userId) {
+      params.set('user_id', savedOptions.userId.toString());
+    }
+    if (savedOptions.role) {
+      params.set('role', savedOptions.role);
+    }
+
+    const queryString = params.toString();
+    if (queryString) {
+      url += `?${queryString}`;
+    }
+
     console.log(`[WS] Connecting to ${url}...`);
 
     const ws = new WebSocket(url);
@@ -81,6 +113,30 @@ class WebSocketService {
       console.error(`[WS] Error on '${channel}':`, error);
       this._emit('ws_error', { channel, error });
     };
+  }
+
+  /**
+   * Update village_id secara dinamis tanpa reconnect.
+   * Server akan mengubah filter untuk koneksi ini.
+   * @param {number} villageId - ID desa baru
+   * @param {string} [channel='alerts'] - Channel yang ingin diupdate
+   */
+  updateVillage(villageId, channel = 'alerts') {
+    const ws = this._connections[channel];
+    if (ws?.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: 'update_village',
+        village_id: villageId,
+      }));
+      // Update saved options juga
+      if (!this._channelOptions[channel]) {
+        this._channelOptions[channel] = {};
+      }
+      this._channelOptions[channel].villageId = villageId;
+      console.log(`[WS] Sent village update: ${villageId} on '${channel}'`);
+    } else {
+      console.warn(`[WS] Cannot update village — not connected to '${channel}'`);
+    }
   }
 
   /**
@@ -168,7 +224,7 @@ class WebSocketService {
     setTimeout(() => {
       if (!this._intentionallyClosed[channel]) {
         this._reconnectAttempts[channel] = attempts + 1;
-        this.connect(channel);
+        this.connect(channel);  // options diambil dari _channelOptions
       }
     }, delay);
   }

@@ -32,3 +32,4 @@ class Village(Base):
     flood_logs = relationship("FloodProbabilityLog", back_populates="village", cascade="all, delete-orphan")
     emergency_statuses = relationship("EmergencyStatus", back_populates="village", cascade="all, delete-orphan")
     sos_tickets = relationship("SOSTicket", back_populates="village", cascade="all, delete-orphan")
+    flood_incidents = relationship("FloodIncident", back_populates="village")

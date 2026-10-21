@@ -17,6 +17,7 @@ from .routers import (
     notifications_router,
     emergency_router,
     dashboard_router,
+    audit_logs_router,
 )
 
 @asynccontextmanager
@@ -34,13 +35,15 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS middleware
+# CORS middleware dengan pengetatan domain produksi & whitelist metode HTTP
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=settings.get_cors_origins(),
+    allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
+    allow_methods=settings.CORS_ALLOW_METHODS,
+    allow_headers=settings.CORS_ALLOW_HEADERS,
+    expose_headers=settings.CORS_EXPOSE_HEADERS,
+    max_age=settings.CORS_MAX_AGE,
 )
 
 # Register routers
@@ -53,6 +56,7 @@ app.include_router(websocket_router)
 app.include_router(notifications_router)
 app.include_router(emergency_router)
 app.include_router(dashboard_router)
+app.include_router(audit_logs_router)
 
 
 import os

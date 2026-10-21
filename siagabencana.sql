@@ -345,6 +345,80 @@ CREATE TABLE system_config (
 
 
 -- =============================================================================
+-- TABEL 11: flood_incidents
+-- Log arsip kejadian banjir lampau & data hidrometeorologi historis
+-- =============================================================================
+CREATE TABLE flood_incidents (
+    id                    INT AUTO_INCREMENT PRIMARY KEY,
+    title                 VARCHAR(200)   NOT NULL,
+    description           TEXT           NULL,
+    category              ENUM('awas','siaga','waspada','aman')
+                          NOT NULL DEFAULT 'siaga',
+    village_id            INT            NULL,
+    affected_villages     VARCHAR(500)   NULL,
+    water_level_m         DECIMAL(5,2)   NULL                          COMMENT 'Tinggi Muka Air (TMA) puncak (mdpl)',
+    discharge_m3s         DECIMAL(10,2)  NULL                          COMMENT 'Debit puncak Bengawan Solo (m3/s)',
+    rainfall_mm           DECIMAL(8,2)   NULL                          COMMENT 'Curah hujan akumulasi (mm)',
+    evacuated_count       INT            NOT NULL DEFAULT 0            COMMENT 'Jumlah jiwa dievakuasi',
+    affected_people_count INT            NOT NULL DEFAULT 0            COMMENT 'Estimasi warga terdampak',
+    shelter_count         INT            NOT NULL DEFAULT 0            COMMENT 'Posko pengungsian aktif',
+    event_date            DATETIME       NOT NULL,
+    end_date              DATETIME       NULL,
+    status                VARCHAR(50)    NOT NULL DEFAULT 'selesai',
+    is_archived           BOOLEAN        NOT NULL DEFAULT TRUE,
+    created_by            INT            NULL,
+    created_at            TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at            TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_incident_village
+        FOREIGN KEY (village_id) REFERENCES villages(id) ON DELETE SET NULL,
+    CONSTRAINT fk_incident_creator
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+
+    INDEX idx_incident_date (event_date DESC),
+    INDEX idx_incident_category (category),
+    INDEX idx_incident_village (village_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Log arsip kejadian banjir lampau & data hidrometeorologi historis';
+
+
+-- =============================================================================
+-- TABEL 12: audit_logs
+-- Rekam jejak audit aktivitas admin (disposisi armada, ubah status SOS, aktivasi darurat)
+-- =============================================================================
+CREATE TABLE audit_logs (
+    id             INT AUTO_INCREMENT PRIMARY KEY,
+    admin_id       INT            NULL                           COMMENT 'ID admin pelaksana aksi',
+    admin_name     VARCHAR(100)   NULL                           COMMENT 'Nama admin saat aksi',
+    action_type    VARCHAR(50)    NOT NULL                       COMMENT 'disposisi_armada, ubah_status_sos, emergency_activate, emergency_deactivate',
+    target_type    VARCHAR(50)    NOT NULL DEFAULT 'sos_ticket'  COMMENT 'sos_ticket, emergency_status, dll',
+    target_id      INT            NULL                           COMMENT 'ID target entity (misal sos_tickets.id)',
+    ticket_number  VARCHAR(50)    NULL                           COMMENT 'Nomor tiket (EVAC-BRN-...) jika terkait tiket',
+    old_status     VARCHAR(50)    NULL                           COMMENT 'Status sebelum perubahan',
+    new_status     VARCHAR(50)    NULL                           COMMENT 'Status sesudah perubahan',
+    assigned_unit  VARCHAR(100)   NULL                           COMMENT 'Unit armada yang ditugaskan',
+    shelter_id     INT            NULL                           COMMENT 'Posko tujuan evakuasi',
+    shelter_name   VARCHAR(150)   NULL                           COMMENT 'Nama posko tujuan',
+    notes          TEXT           NULL                           COMMENT 'Catatan atau alasan aksi',
+    details        TEXT           NULL                           COMMENT 'JSON payload snapshot untuk audit mendalam',
+    ip_address     VARCHAR(50)    NULL                           COMMENT 'Alamat IP pelaksana jika tersedia',
+    created_at     TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_audit_admin
+        FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE SET NULL,
+    CONSTRAINT fk_audit_shelter
+        FOREIGN KEY (shelter_id) REFERENCES shelters(id) ON DELETE SET NULL,
+
+    INDEX idx_audit_created (created_at DESC),
+    INDEX idx_audit_action (action_type),
+    INDEX idx_audit_target (target_type, target_id),
+    INDEX idx_audit_ticket (ticket_number),
+    INDEX idx_audit_admin (admin_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Audit log pencatatan aksi disposisi armada & ubah status oleh admin';
+
+
+-- =============================================================================
 -- SEED DATA: 25 Desa Kecamatan Baureno
 -- Sumber: Data Administrasi Kemendagri & BPS Kabupaten Bojonegoro
 -- =============================================================================

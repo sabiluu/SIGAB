@@ -8,9 +8,9 @@ from typing import Optional
 from pydantic import BaseModel, EmailStr
 
 from ..core.database import get_db
-from ..core.security import hash_password, verify_password, create_access_token
+from ..core.security import hash_password, verify_password, create_access_token, check_secret_key_strength
 from ..core.config import settings
-from ..core.deps import get_current_active_user
+from ..core.deps import get_current_active_user, get_current_admin_user
 from ..models.user import User
 
 router = APIRouter(tags=["Authentication"])
@@ -195,4 +195,22 @@ def get_profile(current_user: User = Depends(get_current_active_user)):
         "role": role_str,
         "village_id": current_user.village_id,
         "is_active": current_user.is_active,
+    }
+
+
+@router.get("/auth/security-check")
+def get_security_check(current_admin: User = Depends(get_current_admin_user)):
+    """(Admin) Audit status keamanan backend (CORS policy & validasi kekuatan JWT Secret Key)."""
+    return {
+        "status": "ok",
+        "environment": settings.ENVIRONMENT,
+        "is_production": settings.is_production,
+        "jwt_security": check_secret_key_strength(),
+        "cors_policy": {
+            "allowed_origins": settings.get_cors_origins(),
+            "allow_credentials": settings.CORS_ALLOW_CREDENTIALS,
+            "allowed_methods": settings.CORS_ALLOW_METHODS,
+            "allowed_headers": settings.CORS_ALLOW_HEADERS,
+            "max_age_seconds": settings.CORS_MAX_AGE,
+        },
     }

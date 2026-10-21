@@ -103,7 +103,11 @@ export default function WargaSOS({ onNavigate, geo: externalGeo }) {
 
   // WebSocket listener for SOS events on channel 'alerts'
   useEffect(() => {
-    wsService.connect('alerts');
+    wsService.connect('alerts', {
+      villageId: user?.village_id,
+      userId: user?.id,
+      role: 'user',
+    });
 
     const handleSOSUpdate = (data) => {
       // Update active ticket if matches
