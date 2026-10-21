@@ -15,6 +15,8 @@ from app.models.weather_data_log import WeatherDataLog
 from app.models.emergency_status import EmergencyStatus
 from app.models.notification import Notification
 from app.models.system_config import SystemConfig
+from app.models.flood_incident import FloodIncident
+from app.models.audit_log import AuditLog
 
 def init_db():
     print("Creating database tables...")

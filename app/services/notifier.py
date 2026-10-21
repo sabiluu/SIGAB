@@ -1,8 +1,18 @@
 """
 Service: Notification Broadcaster — mengirim notifikasi ke database
-dan broadcast via WebSocket secara bersamaan.
+dan broadcast via WebSocket secara bersamaan, TERTARGET per desa/wilayah.
 
 Digunakan oleh router SOS dan Flood untuk push notifikasi real-time.
+
+Aturan filtering:
+  - flood_alert      → hanya ke warga di desa yang terdampak (channel 'alerts')
+                        + semua admin (channel 'sos')
+  - sos_new          → hanya ke warga di desa terdekat (channel 'alerts')
+                        + semua admin (channel 'sos')
+  - sos_update       → ke semua admin (channel 'sos')
+                        + pelapor di desa ybs (channel 'alerts')
+  - emergency_status → hanya ke warga di desa terdampak (channel 'alerts')
+                        + semua admin (channel 'sos')
 """
 
 import asyncio
@@ -26,7 +36,8 @@ async def broadcast_flood_alert(
     probability: float,
 ):
     """
-    Broadcast peringatan banjir ke semua warga via WebSocket channel 'alerts'.
+    Broadcast peringatan banjir TERTARGET ke warga di desa terdampak via
+    WebSocket channel 'alerts', dan ke semua admin via channel 'sos'.
     Juga simpan notifikasi ke database untuk semua user di desa tersebut.
     """
     level_labels = {
@@ -48,7 +59,6 @@ async def broadcast_flood_alert(
     elif risk_level == "sedang":
         message += "Harap waspada dan pantau informasi terkini."
 
-    # Broadcast via WebSocket ke channel 'alerts' (warga) dan 'sos' (admin)
     ws_payload = {
         "type": "flood_alert",
         "data": {
@@ -61,7 +71,11 @@ async def broadcast_flood_alert(
             "timestamp": datetime.now().isoformat(),
         },
     }
-    await ws_manager.broadcast("alerts", ws_payload)
+
+    # ✅ TERTARGET: hanya ke warga di desa ini di channel 'alerts'
+    await ws_manager.broadcast_to_village("alerts", village_id, ws_payload)
+
+    # Admin selalu menerima semua alert via channel 'sos'
     await ws_manager.broadcast("sos", ws_payload)
 
     # Simpan notifikasi ke database untuk user di desa tersebut
@@ -102,8 +116,9 @@ async def broadcast_sos_event(
 ):
     """
     Broadcast event SOS ke admin dashboard via WebSocket channel 'sos'.
+    Untuk SOS baru, juga broadcast TERTARGET ke warga di desa ybs via 'alerts'.
     Juga simpan notifikasi ke database untuk semua admin.
-    
+
     event_type: 'sos_new', 'sos_updated', 'sos_verified', 'sos_dispatched', dll.
     """
     event_labels = {
@@ -120,7 +135,7 @@ async def broadcast_sos_event(
     title = f"{label} — {ticket_number}"
     message = f"Tiket SOS dari {reporter_name} di Desa {village_name}. Status: {status}."
 
-    # Broadcast via WebSocket ke channel 'sos' (admin)
+    # Broadcast via WebSocket ke channel 'sos' (semua admin)
     ws_payload = {
         "type": event_type,
         "data": {
@@ -138,9 +153,9 @@ async def broadcast_sos_event(
     }
     await ws_manager.broadcast("sos", ws_payload)
 
-    # Jika SOS baru, notify ke warga di desa ybs via alerts
+    # ✅ TERTARGET: Jika SOS baru, notify hanya ke warga di desa ybs
     if event_type == "sos_new":
-        await ws_manager.broadcast("alerts", {
+        await ws_manager.broadcast_to_village("alerts", village_id, {
             "type": "sos_nearby",
             "data": {
                 "village_id": village_id,
@@ -150,8 +165,8 @@ async def broadcast_sos_event(
             },
         })
     else:
-        # Broadcast status update ke alerts agar pelapor bisa tracking secara real-time
-        await ws_manager.broadcast("alerts", ws_payload)
+        # ✅ TERTARGET: Status update hanya ke warga di desa ybs agar pelapor bisa tracking
+        await ws_manager.broadcast_to_village("alerts", village_id, ws_payload)
 
     # Simpan notifikasi ke database untuk semua admin
     try:
@@ -182,7 +197,7 @@ async def broadcast_emergency_status(
     village_id: int,
     is_active: bool,
 ):
-    """Broadcast perubahan status darurat ke semua channel."""
+    """Broadcast perubahan status darurat TERTARGET ke warga di desa terdampak + admin."""
     status_text = "DIAKTIFKAN" if is_active else "DINONAKTIFKAN"
     ws_payload = {
         "type": "emergency_status",
@@ -194,7 +209,11 @@ async def broadcast_emergency_status(
             "timestamp": datetime.now().isoformat(),
         },
     }
-    await ws_manager.broadcast("alerts", ws_payload)
+
+    # ✅ TERTARGET: hanya ke warga di desa ini di channel 'alerts'
+    await ws_manager.broadcast_to_village("alerts", village_id, ws_payload)
+
+    # Admin selalu menerima via channel 'sos'
     await ws_manager.broadcast("sos", ws_payload)
 
 

@@ -7,3 +7,4 @@ from .websocket import router as websocket_router
 from .notifications import router as notifications_router
 from .emergency import router as emergency_router
 from .dashboard import router as dashboard_router
+from .audit_logs import router as audit_logs_router

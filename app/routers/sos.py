@@ -9,7 +9,14 @@ from ..core.database import get_db
 from ..models.sos_ticket import SOSTicket
 from ..models.user import User
 from ..models.village import Village
+from ..models.audit_log import AuditLog
 from ..schemas.sos_ticket import SOSTicketResponse, SOSTicketCreate, SOSTicketUpdate
+from ..schemas.audit_log import AuditLogResponse
+from ..services.audit_service import (
+    record_sos_disposition,
+    record_sos_status_change,
+    format_audit_log,
+)
 
 router = APIRouter(prefix="/sos", tags=["SOS"])
 
@@ -278,6 +285,8 @@ async def update_sos_ticket(
         raise HTTPException(status_code=404, detail="Ticket not found")
     
     old_status = ticket.status
+    old_unit = ticket.assigned_unit
+    old_shelter = ticket.shelter_destination_id
     ticket.status = ticket_update.status
 
     # Update timestamp berdasarkan status baru
@@ -302,6 +311,28 @@ async def update_sos_ticket(
         ticket.rejection_reason = ticket_update.rejection_reason
     if ticket_update.shelter_destination_id is not None:
         ticket.shelter_destination_id = ticket_update.shelter_destination_id
+
+    # === PENCATATAN AUDIT LOG ===
+    # 1. Aksi disposisi armada (jika unit armada ditugaskan/diubah atau status masuk dispatched)
+    if ticket_update.assigned_unit is not None and (ticket_update.assigned_unit != old_unit or ticket_update.status == "dispatched"):
+        record_sos_disposition(
+            db=db,
+            admin=current_admin,
+            ticket=ticket,
+            assigned_unit=ticket.assigned_unit,
+            shelter_id=ticket.shelter_destination_id,
+        )
+
+    # 2. Aksi perubahan status tiket SOS
+    if old_status != ticket_update.status:
+        record_sos_status_change(
+            db=db,
+            admin=current_admin,
+            ticket=ticket,
+            old_status=old_status,
+            new_status=ticket_update.status,
+            reason=ticket_update.rejection_reason,
+        )
 
     db.commit()
     db.refresh(ticket)
@@ -332,3 +363,26 @@ async def update_sos_ticket(
     db.commit()
 
     return ticket
+
+
+@router.get("/{ticket_id}/audit-logs", response_model=List[AuditLogResponse])
+def get_ticket_audit_trail(
+    ticket_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """(Admin / Pelapor) Mengambil riwayat jejak audit untuk satu tiket SOS tertentu."""
+    ticket = db.query(SOSTicket).filter(SOSTicket.id == ticket_id).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Tiket SOS tidak ditemukan")
+    if current_user.role != "admin" and ticket.reporter_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Akses ditolak")
+
+    logs = (
+        db.query(AuditLog)
+        .filter(AuditLog.target_type == "sos_ticket", AuditLog.target_id == ticket_id)
+        .order_by(AuditLog.created_at.asc())
+        .all()
+    )
+    return [format_audit_log(l) for l in logs]
+

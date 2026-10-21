@@ -1,14 +1,17 @@
 """
-Router: WebSocket endpoints untuk notifikasi realtime.
+Router: WebSocket endpoints untuk notifikasi realtime
+dengan filter per desa/wilayah.
 
 Endpoints:
-  WS /ws/alerts  — push peringatan banjir ke warga
-  WS /ws/sos     — push tiket SOS ke admin dashboard
-  GET /ws/status — cek jumlah koneksi aktif
+  WS /ws/alerts?village_id=X  — push peringatan banjir ke warga desa X
+  WS /ws/sos                  — push tiket SOS ke admin dashboard
+  WS /ws/dashboard            — data realtime dashboard admin
+  GET /ws/status              — cek jumlah koneksi aktif (termasuk per village)
 """
 
 import json
 import logging
+from typing import Optional
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
 from ..services.ws_manager import ws_manager
 from ..core.database import SessionLocal
@@ -18,13 +21,14 @@ logger = logging.getLogger("ws_router")
 
 router = APIRouter(tags=["WebSocket"])
 
+
 @router.websocket("/ws/dashboard")
 async def ws_dashboard(websocket: WebSocket):
     """
     WebSocket endpoint untuk data dashboard real-time.
     Saat connect: kirim snapshot terkini.
     """
-    await ws_manager.connect(websocket, channel="dashboard")
+    await ws_manager.connect(websocket, channel="dashboard", role="admin")
     try:
         # Kirim snapshot awal
         db = SessionLocal()
@@ -51,21 +55,47 @@ async def ws_dashboard(websocket: WebSocket):
 
 
 @router.websocket("/ws/alerts")
-async def ws_alerts(websocket: WebSocket):
+async def ws_alerts(
+    websocket: WebSocket,
+    village_id: Optional[int] = Query(None, description="ID desa warga untuk filter notifikasi"),
+    user_id: Optional[int] = Query(None, description="ID user (opsional, untuk tracking)"),
+    role: Optional[str] = Query(None, description="Role user: 'user' atau 'admin'"),
+):
     """
     WebSocket untuk warga — menerima push notifikasi:
     - Peringatan banjir (perubahan level risiko desa)
     - Status darurat (aktivasi/deaktivasi mode evakuasi)
     - Broadcast info umum dari petugas
+
+    Query params:
+    - village_id: wajib agar alert dikirim hanya ke desa yang relevan.
+      Jika tidak dikirim, client hanya menerima broadcast global.
+    - user_id: opsional, untuk tracking koneksi.
+    - role: opsional, 'admin' akan menerima alert semua desa.
     """
-    await ws_manager.connect(websocket, channel="alerts")
+    client = await ws_manager.connect(
+        websocket,
+        channel="alerts",
+        village_id=village_id,
+        user_id=user_id,
+        role=role,
+    )
     try:
-        # Kirim pesan selamat datang
-        await ws_manager.send_personal(websocket, {
+        # Kirim pesan selamat datang + info filter aktif
+        welcome = {
             "type": "connected",
             "channel": "alerts",
             "message": "Terhubung ke sistem peringatan dini SiagaBencana.",
-        })
+            "filter": {
+                "village_id": village_id,
+                "info": (
+                    f"Alert akan dikirim khusus untuk desa ID {village_id}."
+                    if village_id
+                    else "Tidak ada filter desa aktif — hanya menerima broadcast global."
+                ),
+            },
+        }
+        await ws_manager.send_personal(websocket, welcome)
 
         # Keep-alive loop — terima ping/pesan dari client
         while True:
@@ -75,6 +105,21 @@ async def ws_alerts(websocket: WebSocket):
                 # Client bisa mengirim ping untuk keep-alive
                 if msg.get("type") == "ping":
                     await ws_manager.send_personal(websocket, {"type": "pong"})
+
+                # Client bisa update village_id secara dinamis tanpa reconnect
+                elif msg.get("type") == "update_village":
+                    new_village_id = msg.get("village_id")
+                    if new_village_id is not None:
+                        client.village_id = int(new_village_id)
+                        await ws_manager.send_personal(websocket, {
+                            "type": "village_updated",
+                            "village_id": client.village_id,
+                            "message": f"Filter desa diperbarui ke ID {client.village_id}.",
+                        })
+                        logger.info(
+                            f"[WS alerts] Client updated village_id to {client.village_id}"
+                        )
+
             except json.JSONDecodeError:
                 pass
     except WebSocketDisconnect:
@@ -92,7 +137,7 @@ async def ws_sos(websocket: WebSocket):
     - Update status tiket SOS
     - Perubahan level darurat desa
     """
-    await ws_manager.connect(websocket, channel="sos")
+    await ws_manager.connect(websocket, channel="sos", role="admin")
     try:
         await ws_manager.send_personal(websocket, {
             "type": "connected",
@@ -117,10 +162,12 @@ async def ws_sos(websocket: WebSocket):
 
 @router.get("/ws/status")
 def ws_connection_status():
-    """Cek jumlah koneksi WebSocket aktif per channel."""
+    """Cek jumlah koneksi WebSocket aktif per channel, termasuk detail per village."""
+    stats = ws_manager.get_connection_stats()
     return {
-        "alerts": ws_manager.get_connection_count("alerts"),
-        "sos": ws_manager.get_connection_count("sos"),
-        "general": ws_manager.get_connection_count("general"),
+        "alerts": stats.get("alerts", {"total": 0}),
+        "sos": stats.get("sos", {"total": 0}),
+        "general": stats.get("general", {"total": 0}),
+        "dashboard": stats.get("dashboard", {"total": 0}),
         "total": ws_manager.get_connection_count(),
     }

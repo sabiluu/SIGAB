@@ -85,7 +85,11 @@ function WargaHome() {
     markAsRead, 
     markAllAsRead, 
     clearAll 
-  } = useRealtimeNotifications('alerts')
+  } = useRealtimeNotifications('alerts', {
+    villageId: userProfile?.village_id || selectedVillageId,
+    userId: userProfile?.id,
+    role: 'user',
+  })
 
   // Sample default notifications if empty so citizen always has guidance
   const defaultNotifs = [
@@ -130,7 +134,11 @@ function WargaHome() {
       .then(res => setIsEmergencyActive(res.is_emergency_active))
       .catch(() => {})
       
-    wsService.connect('alerts')
+    wsService.connect('alerts', {
+      villageId: userProfile?.village_id || selectedVillageId,
+      userId: userProfile?.id,
+      role: 'user',
+    })
     const unsub = wsService.on('emergency_status', (data) => setIsEmergencyActive(data.is_active))
     return () => unsub()
   }, [])
@@ -911,7 +919,7 @@ function AdminHome() {
     apiFetch('/emergency/1').then(res => setIsEmergency(res.is_emergency_active)).catch(() => {})
     fetchTickets()
 
-    wsService.connect('alerts')
+    wsService.connect('alerts', { role: 'admin' })
     wsService.connect('sos')
     const unsubAlerts = wsService.on('emergency_status', (data) => setIsEmergency(data.is_active))
     const unsubSosNew = wsService.on('sos_new', () => {

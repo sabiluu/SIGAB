@@ -25,7 +25,7 @@ export default function AdminLayout({ children, activeMenu }) {
       }
     }).catch(() => {})
 
-    wsService.connect('alerts')
+    wsService.connect('alerts', { role: 'admin' })
     wsService.connect('sos')
     const unsub1 = wsService.on('emergency_status', (data) => setIsEmergency(data.is_active))
     const unsub2 = wsService.on('sos_new', () => setSosCount(prev => prev + 1))
