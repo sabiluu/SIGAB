@@ -129,10 +129,10 @@ class Settings:
             if not origins:
                 origins = list(DEFAULT_PROD_ORIGINS)
         else:
-            # Di development: gabungkan dengan dev origins lokal dan FRONTEND_URL
-            for dev_origin in DEFAULT_DEV_ORIGINS:
-                if dev_origin not in origins:
-                    origins.append(dev_origin)
+            # Di development: gabungkan dengan dev origins lokal, domain resmi BPBD, dan FRONTEND_URL
+            for o in DEFAULT_DEV_ORIGINS + DEFAULT_PROD_ORIGINS:
+                if o not in origins:
+                    origins.append(o)
             if self.FRONTEND_URL and self.FRONTEND_URL.rstrip("/") not in origins:
                 origins.append(self.FRONTEND_URL.rstrip("/"))
 

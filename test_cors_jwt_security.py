@@ -18,7 +18,22 @@ from app.core.security import (
     check_secret_key_strength,
 )
 
+from app.core.database import SessionLocal
+from app.models.user import User
+from app.core.security import hash_password
+
 client = TestClient(app)
+
+# Pastikan test user ada di database
+_db = SessionLocal()
+try:
+    if not _db.query(User).filter(User.email == "admin@bpbd.go.id").first():
+        _db.add(User(full_name="Admin BPBD", email="admin@bpbd.go.id", phone="081234567890", password_hash=hash_password("admin123"), role="admin", is_active=True))
+    if not _db.query(User).filter(User.email == "warga@gmail.com").first():
+        _db.add(User(full_name="Warga Baureno", email="warga@gmail.com", phone="081234567891", password_hash=hash_password("warga123"), role="user", is_active=True))
+    _db.commit()
+finally:
+    _db.close()
 
 admin_token = create_access_token({"sub": "admin@bpbd.go.id", "role": "admin"})
 admin_headers = {"Authorization": f"Bearer {admin_token}"}
