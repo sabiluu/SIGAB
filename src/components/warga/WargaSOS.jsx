@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { createSOSTicket, getMyTickets, uploadSOSPhoto } from '../../services/sosService';
 import wsService from '../../services/wsService';
@@ -10,16 +10,40 @@ import useGeolocation from '../../hooks/useGeolocation';
 const userPinIcon = L.divIcon({
   className: 'custom-sos-pin',
   html: `
-    <div style="position: relative; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
-      <div style="position: absolute; width: 32px; height: 32px; border-radius: 50%; background: rgba(220, 38, 38, 0.4); animation: pulse 1.5s infinite;"></div>
-      <div style="background-color: #dc2626; color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.4);">
+    <div style="position: relative; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
+      <div style="position: absolute; width: 36px; height: 36px; border-radius: 50%; background: rgba(220, 38, 38, 0.4); animation: pulse 1.5s infinite;"></div>
+      <div style="background-color: #dc2626; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; border: 2.5px solid white; box-shadow: 0 3px 8px rgba(0,0,0,0.45); cursor: grab;">
         📍
       </div>
     </div>
   `,
-  iconSize: [32, 32],
-  iconAnchor: [16, 16],
+  iconSize: [36, 36],
+  iconAnchor: [18, 18],
 });
+
+function MapPanController({ center }) {
+  const map = useMap();
+  useEffect(() => {
+    if (center && center.lat && center.lng) {
+      map.flyTo([center.lat, center.lng], 16, { duration: 0.8 });
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 250);
+    }
+  }, [center?.lat, center?.lng, map]);
+  return null;
+}
+
+function MapClickHandler({ onLocationSelect }) {
+  useMapEvents({
+    click(e) {
+      if (onLocationSelect && e.latlng) {
+        onLocationSelect(e.latlng.lat, e.latlng.lng);
+      }
+    }
+  });
+  return null;
+}
 
 export default function WargaSOS({ onNavigate, geo: externalGeo }) {
   const { user } = useAuth();
@@ -65,18 +89,123 @@ export default function WargaSOS({ onNavigate, geo: externalGeo }) {
     pregnant: false
   });
 
-  // Sinkronkan GPS otomatis saat terdeteksi
+  const [loadingGps, setLoadingGps] = useState(false);
+  const [gpsAccuracy, setGpsAccuracy] = useState(geo?.position?.accuracy || null);
+  const [locationSource, setLocationSource] = useState(
+    geo?.isRealDevice ? 'real_gps' : 'syncing'
+  );
+
+  const reverseGeocodeCoords = async (lat, lng) => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
+        { headers: { 'Accept-Language': 'id', 'User-Agent': 'SIGAB-Disaster-App/1.0' } }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const addr = data.address || {};
+        const subdistrict = addr.village || addr.suburb || addr.neighbourhood || addr.municipality || '';
+        const city = addr.city || addr.town || addr.county || addr.state || '';
+        const label = [subdistrict, city].filter(Boolean).join(', ') || data.display_name;
+        return { short: label, full: data.display_name || label };
+      }
+    } catch {}
+
+    try {
+      const res = await fetch(
+        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=id`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const label = [data.locality, data.city].filter(Boolean).join(', ');
+        return { short: label, full: `${label}, ${data.countryName || 'Indonesia'}` };
+      }
+    } catch {}
+
+    return { short: `${lat.toFixed(5)}, ${lng.toFixed(5)}`, full: `Koordinat ${lat.toFixed(5)}, ${lng.toFixed(5)}` };
+  };
+
+  // Fungsi sinkronisasi koordinat GPS nyata dari device
+  const syncRealDeviceLocation = useCallback(async () => {
+    setLoadingGps(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          const acc = pos.coords.accuracy;
+          setGpsLocation({ lat, lng });
+          setGpsAccuracy(acc);
+          setLocationSource('real_gps');
+
+          const names = await reverseGeocodeCoords(lat, lng);
+          setAddress(names.full || names.short);
+          setLoadingGps(false);
+
+          if (geo?.setCustomCoordinates) {
+            geo.setCustomCoordinates(lat, lng, acc);
+          }
+        },
+        async (err) => {
+          console.warn('Geolocation error, fallback to IP:', err);
+          try {
+            const ipRes = await fetch('https://get.geojs.io/v1/ip/geo.json');
+            if (ipRes.ok) {
+              const ipData = await ipRes.json();
+              const ipLat = parseFloat(ipData.latitude);
+              const ipLng = parseFloat(ipData.longitude);
+              if (!isNaN(ipLat) && !isNaN(ipLng)) {
+                setGpsLocation({ lat: ipLat, lng: ipLng });
+                setGpsAccuracy(1000);
+                setLocationSource('ip');
+                const names = await reverseGeocodeCoords(ipLat, ipLng);
+                setAddress(names.full || names.short);
+                setLoadingGps(false);
+                return;
+              }
+            }
+          } catch (e) {}
+          setLoadingGps(false);
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+      );
+    } else {
+      setLoadingGps(false);
+    }
+  }, [geo]);
+
+  // Handler jika user menggeser pin atau mengklik titik pada peta
+  const handleMapLocationSelect = async (lat, lng) => {
+    setGpsLocation({ lat, lng });
+    setLocationSource('manual');
+    const names = await reverseGeocodeCoords(lat, lng);
+    setAddress(names.full || names.short);
+    if (geo?.setCustomCoordinates) {
+      geo.setCustomCoordinates(lat, lng);
+    }
+  };
+
+  // Jalankan sinkronisasi GPS nyata perangkat saat halaman SOS dibuka
+  useEffect(() => {
+    syncRealDeviceLocation();
+  }, [syncRealDeviceLocation]);
+
+  // Sinkronkan GPS otomatis saat terdeteksi dari hook geo
   useEffect(() => {
     if (geo?.position?.latitude && geo?.position?.longitude) {
       setGpsLocation({ lat: geo.position.latitude, lng: geo.position.longitude });
+      if (geo.position.accuracy) {
+        setGpsAccuracy(geo.position.accuracy);
+      }
       if (geo.fullAddress || geo.address) {
         setAddress(geo.fullAddress || geo.address);
       }
     }
-  }, [geo?.position?.latitude, geo?.position?.longitude, geo?.fullAddress, geo?.address]);
+  }, [geo?.position?.latitude, geo?.position?.longitude, geo?.position?.accuracy, geo?.fullAddress, geo?.address]);
 
   // Handler Refresh GPS
   const detectGPS = () => {
+    syncRealDeviceLocation();
     if (geo?.refresh) {
       geo.refresh();
     }
@@ -459,41 +588,134 @@ export default function WargaSOS({ onNavigate, geo: externalGeo }) {
           {/* STEP 1: GPS & LOKASI */}
           {step === 1 && (
             <div className="sos-step">
-              <h3 style={{ fontSize: '1.1rem', marginBottom: '6px' }}>Langkah 1: Konfirmasi Lokasi Anda</h3>
-              <p style={{ marginBottom: '1rem', color: '#64748b', fontSize: '13px' }}>
-                Sistem mengunci koordinat GPS perangkat Anda untuk memandu perahu penyelamat dan armada BPBD langsung ke lokasi.
-              </p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.1rem', margin: '0 0 4px 0', color: '#0f172a' }}>Langkah 1: Konfirmasi Lokasi Anda</h3>
+                  <p style={{ margin: 0, color: '#64748b', fontSize: '13px' }}>
+                    Sistem mendeteksi koordinat GPS perangkat Anda secara real. Anda juga dapat menggeser pin merah atau mengklik peta untuk menyesuaikan titik lokasi secara presisi.
+                  </p>
+                </div>
+              </div>
               
               {/* Mini Map */}
-              <div style={{ height: '240px', borderRadius: '8px', overflow: 'hidden', marginBottom: '1rem', border: '1px solid #cbd5e1', position: 'relative' }}>
+              <div style={{ height: '260px', borderRadius: '10px', overflow: 'hidden', marginBottom: '1rem', border: '1.5px solid #cbd5e1', position: 'relative', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
                 {gpsLocation ? (
-                  <MapContainer center={[gpsLocation.lat, gpsLocation.lng]} zoom={15} style={{ height: '100%', width: '100%' }}>
+                  <MapContainer center={[gpsLocation.lat, gpsLocation.lng]} zoom={16} style={{ height: '100%', width: '100%' }}>
                     <TileLayer
                       attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a>'
                       url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     />
-                    <Marker position={[gpsLocation.lat, gpsLocation.lng]} icon={userPinIcon}>
-                      <Popup>Posisi Anda Terkunci</Popup>
+                    <MapPanController center={gpsLocation} />
+                    <MapClickHandler onLocationSelect={handleMapLocationSelect} />
+                    <Marker 
+                      position={[gpsLocation.lat, gpsLocation.lng]} 
+                      icon={userPinIcon}
+                      draggable={true}
+                      eventHandlers={{
+                        dragend: (e) => {
+                          const marker = e.target;
+                          const pos = marker.getLatLng();
+                          handleMapLocationSelect(pos.lat, pos.lng);
+                        }
+                      }}
+                    >
+                      <Popup>
+                        <div style={{ textAlign: 'center', fontSize: '12px' }}>
+                          <strong style={{ color: '#dc2626' }}>📍 Titik Evakuasi</strong><br />
+                          <span>{address}</span><br />
+                          <small style={{ color: '#64748b' }}>Geser pin atau klik peta untuk memindahkan</small>
+                        </div>
+                      </Popup>
                     </Marker>
                   </MapContainer>
                 ) : (
-                  <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', color: '#64748b' }}>
-                    📡 Mencari sinyal GPS...
+                  <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', color: '#64748b', gap: '8px' }}>
+                    <div style={{ width: '24px', height: '24px', border: '3px solid #cbd5e1', borderTopColor: '#2563eb', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                    <span style={{ fontSize: '13px', fontWeight: 600 }}>📡 Mengunci koordinat GPS perangkat Anda...</span>
                   </div>
                 )}
+                
+                {/* Floating Map Hint */}
+                <div style={{
+                  position: 'absolute',
+                  top: '10px',
+                  right: '10px',
+                  zIndex: 999,
+                  background: 'rgba(15, 23, 42, 0.75)',
+                  backdropFilter: 'blur(4px)',
+                  color: 'white',
+                  padding: '4px 10px',
+                  borderRadius: '20px',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  pointerEvents: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}>
+                  <span>🎯 Klik peta / geser pin untuk atur titik</span>
+                </div>
               </div>
 
-              <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>
-                  📍 {address}
-                </span>
-                <button
-                  type="button"
-                  onClick={detectGPS}
-                  style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '12px', cursor: 'pointer', textDecoration: 'underline' }}
-                >
-                  🔄 Refresh GPS
-                </button>
+              {/* Status Lokasi & Detail GPS */}
+              <div style={{
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: '10px',
+                padding: '12px 14px',
+                marginBottom: '14px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                  <div style={{ flex: 1, minWidth: '220px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.4px', display: 'block', marginBottom: '2px' }}>
+                      Alamat Terdeteksi:
+                    </span>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b', lineHeight: 1.4 }}>
+                      📍 {address}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={detectGPS}
+                    disabled={loadingGps}
+                    style={{
+                      background: loadingGps ? '#f1f5f9' : '#ecfdf5',
+                      border: '1px solid #a7f3d0',
+                      color: loadingGps ? '#94a3b8' : '#065f46',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      padding: '6px 12px',
+                      borderRadius: '8px',
+                      cursor: loadingGps ? 'not-allowed' : 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                      transition: 'all 0.15s'
+                    }}
+                  >
+                    {loadingGps ? '📡 Mencari GPS...' : '🔄 Refresh GPS'}
+                  </button>
+                </div>
+
+                {gpsLocation && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', fontSize: '11.5px', color: '#64748b', borderTop: '1px solid #f1f5f9', paddingTop: '8px' }}>
+                    <span><strong>Lat:</strong> {gpsLocation.lat.toFixed(6)}</span>
+                    <span><strong>Lng:</strong> {gpsLocation.lng.toFixed(6)}</span>
+                    {gpsAccuracy && <span><strong>Akurasi:</strong> ±{Math.round(gpsAccuracy)}m</span>}
+                    <span style={{
+                      padding: '2px 8px',
+                      borderRadius: '12px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      background: locationSource === 'real_gps' ? '#dcfce7' : locationSource === 'manual' ? '#eff6ff' : '#fef3c7',
+                      color: locationSource === 'real_gps' ? '#15803d' : locationSource === 'manual' ? '#1d4ed8' : '#b45309',
+                      border: `1px solid ${locationSource === 'real_gps' ? '#bbf7d0' : locationSource === 'manual' ? '#bfdbfe' : '#fde68a'}`
+                    }}>
+                      {locationSource === 'real_gps' ? '● Lokasi Perangkat Real (GPS)' : locationSource === 'manual' ? '● Titik Disesuaikan Manual' : '● Lokasi Jaringan (IP)'}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div style={{ marginBottom: '1.5rem' }}>

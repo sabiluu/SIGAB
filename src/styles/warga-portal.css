@@ -141,10 +141,25 @@
   border-radius: 9999px;
   font-size: 0.78rem;
   color: #475569;
-  font-weight: 500;
+  font-weight: 600;
   white-space: nowrap !important;
   flex-shrink: 0;
   word-break: keep-all;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+
+.warga-loc-pill:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #0f172a;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.warga-loc-pill:active {
+  transform: translateY(0);
 }
 
 .warga-loc-pill span {
@@ -2205,3 +2220,345 @@
   border-radius: 3px;
   transition: width 0.5s ease;
 }
+
+/* ============================================================== */
+/* INDIKATOR SISA KAPASITAS POSKO TERDEKAT                        */
+/* ============================================================== */
+.posko-indikator-card {
+  padding: 22px 20px;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+  transition: all 0.25s ease;
+}
+
+.posko-indikator-card:hover {
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.07);
+  border-color: #cbd5e1;
+}
+
+.posko-indikator-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.posko-header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.posko-header-icon {
+  font-size: 1.35rem;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eff6ff;
+  border-radius: 10px;
+  border: 1px solid #dbeafe;
+}
+
+.sisa-kapasitas-hero-box {
+  transition: all 0.3s ease;
+}
+
+.sisa-kapasitas-hero-box:hover {
+  transform: translateY(-1px);
+}
+
+.posko-stats-3col {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(148, 163, 184, 0.3);
+  text-align: center;
+}
+
+.posko-stats-3col > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.posko-stats-3col small {
+  font-size: 0.62rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.posko-stats-3col strong {
+  font-size: 0.8rem;
+  color: #0f172a;
+}
+
+/* ==========================================================================
+   SEKAT TRANSISI ELEGAN: BERANDA → PETA WILAYAH SPASIAL
+   ========================================================================== */
+.warga-portal-sekat {
+  position: relative;
+  margin: 18px 0 12px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 0;
+  width: 100%;
+}
+
+.sekat-track-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 2px;
+  background: linear-gradient(
+    90deg, 
+    rgba(226, 232, 240, 0) 0%, 
+    rgba(59, 130, 246, 0.25) 20%, 
+    rgba(6, 182, 212, 0.5) 50%, 
+    rgba(16, 185, 129, 0.3) 80%, 
+    rgba(226, 232, 240, 0) 100%
+  );
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.2);
+  pointer-events: none;
+}
+
+.sekat-bridge-capsule {
+  position: relative;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1.5px solid #cbd5e1;
+  border-radius: 9999px;
+  padding: 6px 14px 6px 12px;
+  box-shadow: 0 4px 18px -2px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.9) inset;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  max-width: 95%;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.sekat-bridge-capsule:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 8px 24px -4px rgba(37, 99, 235, 0.12), 0 0 0 1px rgba(255, 255, 255, 1) inset;
+  transform: translateY(-1px);
+}
+
+.sekat-radar-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  position: relative;
+}
+
+.sekat-radar-dot-wrapper {
+  position: relative;
+  width: 10px;
+  height: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sekat-radar-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #2563eb;
+  position: relative;
+  z-index: 2;
+}
+
+.sekat-radar-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.4);
+  animation: sekatRadarRipple 2s infinite ease-out;
+  pointer-events: none;
+}
+
+@keyframes sekatRadarRipple {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2.8);
+    opacity: 0;
+  }
+}
+
+.sekat-radar-label {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #1e40af;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.sekat-bridge-divider {
+  width: 1px;
+  height: 18px;
+  background: #e2e8f0;
+}
+
+.sekat-bridge-stats {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.76rem;
+  color: #64748b;
+}
+
+.sekat-stat-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #334155;
+  font-weight: 500;
+}
+
+.sekat-stat-item strong {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.sekat-stat-bullet {
+  color: #cbd5e1;
+  font-weight: bold;
+}
+
+.sekat-scroll-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 9999px;
+  padding: 6px 14px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.28);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+}
+
+.sekat-scroll-btn:hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.38);
+}
+
+.sekat-scroll-btn svg {
+  transition: transform 0.2s ease;
+}
+
+.sekat-scroll-btn:hover svg {
+  transform: translateY(2px);
+}
+
+/* ==========================================================================
+   PETA SECTION HERO CARD HEADER
+   ========================================================================== */
+.peta-header-hero {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 55%, #eff6ff 100%);
+  border: 1px solid #dbeafe;
+  border-radius: 20px;
+  padding: 24px 28px;
+  box-shadow: 0 8px 30px -4px rgba(37, 99, 235, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 24px;
+  transition: all 0.3s ease;
+}
+
+.peta-header-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3.5px;
+  background: linear-gradient(90deg, #2563eb 0%, #06b6d4 50%, #10b981 100%);
+}
+
+.peta-hero-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.peta-meta-chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.peta-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.peta-meta-chip.active {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+.peta-meta-chip.green {
+  background: #ecfdf5;
+  color: #065f46;
+  border-color: #a7f3d0;
+}
+
+@media (max-width: 768px) {
+  .sekat-bridge-capsule {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+  .sekat-bridge-divider,
+  .sekat-stat-bullet {
+    display: none;
+  }
+  .sekat-bridge-stats {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+  }
+  .peta-header-hero {
+    padding: 18px 16px;
+  }
+}
+

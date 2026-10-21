@@ -32,3 +32,6 @@ export async function getRouteToShelter(shelterId, userLat, userLon) {
   return apiFetch(`/shelters/${shelterId}/route?user_lat=${userLat}&user_lon=${userLon}`);
 }
 
+export async function getNearbyAvailableShelters(userLat, userLon, maxDistanceKm = 50, limit = 10) {
+  return apiFetch(`/shelters/nearby-available?user_lat=${userLat}&user_lon=${userLon}&max_distance_km=${maxDistanceKm}&limit=${limit}`);
+}

@@ -4,14 +4,13 @@ import { apiFetch } from '../services/api'
 import wsService from '../services/wsService'
 import RiskMap from '../components/RiskMap'
 import WargaBeranda from '../components/warga/WargaBeranda'
-import WargaPetaWilayah from '../components/warga/WargaPetaWilayah'
 import WargaRiwayatKejadian from '../components/warga/WargaRiwayatKejadian'
 import WargaPanduan from '../components/warga/WargaPanduan'
 import WargaKontakDarurat from '../components/warga/WargaKontakDarurat'
 import WargaSOS from '../components/warga/WargaSOS'
 import VillageStatsTable from '../components/dashboard/VillageStatsTable'
 import useDashboardRealtime from '../hooks/useDashboardRealtime'
-import useGeolocation from '../hooks/useGeolocation'
+import useGeolocation, { BAURENO_VILLAGES } from '../hooks/useGeolocation'
 import useRealtimeNotifications from '../hooks/useRealtimeNotifications'
 import { playSosAlertTone } from '../utils/audioAlarm'
 import { getSOSTickets } from '../services/sosService'
@@ -44,8 +43,41 @@ function WargaHome() {
   const [showNotifDropdown, setShowNotifDropdown] = useState(false)
   const [showProfileDropdown, setShowProfileDropdown] = useState(false)
   const [showProfileModal, setShowProfileModal] = useState(false)
+  const [showLocationModal, setShowLocationModal] = useState(false)
+  const [tempVillageId, setTempVillageId] = useState(3)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const geo = useGeolocation()
+
+  const handleOpenLocationModal = () => {
+    const currentVillage = BAURENO_VILLAGES.find(v => {
+      if (geo.isCustom && geo.address) {
+        return geo.address.toLowerCase().includes(v.name.toLowerCase().replace(' (pusat)', ''))
+      }
+      return false
+    })
+    setTempVillageId(currentVillage ? currentVillage.id : (selectedVillageId || 3))
+    setShowLocationModal(true)
+  }
+
+  const handleApplyVillage = (vId) => {
+    const target = BAURENO_VILLAGES.find(v => v.id === Number(vId))
+    if (target) {
+      geo.setVillageLocation(target)
+      setSelectedVillageId(target.id)
+      setShowLocationModal(false)
+    }
+  }
+
+  const handleResetLocation = () => {
+    geo.resetToBaurenoDefault()
+    setSelectedVillageId(3)
+    setShowLocationModal(false)
+  }
+
+  const handleUseRealGps = () => {
+    geo.useRealDeviceLocation()
+    setShowLocationModal(false)
+  }
 
   const { 
     notifications, 
@@ -187,22 +219,23 @@ function WargaHome() {
           <div className="warga-tools">
             <div 
               className="warga-loc-pill"
-              title={geo.fullAddress || (geo.position ? `Koordinat GPS: ${geo.latitude?.toFixed(5)}, ${geo.longitude?.toFixed(5)}` : 'Klik untuk deteksi ulang GPS')}
-              onClick={geo.refresh}
-              style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+              title="Klik untuk memilih desa domisili Baureno atau perbarui GPS"
+              onClick={handleOpenLocationModal}
+              style={{ cursor: 'pointer', transition: 'all 0.2s', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
               <svg 
                 width="14" 
                 height="14" 
                 viewBox="0 0 24 24" 
                 fill="none" 
-                stroke={geo.isRealDevice ? '#10b981' : 'currentColor'} 
+                stroke={geo.isCustom ? '#0284c7' : geo.isRealDevice ? '#10b981' : 'currentColor'} 
                 strokeWidth="2.5"
               >
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                 <circle cx="12" cy="10" r="3" />
               </svg>
-              <span>{geo.loading ? 'Mencari GPS...' : (geo.address || 'Baureno, Bojonegoro')}</span>
+              <span>{geo.loading ? 'Mencari GPS...' : (geo.address || 'Desa Baureno, Bojonegoro')}</span>
+              <span style={{ fontSize: '10px', opacity: 0.65, marginLeft: '1px' }}>▾</span>
               {geo.isRealDevice && (
                 <span 
                   style={{
@@ -397,9 +430,18 @@ function WargaHome() {
               ✕
             </button>
           </div>
-          <div style={{ padding: '12px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: '0.8rem', color: '#475569' }}>
+          <div 
+            style={{ padding: '12px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: '0.8rem', color: '#475569', cursor: 'pointer' }}
+            onClick={() => {
+              setMobileMenuOpen(false)
+              handleOpenLocationModal()
+            }}
+          >
             <div><strong>{userProfile.full_name || 'Ahmad Fauzi'}</strong></div>
-            <div style={{ fontSize: '0.72rem', color: '#64748b' }}>📍 {geo.address || 'Kecamatan Baureno'}</div>
+            <div style={{ fontSize: '0.72rem', color: '#0284c7', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+              <span>📍 {geo.address || 'Desa Baureno, Bojonegoro'}</span>
+              <span style={{ fontSize: '10px', background: '#e0f2fe', padding: '1px 5px', borderRadius: '4px' }}>Ubah Desa</span>
+            </div>
           </div>
           <div className="mobile-nav-list">
             <button 
@@ -555,6 +597,270 @@ function WargaHome() {
         </div>
       )}
 
+      {/* Location Picker Modal */}
+      {showLocationModal && (
+        <div 
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.6)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 1100,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px'
+          }}
+          onClick={() => setShowLocationModal(false)}
+        >
+          <div 
+            style={{
+              background: '#ffffff',
+              borderRadius: '20px',
+              maxWidth: '560px',
+              width: '100%',
+              padding: '24px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+              position: 'relative',
+              maxHeight: '90vh',
+              overflowY: 'auto'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid #f1f5f9', paddingBottom: '14px', marginBottom: '16px' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '1.4rem' }}>📍</span>
+                  <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#0f172a' }}>
+                    Lokasi Domisili Warga
+                  </h3>
+                </div>
+                <p style={{ margin: '4px 0 0', fontSize: '0.78rem', color: '#64748b' }}>
+                  Kecamatan Baureno, Bojonegoro • Penentu Posko &amp; Peringatan Banjir Terdekat
+                </p>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setShowLocationModal(false)}
+                style={{ border: 'none', background: '#f1f5f9', width: '32px', height: '32px', borderRadius: '8px', cursor: 'pointer', fontSize: '16px', color: '#64748b' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Real Device Location Option */}
+            <div style={{
+              background: '#f0fdf4',
+              border: '1.5px solid #bbf7d0',
+              borderRadius: '12px',
+              padding: '12px 14px',
+              marginBottom: '16px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: '12px',
+              flexWrap: 'wrap'
+            }}>
+              <div>
+                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#166534' }}>
+                  🎯 Lokasi GPS Real Perangkat
+                </div>
+                <div style={{ fontSize: '0.74rem', color: '#15803d', marginTop: '2px' }}>
+                  Kunci koordinat GPS nyata langsung dari perangkat Anda saat ini.
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleUseRealGps}
+                style={{
+                  background: '#16a34a',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '7px 14px',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                }}
+              >
+                Gunakan GPS Device
+              </button>
+            </div>
+
+            {/* Status Lokasi Aktif Saat Ini */}
+            <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '18px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Lokasi Aktif Sekarang
+                </span>
+                <span style={{
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
+                  padding: '2px 8px',
+                  borderRadius: '10px',
+                  background: geo.isCustom ? '#eff6ff' : geo.isRealDevice ? '#dcfce7' : '#f1f5f9',
+                  color: geo.isCustom ? '#1d4ed8' : geo.isRealDevice ? '#15803d' : '#475569',
+                  border: `1px solid ${geo.isCustom ? '#bfdbfe' : geo.isRealDevice ? '#bbf7d0' : '#cbd5e1'}`
+                }}>
+                  {geo.isCustom ? '✓ Dipilih Mandiri' : geo.isRealDevice ? '✓ GPS Hardware' : 'Default Baureno'}
+                </span>
+              </div>
+              <strong style={{ fontSize: '0.98rem', color: '#0f172a', display: 'block' }}>
+                {geo.address || 'Desa Baureno, Bojonegoro'}
+              </strong>
+              <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>
+                Koordinat: {geo.latitude?.toFixed(4)}, {geo.longitude?.toFixed(4)}
+              </div>
+            </div>
+
+            {/* Form Pilihan 25 Desa Baureno */}
+            <div style={{ marginBottom: '16px' }}>
+              <label htmlFor="select-village-domisili" style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#1e293b', marginBottom: '6px' }}>
+                Pilih Desa Domisili Anda (25 Desa Resmi):
+              </label>
+              <select
+                id="select-village-domisili"
+                value={tempVillageId}
+                onChange={(e) => setTempVillageId(Number(e.target.value))}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: '10px',
+                  border: '1.5px solid #cbd5e1',
+                  fontSize: '0.88rem',
+                  fontWeight: 600,
+                  color: '#0f172a',
+                  background: '#ffffff',
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                {BAURENO_VILLAGES.map(v => (
+                  <option key={v.id} value={v.id}>
+                    Desa {v.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Quick Access Badges for Key Flood-Prone / High-Traffic Villages */}
+            <div style={{ marginBottom: '20px' }}>
+              <div style={{ fontSize: '0.72rem', color: '#64748b', marginBottom: '8px', fontWeight: 600 }}>
+                Pilihan Cepat Desa Prioritas Banjir &amp; Posko:
+              </div>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                {[3, 8, 22, 24, 1, 5, 12, 13].map(vId => {
+                  const v = BAURENO_VILLAGES.find(item => item.id === vId)
+                  if (!v) return null
+                  const isSelected = tempVillageId === v.id
+                  return (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => setTempVillageId(v.id)}
+                      style={{
+                        padding: '5px 10px',
+                        borderRadius: '8px',
+                        border: isSelected ? '1.5px solid #2563eb' : '1px solid #e2e8f0',
+                        background: isSelected ? '#eff6ff' : '#f8fafc',
+                        color: isSelected ? '#1d4ed8' : '#334155',
+                        fontSize: '0.75rem',
+                        fontWeight: isSelected ? 700 : 500,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s'
+                      }}
+                    >
+                      {v.name}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap', borderTop: '1px solid #f1f5f9', paddingTop: '16px' }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={handleResetLocation}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0',
+                    background: '#ffffff',
+                    color: '#64748b',
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                  title="Kembalikan ke Pusat Kecamatan Baureno"
+                >
+                  ↺ Reset Default
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    geo.refresh()
+                  }}
+                  disabled={geo.loading}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #d1fae5',
+                    background: '#ecfdf5',
+                    color: '#065f46',
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                  title="Deteksi ulang dari sensor GPS perangkat (disarankan di HP)"
+                >
+                  {geo.loading ? 'Mendeteksi...' : '📡 Pindai GPS'}
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowLocationModal(false)}
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e1',
+                    background: '#ffffff',
+                    color: '#475569',
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleApplyVillage(tempVillageId)}
+                  style={{
+                    padding: '8px 18px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: '#2563eb',
+                    color: '#ffffff',
+                    fontSize: '0.82rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 6px rgba(37, 99, 235, 0.3)'
+                  }}
+                >
+                  ✓ Terapkan Lokasi Desa
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Content Area based on Tab */}
       <main className="warga-page-body">
         {(activeTab === 'beranda' || activeTab === 'peta') && (
@@ -564,6 +870,7 @@ function WargaHome() {
             userProfile={userProfile} 
             selectedVillageId={selectedVillageId}
             onSelectVillageId={setSelectedVillageId}
+            onOpenLocationModal={handleOpenLocationModal}
             initialScrollToMap={activeTab === 'peta'}
           />
         )}
