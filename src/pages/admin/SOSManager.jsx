@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
 import { getSOSTickets, updateSOSStatus } from '../../services/sosService'
 import wsService from '../../services/wsService'
+import { formatWIBDateTime, formatWIBTime } from '../../utils/helpers'
 
 export default function SOSManager() {
   const [selectedTicketId, setSelectedTicketId] = useState(null)
@@ -143,6 +144,7 @@ export default function SOSManager() {
                 <tr key={ticket.id} className={selectedTicketId === ticket.id ? 'selected' : ''} onClick={() => setSelectedTicketId(ticket.id)} style={{ cursor: 'pointer' }}>
                   <td className="ticket-id">
                     <strong>{ticket.ticket_number}</strong>
+                    <br/><small style={{ color: '#0284c7', fontWeight: 600 }}>◷ {formatWIBTime(ticket.submitted_at)}</small>
                     <br/><small style={{ color: '#64748b' }}>Skor: {ticket.priority_score}</small>
                   </td>
                   <td>
@@ -204,7 +206,7 @@ export default function SOSManager() {
                 </div>
               </div>
               <div className="detail-meta">
-                <span>◷ {activeTicket.submitted_at ? new Date(activeTicket.submitted_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-'} WIB</span>
+                <span>◷ {formatWIBDateTime(activeTicket.submitted_at)}</span>
               </div>
             </div>
 

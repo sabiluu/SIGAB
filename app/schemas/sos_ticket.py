@@ -17,6 +17,7 @@ class SOSTicketCreate(BaseModel):
     has_disability: bool = False
     has_pregnant: bool = False
     photo_url: Optional[str] = None
+    is_simulation: bool = False
 
 class SOSTicketUpdate(BaseModel):
     status: str

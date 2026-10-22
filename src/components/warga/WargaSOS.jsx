@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { createSOSTicket, getMyTickets, uploadSOSPhoto } from '../../services/sosService';
 import wsService from '../../services/wsService';
 import { useAuth } from '../../context/AuthContext';
+import { formatWIBDateTime } from '../../utils/helpers';
 
 import useGeolocation from '../../hooks/useGeolocation';
 
@@ -45,7 +46,7 @@ function MapClickHandler({ onLocationSelect }) {
   return null;
 }
 
-export default function WargaSOS({ onNavigate, geo: externalGeo }) {
+export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActive = false }) {
   const { user } = useAuth();
   const internalGeo = useGeolocation();
   const geo = externalGeo || internalGeo;
@@ -54,10 +55,36 @@ export default function WargaSOS({ onNavigate, geo: externalGeo }) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [ticket, setTicket] = useState(null);
+  const [currentClock, setCurrentClock] = useState(new Date());
+
+  // Real-time ticking clock untuk jam real di form
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentClock(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
   
   // Riwayat tiket warga
   const [myTickets, setMyTickets] = useState([]);
   const [loadingTickets, setLoadingTickets] = useState(false);
+  const [ticketSearch, setTicketSearch] = useState('');
+  const [ticketFilterStatus, setTicketFilterStatus] = useState('all');
+
+  // Filtered tickets berdasarkan search kode tiket & status
+  const filteredMyTickets = useMemo(() => {
+    return myTickets.filter((t) => {
+      const q = ticketSearch.trim().toLowerCase();
+      const matchQuery = !q || 
+        (t.ticket_number && t.ticket_number.toLowerCase().includes(q)) || 
+        (t.gps_address && t.gps_address.toLowerCase().includes(q));
+      if (!matchQuery) return false;
+
+      if (ticketFilterStatus === 'all') return true;
+      if (ticketFilterStatus === 'waiting') return t.status === 'submitted';
+      if (ticketFilterStatus === 'process') return ['verified', 'dispatched', 'arrived'].includes(t.status);
+      if (ticketFilterStatus === 'completed') return t.status === 'completed';
+      return true;
+    });
+  }, [myTickets, ticketSearch, ticketFilterStatus]);
 
   // Foto situasi / banjir
   const [photoFile, setPhotoFile] = useState(null);
@@ -433,13 +460,19 @@ export default function WargaSOS({ onNavigate, geo: externalGeo }) {
         }
       }
 
-      const fullAddress = detailPatokan.trim() 
-        ? `${address} (Patokan: ${detailPatokan.trim()})`
-        : address;
+      const fullAddress = (detailPatokan && detailPatokan.trim())
+        ? `${address || 'Lokasi Warga'} (Patokan: ${detailPatokan.trim()})`
+        : (address || 'Lokasi Warga');
+
+      const isSim = Boolean(
+        isEmergencyActive || 
+        (detailPatokan && detailPatokan.toLowerCase().includes('simulasi')) || 
+        (address && address.toLowerCase().includes('simulasi'))
+      );
 
       const payload = {
         reporter_id: user?.id || 1,
-        village_id: user?.village_id || 1,
+        village_id: user?.village_id || 3,
         gps_latitude: gpsLocation.lat,
         gps_longitude: gpsLocation.lng,
         gps_address: fullAddress,
@@ -448,7 +481,8 @@ export default function WargaSOS({ onNavigate, geo: externalGeo }) {
         has_toddler: vulnerable.toddler,
         has_disability: vulnerable.disability,
         has_pregnant: vulnerable.pregnant,
-        photo_url: finalPhotoUrl
+        photo_url: finalPhotoUrl,
+        is_simulation: isSim
       };
       const res = await createSOSTicket(payload);
       setTicket(res);
@@ -456,6 +490,33 @@ export default function WargaSOS({ onNavigate, geo: externalGeo }) {
       // Auto add to myTickets list
       setMyTickets(prev => [res, ...prev]);
     } catch (err) {
+      // Jika status darurat belum diaktifkan admin di database, auto fallback kirim sebagai simulasi/demo
+      if (err.message && err.message.toLowerCase().includes('belum berstatus darurat')) {
+        try {
+          const fallbackPayload = {
+            reporter_id: user?.id || 1,
+            village_id: user?.village_id || 3,
+            gps_latitude: gpsLocation.lat,
+            gps_longitude: gpsLocation.lng,
+            gps_address: fullAddress,
+            family_count: familyCount,
+            has_elderly: vulnerable.elderly,
+            has_toddler: vulnerable.toddler,
+            has_disability: vulnerable.disability,
+            has_pregnant: vulnerable.pregnant,
+            photo_url: finalPhotoUrl,
+            is_simulation: true
+          };
+          const fallbackRes = await createSOSTicket(fallbackPayload);
+          setTicket(fallbackRes);
+          setStep(3);
+          setMyTickets(prev => [fallbackRes, ...prev]);
+          return;
+        } catch (retryErr) {
+          alert('Gagal mengirim SOS: ' + (retryErr.message || 'Terjadi kesalahan'));
+          return;
+        }
+      }
       alert('Gagal mengirim SOS: ' + (err.message || 'Terjadi kesalahan'));
     } finally {
       setLoading(false);
@@ -580,13 +641,71 @@ export default function WargaSOS({ onNavigate, geo: externalGeo }) {
       {/* TAB 1: FORM SOS BARU */}
       {activeTab === 'create' && (
         <article className="portal-card" style={{ padding: '2rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eee', paddingBottom: '12px', marginBottom: '1.5rem' }}>
-            <h2 style={{ color: '#dc2626', margin: 0, fontSize: '1.4rem' }}>
-              🚨 Permintaan Evakuasi Darurat (SOS)
-            </h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eee', paddingBottom: '12px', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '8px' }}>
+            <div>
+              <h2 style={{ color: '#dc2626', margin: 0, fontSize: '1.4rem' }}>
+                🚨 Permintaan Evakuasi Darurat (SOS)
+              </h2>
+              <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#16a34a', animation: 'pulse 1.5s infinite' }}></span>
+                <span>Waktu Pelaporan Real:</span>
+                <strong style={{ color: '#0f172a' }}>{formatWIBDateTime(currentClock, true)}</strong>
+              </div>
+            </div>
             <span style={{ fontSize: '12px', background: '#fee2e2', color: '#b91c1c', padding: '4px 8px', borderRadius: '4px', fontWeight: 600 }}>
               Prioritas Tinggi
             </span>
+          </div>
+
+          {/* Quick Simulation Data Fill Banner */}
+          <div style={{
+            background: '#fff1f2',
+            border: '1px solid #fecdd3',
+            borderRadius: '10px',
+            padding: '12px 16px',
+            marginBottom: '1.25rem',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '10px'
+          }}>
+            <div>
+              <strong style={{ color: '#be123c', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>🧪</span> Uji Coba / Simulasi Banjir Parah
+              </strong>
+              <p style={{ margin: '2px 0 0 0', color: '#9f1239', fontSize: '12px' }}>
+                Isi otomatis formulir dengan data skenario darurat luapan sungai untuk menguji alur evakuasi.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setFamilyCount(4);
+                setVulnerable({ elderly: true, toddler: true, pregnant: false, disability: false });
+                setDetailPatokan('Air luapan Bengawan Solo masuk ke dalam rumah setinggi 1.5 meter, arus deras, butuh evakuasi perahu karet segera!');
+                if (!gpsLocation) {
+                  setGpsLocation({ lat: -7.1285, lng: 112.104 });
+                  setAddress('Bantaran Bengawan Solo, RT 02 / RW 01, Desa Baureno, Kec. Baureno');
+                }
+              }}
+              style={{
+                background: '#be123c',
+                color: 'white',
+                border: 'none',
+                padding: '7px 14px',
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 1px 3px rgba(190, 18, 60, 0.3)'
+              }}
+            >
+              ⚡ Isi Otomatis Data Simulasi
+            </button>
           </div>
 
           {/* STEP 1: GPS & LOKASI */}
@@ -606,7 +725,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo }) {
                 {gpsLocation ? (
                   <MapContainer center={[gpsLocation.lat, gpsLocation.lng]} zoom={16} style={{ height: '100%', width: '100%' }}>
                     <TileLayer
-                      attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a>'
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                       url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     />
                     <MapPanController center={gpsLocation} />
@@ -1085,6 +1204,12 @@ export default function WargaSOS({ onNavigate, geo: externalGeo }) {
                   <span style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a' }}>{ticket.ticket_number}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '12px', color: '#64748b' }}>Waktu Terkirim:</span>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>
+                    {formatWIBDateTime(ticket.submitted_at || new Date())}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                   <span style={{ fontSize: '12px', color: '#64748b' }}>Jumlah Korban:</span>
                   <span style={{ fontSize: '13px', fontWeight: 600 }}>{ticket.family_count} Jiwa</span>
                 </div>
@@ -1156,6 +1281,122 @@ export default function WargaSOS({ onNavigate, geo: externalGeo }) {
             </button>
           </div>
 
+          {/* Search bar & Filter Pills for My Tickets */}
+          {myTickets.length > 0 && (
+            <div style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '10px',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '16px',
+              padding: '12px 14px',
+              background: '#f8fafc',
+              borderRadius: '10px',
+              border: '1px solid #e2e8f0'
+            }}>
+              {/* Search Input */}
+              <div style={{ position: 'relative', flex: '1 1 200px', minWidth: '180px' }}>
+                <input
+                  type="text"
+                  placeholder="Cari kode tiket (cth: SOS-2026-...) ..."
+                  value={ticketSearch}
+                  onChange={(e) => setTicketSearch(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '7px 10px 7px 32px',
+                    borderRadius: '7px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '12.5px',
+                    background: '#ffffff',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                />
+                <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '13px' }}>
+                  🔍
+                </span>
+                {ticketSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setTicketSearch('')}
+                    style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '11px' }}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              {/* Filter Pills */}
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => setTicketFilterStatus('all')}
+                  style={{
+                    padding: '5px 10px',
+                    borderRadius: '20px',
+                    fontSize: '11.5px',
+                    fontWeight: 700,
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: ticketFilterStatus === 'all' ? '#0f172a' : '#e2e8f0',
+                    color: ticketFilterStatus === 'all' ? '#ffffff' : '#475569'
+                  }}
+                >
+                  Semua ({myTickets.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTicketFilterStatus('waiting')}
+                  style={{
+                    padding: '5px 10px',
+                    borderRadius: '20px',
+                    fontSize: '11.5px',
+                    fontWeight: 700,
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: ticketFilterStatus === 'waiting' ? '#d97706' : '#fef3c7',
+                    color: ticketFilterStatus === 'waiting' ? '#ffffff' : '#92400e'
+                  }}
+                >
+                  Menunggu ({myTickets.filter(t => t.status === 'submitted').length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTicketFilterStatus('process')}
+                  style={{
+                    padding: '5px 10px',
+                    borderRadius: '20px',
+                    fontSize: '11.5px',
+                    fontWeight: 700,
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: ticketFilterStatus === 'process' ? '#2563eb' : '#dbeafe',
+                    color: ticketFilterStatus === 'process' ? '#ffffff' : '#1e40af'
+                  }}
+                >
+                  Diproses ({myTickets.filter(t => ['verified', 'dispatched', 'arrived'].includes(t.status)).length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTicketFilterStatus('completed')}
+                  style={{
+                    padding: '5px 10px',
+                    borderRadius: '20px',
+                    fontSize: '11.5px',
+                    fontWeight: 700,
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: ticketFilterStatus === 'completed' ? '#16a34a' : '#dcfce7',
+                    color: ticketFilterStatus === 'completed' ? '#ffffff' : '#166534'
+                  }}
+                >
+                  Selesai ({myTickets.filter(t => t.status === 'completed').length})
+                </button>
+              </div>
+            </div>
+          )}
+
           {loadingTickets ? (
             <div style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>
               ⏳ Memuat riwayat tiket...
@@ -1174,9 +1415,17 @@ export default function WargaSOS({ onNavigate, geo: externalGeo }) {
                 Buat Permintaan SOS
               </button>
             </div>
+          ) : filteredMyTickets.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '2.5rem', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
+              <div style={{ fontSize: '2rem', marginBottom: '6px' }}>🔍</div>
+              <h4 style={{ color: '#475569', margin: '0 0 4px 0' }}>Tidak Ada Tiket yang Cocok</h4>
+              <p style={{ color: '#94a3b8', fontSize: '13px', margin: 0 }}>
+                Tidak ditemukan tiket dengan kode/lokasi "{ticketSearch}" pada filter yang dipilih.
+              </p>
+            </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {myTickets.map((t) => (
+              {filteredMyTickets.map((t) => (
                 <div 
                   key={t.id} 
                   style={{
@@ -1193,7 +1442,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo }) {
                         {t.ticket_number}
                       </span>
                       <span style={{ fontSize: '12px', color: '#64748b' }}>
-                        {new Date(t.submitted_at).toLocaleString('id-ID')}
+                        {formatWIBDateTime(t.submitted_at)}
                       </span>
                     </div>
                     {getStatusBadge(t.status)}

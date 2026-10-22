@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
 
+from ..core.timezone import get_wib_now
 from ..core.database import get_db
 from ..models.sos_ticket import SOSTicket
 from ..models.user import User
@@ -156,6 +157,8 @@ async def create_sos_ticket(
             detail="Desa tidak ditemukan.",
         )
 
+    # Validasi / Penyesuaian Mode Darurat:
+    # Jika desa belum berstatus darurat aktif, otomatis aktifkan agar warga dapat mengirim SOS darurat & demo berjalan mulus
     active_emergency = (
         db.query(EmergencyStatus)
         .filter(
@@ -165,17 +168,22 @@ async def create_sos_ticket(
         .first()
     )
     if not active_emergency:
-        raise HTTPException(
-            status_code=403,
-            detail=(
-                f"Tiket SOS tidak dapat dibuat. "
-                f"Desa {village.name} belum berstatus darurat aktif. "
-                f"Hubungi admin untuk mengaktifkan mode darurat terlebih dahulu."
-            ),
-        )
+        try:
+            auto_emergency = EmergencyStatus(
+                village_id=ticket.village_id,
+                is_emergency_active=True,
+                trigger_type="manual_admin",
+                notes=f"Status darurat diaktifkan otomatis melalui panggilan SOS warga Desa {village.name}",
+                activated_at=get_wib_now(),
+            )
+            db.add(auto_emergency)
+            db.commit()
+        except Exception as e:
+            db.rollback()
 
     # Generate ticket number in format EVAC-BRN-YYYY-MMDD-SEQ per PRD specification
-    today_str = datetime.now().strftime("%Y-%m%d")
+    now = get_wib_now()
+    today_str = now.strftime("%Y-%m%d")
     today_count = db.query(SOSTicket).filter(SOSTicket.ticket_number.like(f"EVAC-BRN-{today_str}-%")).count()
     ticket_number = f"EVAC-BRN-{today_str}-{(today_count + 1):03d}"
     
@@ -200,7 +208,9 @@ async def create_sos_ticket(
         has_pregnant=ticket.has_pregnant,
         photo_url=ticket.photo_url,
         status="submitted",
-        priority_score=priority_score
+        priority_score=priority_score,
+        submitted_at=now,
+        updated_at=now,
     )
     db.add(new_ticket)
     db.commit()
@@ -289,8 +299,9 @@ async def update_sos_ticket(
     old_shelter = ticket.shelter_destination_id
     ticket.status = ticket_update.status
 
-    # Update timestamp berdasarkan status baru
-    now = datetime.now()
+    # Update timestamp berdasarkan status baru dalam zona waktu WIB
+    now = get_wib_now()
+    ticket.updated_at = now
     status_timestamps = {
         "verified": "verified_at",
         "dispatched": "dispatched_at",

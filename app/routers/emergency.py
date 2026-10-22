@@ -15,6 +15,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime
 
+from ..core.timezone import get_wib_now
 from ..core.database import get_db
 from ..core.deps import get_current_admin_user, get_current_active_user
 from ..models.emergency_status import EmergencyStatus
@@ -297,6 +298,7 @@ async def activate_emergency(
         triggered_by=current_admin.id,
         probability_at_trigger=village.current_probability,
         notes=body.notes or f"Diaktifkan manual oleh {current_admin.full_name}",
+        activated_at=get_wib_now(),
     )
     db.add(emergency)
     db.flush()
@@ -366,7 +368,7 @@ async def deactivate_emergency(
 
     # Nonaktifkan
     active.is_emergency_active = False
-    active.deactivated_at = datetime.now()
+    active.deactivated_at = get_wib_now()
     active.notes = (active.notes or "") + f" | Dinonaktifkan oleh {current_admin.full_name}"
     if body.notes:
         active.notes += f": {body.notes}"

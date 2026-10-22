@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
 import { getShelters, updateShelterCapacity, createShelter, deleteShelter } from '../../services/shelterService'
 import { getVillages } from '../../services/floodService'
+import wsService from '../../services/wsService'
 
 export default function PoskoManager() {
   const [poskoList, setPoskoList] = useState([])
@@ -26,6 +27,17 @@ export default function PoskoManager() {
     getVillages().then(data => {
       if (Array.isArray(data)) setVillages(data.slice(0, 25))
     }).catch(() => {})
+
+    wsService.connect('dashboard')
+    const unsub = wsService.on('dashboard_update', (msg) => {
+      if (msg && Array.isArray(msg.shelters) && msg.shelters.length > 0) {
+        setPoskoList(msg.shelters)
+      }
+    })
+
+    return () => {
+      unsub()
+    }
   }, [])
 
   const fetchPoskos = async () => {
@@ -43,11 +55,16 @@ export default function PoskoManager() {
   const handleUpdateCapacity = async (id, newCapacity, maxCapacity) => {
     if (newCapacity < 0) newCapacity = 0
     if (newCapacity > maxCapacity) newCapacity = maxCapacity
+
+    // Optimistic UI update
+    setPoskoList(prev => prev.map(p => p.id === id ? { ...p, capacity_occupied: newCapacity } : p))
+
     try {
       await updateShelterCapacity(id, newCapacity)
       fetchPoskos()
     } catch (err) {
       alert('Gagal update kapasitas: ' + err.message)
+      fetchPoskos()
     }
   }
 

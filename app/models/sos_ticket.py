@@ -3,9 +3,13 @@ Model SOSTicket — tabel 'sos_tickets'.
 Tiket permintaan evakuasi darurat (SOS).
 """
 
+from datetime import datetime
 from sqlalchemy import Column, Integer, BigInteger, String, Text, Enum, DateTime, Boolean, DECIMAL, ForeignKey, func
 from sqlalchemy.orm import relationship
 from ..core.database import Base
+
+
+from ..core.timezone import get_wib_now
 
 
 class SOSTicket(Base):
@@ -39,12 +43,12 @@ class SOSTicket(Base):
     rejection_reason = Column(String(500), nullable=True)
     shelter_destination_id = Column(Integer, ForeignKey("shelters.id", ondelete="SET NULL"), nullable=True)
     
-    submitted_at = Column(DateTime, server_default=func.now())
+    submitted_at = Column(DateTime, default=get_wib_now)
     verified_at = Column(DateTime, nullable=True)
     dispatched_at = Column(DateTime, nullable=True)
     arrived_at = Column(DateTime, nullable=True)
     completed_at = Column(DateTime, nullable=True)
-    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    updated_at = Column(DateTime, default=get_wib_now, onupdate=get_wib_now)
     
     reporter = relationship("User", foreign_keys=[reporter_id], back_populates="sos_tickets_reported")
     assigned_admin = relationship("User", foreign_keys=[assigned_admin_id], back_populates="sos_tickets_assigned")

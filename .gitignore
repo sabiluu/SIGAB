@@ -51,6 +51,13 @@ Thumbs.db
 02_prd_v3.md
 PANDUAN_KOLABORASI.md
 TIMELINE_MINGGU_5_14_PRIVAT.md
+LAPORAN_*.md
+paper/
+*.tex
+
+# ===== Local Assets & Media =====
+public/hero-river.jpg
+uploads/
 
 # ===== Raw Data & Scratch Scripts =====
 *.zip

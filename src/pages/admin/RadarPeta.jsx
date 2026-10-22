@@ -57,19 +57,67 @@ export default function RadarPeta() {
       </div>
 
       <div className="admin-main-grid">
-        <div className="portal-card" style={{ padding: '16px', position: 'relative', height: '620px' }}>
-          <RiskMap 
-            onSelectVillage={handleSelectVillage} 
-            selectedVillageName={selectedVillageName} 
-            shelters={data?.shelters || []}
-            height="550px"
-          />
-          <div className="map-legend-bottom">
-            <span><i className="red-dot" /> Sangat Tinggi / Awas</span>
-            <span><i className="orange-dot" /> Tinggi / Siaga</span>
-            <span><i className="yellow-dot" /> Sedang / Waspada</span>
-            <span><i className="green-dot" /> Rendah / Aman</span>
-            <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <div className="portal-card" style={{ 
+          padding: '16px', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: '12px',
+          background: '#ffffff',
+          borderRadius: '16px',
+          border: '1px solid #e2e8f0',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+          height: '620px'
+        }}>
+          {/* Framed Map Container */}
+          <div style={{ 
+            flex: 1, 
+            width: '100%', 
+            minHeight: '480px', 
+            borderRadius: '12px', 
+            overflow: 'hidden', 
+            border: '1.5px solid #cbd5e1',
+            boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.02)',
+            position: 'relative' 
+          }}>
+            <RiskMap 
+              onSelectVillage={handleSelectVillage} 
+              selectedVillageName={selectedVillageName} 
+              shelters={data?.shelters || []}
+              villagesData={data?.villages || []}
+              height="100%"
+            />
+          </div>
+
+          {/* Separated Legend Bar below the map frame */}
+          <div className="map-legend-bottom" style={{
+            position: 'static',
+            display: 'flex',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '16px',
+            padding: '10px 16px',
+            background: '#f8fafc',
+            borderRadius: '10px',
+            border: '1px solid #e2e8f0',
+            fontSize: '0.72rem',
+            color: '#475569',
+            margin: '0',
+            boxShadow: 'none',
+            flexShrink: 0
+          }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <i className="red-dot" /> Sangat Tinggi / Awas
+            </span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <i className="orange-dot" /> Tinggi / Siaga
+            </span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <i className="yellow-dot" /> Sedang / Waspada
+            </span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <i className="green-dot" /> Rendah / Aman
+            </span>
+            <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ fontSize: '13px' }}>🏠</span> Posko Evakuasi
             </span>
           </div>

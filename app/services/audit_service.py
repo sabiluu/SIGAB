@@ -14,6 +14,7 @@ from ..models.sos_ticket import SOSTicket
 from ..models.user import User
 from ..models.shelter import Shelter
 from ..schemas.audit_log import AuditLogResponse, AuditLogStatsResponse
+from ..core.timezone import get_wib_now
 
 ACTION_LABELS = {
     "disposisi_armada": "Disposisi Armada",
@@ -33,7 +34,7 @@ def _format_time(dt: Optional[datetime]) -> str:
     if not dt:
         return "-"
     month_name = ID_MONTHS[dt.month] if 1 <= dt.month <= 12 else str(dt.month)
-    return f"{dt.day:02d} {month_name} {dt.year} • {dt.strftime('%H:%M')}"
+    return f"{dt.day:02d} {month_name} {dt.year} • {dt.strftime('%H:%M')} WIB"
 
 
 def format_audit_log(log: AuditLog) -> AuditLogResponse:
@@ -112,6 +113,7 @@ def record_sos_disposition(
         notes=desc_notes,
         details=json.dumps(details_payload, ensure_ascii=False),
         ip_address=ip_address,
+        created_at=get_wib_now(),
     )
     db.add(log_entry)
     db.flush()
@@ -158,6 +160,7 @@ def record_sos_status_change(
         notes=desc_notes,
         details=json.dumps(details_payload, ensure_ascii=False),
         ip_address=ip_address,
+        created_at=get_wib_now(),
     )
     db.add(log_entry)
     db.flush()
@@ -202,6 +205,7 @@ def record_emergency_action(
         notes=desc_notes,
         details=json.dumps(details_payload, ensure_ascii=False),
         ip_address=ip_address,
+        created_at=get_wib_now(),
     )
     db.add(log_entry)
     db.flush()

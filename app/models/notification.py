@@ -8,6 +8,9 @@ from sqlalchemy.orm import relationship
 from ..core.database import Base
 
 
+from ..core.timezone import get_wib_now
+
+
 class Notification(Base):
     __tablename__ = "notifications"
 
@@ -23,6 +26,6 @@ class Notification(Base):
     reference_id = Column(BigInteger, nullable=True)
     is_read = Column(Boolean, nullable=False, default=False)
     is_pushed = Column(Boolean, nullable=False, default=False)
-    created_at = Column(DateTime, server_default=func.now())
+    created_at = Column(DateTime, default=get_wib_now)
     
     user = relationship("User", back_populates="notifications")

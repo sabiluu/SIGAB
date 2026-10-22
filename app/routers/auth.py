@@ -169,33 +169,103 @@ def login_api(
     return authenticate_user(email, user_in.password, user_in.role, db)
 
 
+class UpdateProfileBody(BaseModel):
+    full_name: Optional[str] = None
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    village_id: Optional[int] = None
+    nik: Optional[str] = None
+    address: Optional[str] = None
+    family_count: Optional[int] = None
+    elderly_count: Optional[int] = None
+    toddler_count: Optional[int] = None
+    pregnant_count: Optional[int] = None
+    disabled_count: Optional[int] = None
+    notes: Optional[str] = None
+    avatar_url: Optional[str] = None
+
+
+def format_user_profile(user: User):
+    role_str = "petugas" if user.role == "admin" else "warga"
+    return {
+        "id": user.id,
+        "full_name": user.full_name,
+        "name": user.full_name,
+        "email": user.email,
+        "role": role_str,
+        "raw_role": user.role,
+        "phone": user.phone,
+        "village_id": user.village_id,
+        "nik": user.nik or "",
+        "address": user.address or "",
+        "family_count": user.family_count if user.family_count is not None else 4,
+        "elderly_count": user.elderly_count if user.elderly_count is not None else 0,
+        "toddler_count": user.toddler_count if user.toddler_count is not None else 0,
+        "pregnant_count": user.pregnant_count if user.pregnant_count is not None else 0,
+        "disabled_count": user.disabled_count if user.disabled_count is not None else 0,
+        "notes": user.notes or "",
+        "avatar_url": user.avatar_url or "",
+        "is_active": user.is_active,
+    }
+
+
 # --- Profile / Me Endpoints ---
 @router.get("/auth/me")
 def get_me(current_user: User = Depends(get_current_active_user)):
-    role_str = "petugas" if current_user.role == "admin" else "warga"
-    return {
-        "id": current_user.id,
-        "full_name": current_user.full_name,
-        "email": current_user.email,
-        "role": role_str,
-        "raw_role": current_user.role,
-        "phone": current_user.phone,
-        "village_id": current_user.village_id,
-        "is_active": current_user.is_active,
-    }
+    return format_user_profile(current_user)
+
+
+@router.put("/auth/me")
+def update_me(
+    body: UpdateProfileBody,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    if body.name is not None and body.name.strip():
+        current_user.full_name = body.name.strip()
+    elif body.full_name is not None and body.full_name.strip():
+        current_user.full_name = body.full_name.strip()
+
+    if body.phone is not None:
+        current_user.phone = body.phone.strip()
+    if body.village_id is not None:
+        current_user.village_id = body.village_id
+    if body.nik is not None:
+        current_user.nik = body.nik.strip()
+    if body.address is not None:
+        current_user.address = body.address.strip()
+    if body.family_count is not None:
+        current_user.family_count = max(1, body.family_count)
+    if body.elderly_count is not None:
+        current_user.elderly_count = max(0, body.elderly_count)
+    if body.toddler_count is not None:
+        current_user.toddler_count = max(0, body.toddler_count)
+    if body.pregnant_count is not None:
+        current_user.pregnant_count = max(0, body.pregnant_count)
+    if body.disabled_count is not None:
+        current_user.disabled_count = max(0, body.disabled_count)
+    if body.notes is not None:
+        current_user.notes = body.notes.strip()
+    if body.avatar_url is not None:
+        current_user.avatar_url = body.avatar_url.strip()
+
+    db.commit()
+    db.refresh(current_user)
+    return format_user_profile(current_user)
 
 
 @router.get("/api/profile")
 def get_profile(current_user: User = Depends(get_current_active_user)):
-    role_str = "petugas" if current_user.role == "admin" else "warga"
-    return {
-        "id": current_user.id,
-        "full_name": current_user.full_name,
-        "email": current_user.email,
-        "role": role_str,
-        "village_id": current_user.village_id,
-        "is_active": current_user.is_active,
-    }
+    return format_user_profile(current_user)
+
+
+@router.put("/api/profile")
+def update_profile(
+    body: UpdateProfileBody,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    return update_me(body, current_user, db)
 
 
 @router.get("/auth/security-check")

@@ -125,9 +125,21 @@ def get_shelter_by_id(shelter_id: int, db: Session = Depends(get_db)):
 
 
 from ..core.deps import get_current_admin_user
+from ..schemas.shelter import ShelterCreate, ShelterFullUpdate
+from ..services.ws_manager import ws_manager
+from ..services.dashboard_builder import build_dashboard_snapshot
+
+async def broadcast_shelter_update(db: Session):
+    """Kirim snapshot realtime terbaru ke semua client websocket yang memantau posko."""
+    try:
+        snapshot = build_dashboard_snapshot(db)
+        await ws_manager.broadcast("dashboard", snapshot)
+    except Exception as e:
+        print(f"[Shelters] Failed to broadcast dashboard update: {e}")
+
 
 @router.put("/{shelter_id}/capacity", response_model=ShelterResponse)
-def update_shelter_capacity(
+async def update_shelter_capacity(
     shelter_id: int,
     shelter_update: ShelterUpdate,
     db: Session = Depends(get_db),
@@ -141,12 +153,12 @@ def update_shelter_capacity(
     shelter.capacity_occupied = shelter_update.capacity_occupied
     db.commit()
     db.refresh(shelter)
+    await broadcast_shelter_update(db)
     return shelter
 
-from ..schemas.shelter import ShelterCreate, ShelterFullUpdate
 
 @router.post("", response_model=ShelterResponse, status_code=201)
-def create_shelter(
+async def create_shelter(
     shelter_in: ShelterCreate, 
     db: Session = Depends(get_db),
     current_admin=Depends(get_current_admin_user)
@@ -156,10 +168,12 @@ def create_shelter(
     db.add(new_shelter)
     db.commit()
     db.refresh(new_shelter)
+    await broadcast_shelter_update(db)
     return new_shelter
 
+
 @router.put("/{shelter_id}", response_model=ShelterResponse)
-def update_shelter_info(
+async def update_shelter_info(
     shelter_id: int, 
     shelter_in: ShelterFullUpdate, 
     db: Session = Depends(get_db),
@@ -176,10 +190,12 @@ def update_shelter_info(
         
     db.commit()
     db.refresh(shelter)
+    await broadcast_shelter_update(db)
     return shelter
 
+
 @router.delete("/{shelter_id}", status_code=204)
-def delete_shelter(
+async def delete_shelter(
     shelter_id: int, 
     db: Session = Depends(get_db),
     current_admin=Depends(get_current_admin_user)
@@ -191,6 +207,7 @@ def delete_shelter(
         
     db.delete(shelter)
     db.commit()
+    await broadcast_shelter_update(db)
     return None
 
 

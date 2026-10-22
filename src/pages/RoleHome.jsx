@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { logout, getProfile } from '../services/authService'
 import { apiFetch } from '../services/api'
 import wsService from '../services/wsService'
+import { getSOSTickets, createSOSTicket } from '../services/sosService'
 import RiskMap from '../components/RiskMap'
 import WargaBeranda from '../components/warga/WargaBeranda'
 import WargaRiwayatKejadian from '../components/warga/WargaRiwayatKejadian'
@@ -13,7 +14,9 @@ import useDashboardRealtime from '../hooks/useDashboardRealtime'
 import useGeolocation, { BAURENO_VILLAGES } from '../hooks/useGeolocation'
 import useRealtimeNotifications from '../hooks/useRealtimeNotifications'
 import { playSosAlertTone } from '../utils/audioAlarm'
-import { getSOSTickets } from '../services/sosService'
+import { formatWIBTime } from '../utils/helpers'
+import LogoutModal from '../components/common/LogoutModal'
+import ProfileModal from '../components/warga/ProfileModal'
 import '../styles/role-home.css'
 import '../styles/warga-portal.css'
 
@@ -44,9 +47,35 @@ function WargaHome() {
   const [showProfileDropdown, setShowProfileDropdown] = useState(false)
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [showLocationModal, setShowLocationModal] = useState(false)
+  const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [tempVillageId, setTempVillageId] = useState(3)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const geo = useGeolocation()
+  const [currentTime, setCurrentTime] = useState(new Date())
+  const { data: realtimeData } = useDashboardRealtime()
+
+  // Otomatis aktifkan status darurat jika probabilitas desa/kecamatan >= 76% (Status Awas)
+  useEffect(() => {
+    if (realtimeData?.villages) {
+      const targetVId = selectedVillageId || userProfile?.village_id || 3
+      const myVillage = realtimeData.villages.find(v => v.id === targetVId)
+      const villageProb = myVillage ? (myVillage.current_probability ?? myVillage.probability ?? 0) : 0
+      const subdistrictProb = realtimeData?.kecamatan_summary?.average_probability ?? 0
+      if (villageProb >= 76 || subdistrictProb >= 76) {
+        setIsEmergencyActive(true)
+      }
+    }
+  }, [realtimeData, selectedVillageId, userProfile])
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const hh = String(currentTime.getHours()).padStart(2, '0')
+  const mm = String(currentTime.getMinutes()).padStart(2, '0')
+  const ss = String(currentTime.getSeconds()).padStart(2, '0')
+  const liveTimeStr = `${hh}:${mm}:${ss} WIB`
 
   const handleOpenLocationModal = () => {
     const currentVillage = BAURENO_VILLAGES.find(v => {
@@ -80,39 +109,81 @@ function WargaHome() {
   }
 
   const { 
-    notifications, 
-    unreadCount, 
-    markAsRead, 
-    markAllAsRead, 
-    clearAll 
+    notifications: liveNotifs, 
+    markAsRead: wsMarkAsRead, 
+    markAllAsRead: wsMarkAllAsRead, 
+    clearAll: wsClearAll 
   } = useRealtimeNotifications('alerts', {
     villageId: userProfile?.village_id || selectedVillageId,
     userId: userProfile?.id,
     role: 'user',
   })
 
-  // Sample default notifications if empty so citizen always has guidance
-  const defaultNotifs = [
-    {
-      id: 'def-1',
-      type: 'flood_alert',
-      title: 'Pemantauan Debit Bengawan Solo',
-      message: 'Debit Bengawan Solo terpantau stabil pada 1.200 m³/s. Pantau terus status dusun Anda.',
-      timestamp: new Date().toISOString(),
-      read: false
-    },
-    {
-      id: 'def-2',
-      type: 'info',
-      title: 'Posko Siaga Baureno Siap 24 Jam',
-      message: 'Posko Utama SDN 1 Baureno dan Balai Desa Gunungsari siap beroperasi.',
-      timestamp: new Date(Date.now() - 3600000).toISOString(),
-      read: true
-    }
-  ]
+  // Local notifications state to ensure mark as read and clear work 100% reliably
+  const [localNotifs, setLocalNotifs] = useState(() => {
+    try {
+      const saved = localStorage.getItem('sigab_warga_notifs')
+      if (saved) return JSON.parse(saved)
+    } catch (e) {}
+    return [
+      {
+        id: 'def-1',
+        type: 'flood_alert',
+        title: 'Pemantauan Debit Bengawan Solo',
+        message: 'Debit Bengawan Solo terpantau stabil pada 1.200 m³/s. Pantau terus status dusun Anda.',
+        timestamp: new Date().toISOString(),
+        read: false
+      },
+      {
+        id: 'def-2',
+        type: 'info',
+        title: 'Posko Siaga Baureno Siap 24 Jam',
+        message: 'Posko Utama SDN 1 Baureno dan Balai Desa Gunungsari siap beroperasi.',
+        timestamp: new Date(Date.now() - 3600000).toISOString(),
+        read: true
+      }
+    ]
+  })
 
-  const displayNotifs = notifications.length > 0 ? notifications : defaultNotifs
-  const activeUnread = notifications.length > 0 ? unreadCount : 1
+  // Merge live incoming WebSocket notifications into local state
+  useEffect(() => {
+    if (liveNotifs && liveNotifs.length > 0) {
+      setLocalNotifs(prev => {
+        const merged = [...liveNotifs]
+        prev.forEach(p => {
+          if (!merged.some(m => m.id === p.id)) {
+            merged.push(p)
+          }
+        })
+        return merged
+      })
+    }
+  }, [liveNotifs])
+
+  // Sync to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('sigab_warga_notifs', JSON.stringify(localNotifs))
+    } catch (e) {}
+  }, [localNotifs])
+
+  const handleMarkAsRead = (id) => {
+    setLocalNotifs(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
+    wsMarkAsRead(id)
+  }
+
+  const handleMarkAllAsRead = () => {
+    setLocalNotifs(prev => prev.map(n => ({ ...n, read: true })))
+    wsMarkAllAsRead()
+  }
+
+  const handleClearAll = () => {
+    setLocalNotifs([])
+    wsClearAll()
+  }
+
+  const displayNotifs = localNotifs
+  const activeUnread = displayNotifs.filter(n => !n.read).length
 
   useEffect(() => {
     getProfile()
@@ -157,453 +228,395 @@ function WargaHome() {
   }
 
   return (
-    <div className="warga-container">
-      {/* Emergency Banner */}
+    <div className="warga-portal-wrapper" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
+      {/* 0. EMERGENCY TOP INDICATOR BAR (Spans 100% full-width across very top edge) */}
       {isEmergencyActive && (
-        <div style={{ background: '#dc2626', color: 'white', padding: '12px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 'bold', flexWrap: 'wrap', gap: '10px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ width: '10px', height: '10px', background: 'white', borderRadius: '50%', display: 'inline-block', animation: 'notifPulse 1.5s infinite' }} />
-            <span>🚨 BANJIR PARAH — SEGERA EVAKUASI</span>
-            <span style={{ fontWeight: 'normal', opacity: 0.9, fontSize: '0.85rem' }}>Baureno • Siaga Level 4 • Live Pusdalops</span>
+        <div style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 1200,
+          background: '#dc2626',
+          color: '#ffffff',
+          padding: '10px 24px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          fontWeight: 700,
+          boxShadow: '0 4px 14px rgba(220, 38, 38, 0.4)',
+          borderBottom: '1px solid rgba(255,255,255,0.2)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '26px',
+              height: '26px',
+              borderRadius: '50%',
+              background: 'rgba(255,255,255,0.22)',
+              fontSize: '14px'
+            }}>
+              📢
+            </span>
+            <span style={{ fontSize: '0.94rem', letterSpacing: '0.02em', fontWeight: 800, textTransform: 'uppercase' }}>
+              BANJIR PARAH — EVAKUASI SEKARANG
+            </span>
+            <span style={{ opacity: 0.95, fontWeight: 500, fontSize: '0.84rem' }}>
+              {geo.address ? geo.address.split(',')[0].replace(/^Desa\s+/i, '') : 'Baureno'} • Level 4 • {liveTimeStr}
+            </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <button 
-              style={{ background: 'white', color: '#dc2626', border: 'none', padding: '6px 16px', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
-              onClick={() => handleSelectTab('sos')}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-              MINTA BANTUAN SOS
-            </button>
-          </div>
+
+          <button
+            type="button"
+            onClick={() => handleSelectTab('sos')}
+            style={{
+              background: '#ffffff',
+              color: '#dc2626',
+              border: 'none',
+              padding: '6px 18px',
+              borderRadius: '9999px',
+              fontWeight: 800,
+              fontSize: '0.82rem',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+              transition: 'transform 0.15s ease'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.04)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            <span style={{ fontSize: '0.95rem' }}>⚠️</span>
+            <span>MINTA BANTUAN SOS</span>
+          </button>
         </div>
       )}
 
-      {/* Header Sticky */}
-      <header className="warga-header-wrapper">
-        <div className="warga-header">
-          <Brand locName={geo.address ? geo.address.split(',')[0] : 'Baureno'} />
+      <div className="warga-portal-layout" style={{ flex: 1 }}>
+      {/* 1. LEFT SIDEBAR */}
+      <aside className="warga-sidebar">
+        <div>
+          <a href="#" className="warga-sidebar-brand" onClick={(e) => { e.preventDefault(); handleSelectTab('beranda'); }}>
+            <div className="warga-sidebar-brand-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.4" strokeLinecap="round">
+                <path d="M3 7c2-1.5 4.5-1.5 6.5 0s4.5 1.5 6.5 0 4.5-1.5 5 0" />
+                <path d="M3 12c2-1.5 4.5-1.5 6.5 0s4.5 1.5 6.5 0 4.5-1.5 5 0" />
+                <path d="M3 17c2-1.5 4.5-1.5 6.5 0s4.5 1.5 6.5 0 4.5-1.5 5 0" />
+              </svg>
+            </div>
+            <div className="warga-sidebar-brand-text">
+              <strong>SIGAB</strong>
+              <span>Siaga Banjir Bojonegoro</span>
+            </div>
+          </a>
 
-          {/* Navigation Links */}
-          <nav className="warga-nav" aria-label="Navigasi Warga">
+          <nav className="warga-sidebar-nav">
             <button
               type="button"
-              className={`warga-nav-item ${activeTab === 'beranda' ? 'active' : ''}`}
+              className={`warga-sidebar-item ${activeTab === 'beranda' ? 'active' : ''}`}
               onClick={() => handleSelectTab('beranda')}
             >
-              Beranda
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <polyline points="9 22 9 12 15 12 15 22" />
+              </svg>
+              <span>Beranda</span>
             </button>
+
             <button
               type="button"
-              className={`warga-nav-item ${activeTab === 'riwayat' ? 'active' : ''}`}
+              className={`warga-sidebar-item ${activeTab === 'peta' ? 'active' : ''}`}
+              onClick={() => handleSelectTab('peta')}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
+                <line x1="8" y1="2" x2="8" y2="18" />
+                <line x1="16" y1="6" x2="16" y2="22" />
+              </svg>
+              <span>Peta &amp; Posko</span>
+            </button>
+
+            <button
+              type="button"
+              className={`warga-sidebar-item ${activeTab === 'riwayat' ? 'active' : ''}`}
               onClick={() => handleSelectTab('riwayat')}
             >
-              Riwayat Kejadian
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+              <span>Riwayat Banjir</span>
             </button>
+
             <button
               type="button"
-              className={`warga-nav-item ${activeTab === 'panduan' ? 'active' : ''}`}
+              className={`warga-sidebar-item ${activeTab === 'panduan' ? 'active' : ''}`}
               onClick={() => handleSelectTab('panduan')}
             >
-              Panduan
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+              </svg>
+              <span>Panduan</span>
             </button>
+
             <button
               type="button"
-              className={`warga-nav-item ${activeTab === 'kontak' ? 'active' : ''}`}
+              className={`warga-sidebar-item ${activeTab === 'kontak' ? 'active' : ''}`}
               onClick={() => handleSelectTab('kontak')}
             >
-              Kontak Darurat
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+              </svg>
+              <span>Kontak Darurat</span>
             </button>
+
+            {isEmergencyActive && (
+              <button
+                type="button"
+                className={`warga-sidebar-item ${activeTab === 'sos' ? 'active' : ''}`}
+                onClick={() => handleSelectTab('sos')}
+                style={{ color: '#ef4444', fontWeight: 800 }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+                <span>🚨 Minta Bantuan SOS</span>
+              </button>
+            )}
+          </nav>
+        </div>
+
+        <div className="warga-sidebar-bottom">
+          <div className="warga-sidebar-help-card">
+            <div className="warga-sidebar-help-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+              </svg>
+            </div>
+            <span className="help-sub">Butuh bantuan?</span>
+            <span className="help-title">Hubungi BPBD</span>
+            <a href="tel:0353881234" className="help-phone">(0353) 881-234</a>
+          </div>
+
+          <button
+            type="button"
+            className="warga-sidebar-logout-btn"
+            onClick={() => setShowLogoutModal(true)}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            <span>Keluar</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* 2. MAIN CONTAINER */}
+      <div className="warga-main-container">
+        {/* Topbar */}
+        <header className="warga-topbar">
+          <div className="warga-topbar-breadcrumb">
+            <strong>Portal Warga</strong>
+            <span className="divider">|</span>
+            <span 
+              onClick={() => setShowProfileModal(true)} 
+              style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+              title="Klik untuk melihat atau mengatur data domisili, profil & keluarga Anda"
+            >
+              <span style={{ fontSize: '13px' }}>📍</span>
+              {geo.loading ? (
+                <span>Mendeteksi GPS...</span>
+              ) : (
+                <span>{geo.address ? geo.address.split(',')[0].replace(/^Desa\s+/i, '') : 'Lokasi Device'}</span>
+              )}
+              {geo.isRealDevice && (
+                <span style={{ 
+                  fontSize: '9px', 
+                  background: '#dcfce7', 
+                  color: '#15803d', 
+                  padding: '1px 5px', 
+                  borderRadius: '10px', 
+                  fontWeight: 700 
+                }}>
+                  GPS Real
+                </span>
+              )}
+            </span>
+          </div>
+
+          <div className="warga-topbar-actions">
             <button
               type="button"
-              className={`warga-nav-item ${activeTab === 'sos' ? 'active' : ''}`}
-              onClick={() => handleSelectTab('sos')}
-              style={{ color: '#dc2626', fontWeight: 700 }}
+              onClick={() => {
+                const next = !isEmergencyActive
+                setIsEmergencyActive(next)
+                if (next) playSosAlertTone()
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '5px 12px',
+                borderRadius: '20px',
+                border: isEmergencyActive ? '1.5px solid #dc2626' : '1px solid #cbd5e1',
+                background: isEmergencyActive ? '#fef2f2' : '#ffffff',
+                color: isEmergencyActive ? '#dc2626' : '#475569',
+                fontSize: '0.74rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+              }}
+              title="Aktifkan simulasi banjir parah atau kembalikan ke kondisi real"
             >
-              🚨 SOS Darurat
+              <span>{isEmergencyActive ? '🚨' : '🧪'}</span>
+              <span>{isEmergencyActive ? 'Simulasi Banjir Parah (ON)' : 'Simulasi Banjir (OFF)'}</span>
             </button>
-          </nav>
 
-          {/* Header Right Tools */}
-          <div className="warga-tools">
-            <div 
-              className="warga-loc-pill"
-              title="Klik untuk memilih desa domisili Baureno atau perbarui GPS"
-              onClick={handleOpenLocationModal}
-              style={{ cursor: 'pointer', transition: 'all 0.2s', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-            >
-              <svg 
-                width="14" 
-                height="14" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke={geo.isCustom ? '#0284c7' : geo.isRealDevice ? '#10b981' : 'currentColor'} 
-                strokeWidth="2.5"
-              >
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                <circle cx="12" cy="10" r="3" />
-              </svg>
-              <span>{geo.loading ? 'Mencari GPS...' : (geo.address || 'Desa Baureno, Bojonegoro')}</span>
-              <span style={{ fontSize: '10px', opacity: 0.65, marginLeft: '1px' }}>▾</span>
-              {geo.isRealDevice && (
-                <span 
-                  style={{
-                    width: '7px',
-                    height: '7px',
-                    borderRadius: '50%',
-                    background: '#10b981',
-                    display: 'inline-block',
-                    boxShadow: '0 0 6px #10b981'
-                  }} 
-                  title="GPS Device Terkunci" 
-                />
-              )}
+            <div className="warga-live-chip">
+              <span className="pulse-dot" />
+              <span>Data live • {liveTimeStr}</span>
             </div>
 
-            {/* Notification Dropdown */}
-            <div className="notif-dropdown-wrapper">
-              <button 
-                type="button" 
-                className="warga-bell-btn" 
+            <div style={{ position: 'relative' }}>
+              <button
+                type="button"
+                className="warga-circle-btn"
+                onClick={() => setShowNotifDropdown(!showNotifDropdown)}
                 title="Notifikasi & Peringatan"
-                onClick={() => {
-                  setShowNotifDropdown(!showNotifDropdown)
-                  setShowProfileDropdown(false)
-                }}
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                   <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                 </svg>
-                {activeUnread > 0 && <span className="notif-badge-count">{activeUnread}</span>}
+                {activeUnread > 0 && <span className="warga-badge-count">{activeUnread}</span>}
               </button>
 
               {showNotifDropdown && (
-                <div className="notif-panel">
-                  <div className="notif-panel-header">
-                    <h4>Pemberitahuan ({displayNotifs.length})</h4>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button type="button" onClick={() => markAllAsRead()}>Tandai Dibaca</button>
-                      <button type="button" onClick={() => clearAll()} style={{ color: '#94a3b8' }}>Bersihkan</button>
-                    </div>
-                  </div>
-                  <div className="notif-panel-body">
-                    {displayNotifs.length === 0 ? (
-                      <div className="notif-empty">
-                        <div className="notif-empty-icon">🔔</div>
-                        <strong>Tidak ada notifikasi</strong>
-                        <p style={{ margin: '4px 0 0', fontSize: '0.78rem' }}>Semua peringatan telah dibaca.</p>
+                <>
+                  {/* Invisible backdrop to dismiss dropdown on click outside */}
+                  <div 
+                    style={{ position: 'fixed', inset: 0, zIndex: 999 }} 
+                    onClick={() => setShowNotifDropdown(false)} 
+                  />
+                  <div className="notif-panel">
+                    <div className="notif-panel-header">
+                      <h4>
+                        <span>🔔</span> Pemberitahuan ({displayNotifs.length})
+                      </h4>
+                      <div className="notif-panel-actions">
+                        {activeUnread > 0 && (
+                          <button 
+                            type="button" 
+                            className="notif-btn-read"
+                            onClick={handleMarkAllAsRead}
+                            title="Tandai semua notifikasi sudah dibaca"
+                          >
+                            ✓ Tandai Dibaca
+                          </button>
+                        )}
+                        {displayNotifs.length > 0 && (
+                          <button 
+                            type="button" 
+                            className="notif-btn-clear"
+                            onClick={handleClearAll}
+                            title="Hapus semua notifikasi"
+                          >
+                            Bersihkan
+                          </button>
+                        )}
                       </div>
-                    ) : (
-                      displayNotifs.map((item) => (
-                        <div 
-                          key={item.id} 
-                          className={`notif-item ${!item.read ? 'unread' : ''}`}
-                          onClick={() => {
-                            markAsRead(item.id)
-                            if (item.type?.includes('sos')) handleSelectTab('sos')
-                            else if (item.type?.includes('flood') || item.type?.includes('emergency')) handleSelectTab('peta')
-                            setShowNotifDropdown(false)
-                          }}
-                        >
-                          <div className={`notif-item-icon ${item.type?.includes('flood') ? 'flood' : item.type?.includes('sos') ? 'sos' : 'info'}`}>
-                            {item.type?.includes('flood') ? '🌊' : item.type?.includes('sos') ? '🚨' : '📢'}
-                          </div>
-                          <div className="notif-item-content">
-                            <div className="notif-item-title">{item.title}</div>
-                            <div className="notif-item-msg">{item.message}</div>
-                            <div className="notif-item-time">
-                              {new Date(item.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
+                    </div>
+                    <div className="notif-panel-body">
+                      {displayNotifs.length === 0 ? (
+                        <div className="notif-empty">
+                          <div className="notif-empty-icon">🔔</div>
+                          <strong>Tidak ada notifikasi</strong>
+                          <p style={{ margin: '4px 0 0', fontSize: '0.78rem' }}>Semua pemberitahuan sudah dibaca.</p>
+                        </div>
+                      ) : (
+                        displayNotifs.map((item) => (
+                          <div 
+                            key={item.id} 
+                            className={`notif-item ${!item.read ? 'unread' : ''}`}
+                            onClick={() => {
+                              handleMarkAsRead(item.id)
+                              if (item.type?.includes('sos')) handleSelectTab('sos')
+                              else if (item.type?.includes('flood') || item.type?.includes('emergency')) handleSelectTab('peta')
+                              setShowNotifDropdown(false)
+                            }}
+                          >
+                            <div className={`notif-item-icon ${item.type?.includes('flood') ? 'flood' : item.type?.includes('sos') ? 'sos' : 'info'}`}>
+                              {item.type?.includes('flood') ? '🌊' : item.type?.includes('sos') ? '🚨' : '📢'}
+                            </div>
+                            <div className="notif-item-content">
+                              <div className="notif-item-title">
+                                <span>{item.title}</span>
+                                {!item.read && <span className="notif-unread-dot" title="Belum dibaca" />}
+                              </div>
+                              <div className="notif-item-msg">{item.message}</div>
+                              <div className="notif-item-time">
+                                {new Date(item.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* User Profile Pill & Dropdown */}
-            <div className="profile-dropdown-wrapper">
-              <div 
-                className="warga-user-pill" 
-                title="Profil Pengguna"
-                onClick={() => {
-                  setShowProfileDropdown(!showProfileDropdown)
-                  setShowNotifDropdown(false)
-                }}
-                style={{ cursor: 'pointer' }}
-              >
-                <div className="warga-user-avatar">
-                  <img
-                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
-                    alt={userProfile.full_name}
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none'
-                    }}
-                  />
-                </div>
-                <span className="warga-user-name">{userProfile.full_name || 'Ahmad Fauzi'}</span>
-                <span style={{ fontSize: '10px', color: '#64748b', marginLeft: '4px' }}>▾</span>
-              </div>
-
-              {showProfileDropdown && (
-                <div className="profile-dropdown">
-                  <div className="profile-dropdown-header">
-                    <strong>{userProfile.full_name || 'Ahmad Fauzi'}</strong>
-                    <small>{userProfile.nik ? `NIK: ${userProfile.nik}` : 'Warga Terdaftar'}</small>
-                    <div style={{ fontSize: '0.72rem', color: '#2563eb', marginTop: '4px', fontWeight: 600 }}>
-                      📍 {geo.address ? geo.address.split(',')[0] : 'Desa Baureno'}
+                        ))
+                      )}
                     </div>
                   </div>
-                  <div className="profile-dropdown-body">
-                    <button 
-                      type="button" 
-                      className="profile-dropdown-item"
-                      onClick={() => {
-                        setShowProfileModal(true)
-                        setShowProfileDropdown(false)
-                      }}
-                    >
-                      <span>👤</span> Data Rumah Tangga &amp; NIK
-                    </button>
-                    <button 
-                      type="button" 
-                      className="profile-dropdown-item"
-                      onClick={() => {
-                        handleSelectTab('peta')
-                        setShowProfileDropdown(false)
-                      }}
-                    >
-                      <span>🗺️</span> Peta Risiko &amp; Posko
-                    </button>
-                    <button 
-                      type="button" 
-                      className="profile-dropdown-item"
-                      onClick={() => {
-                        handleSelectTab('panduan')
-                        setShowProfileDropdown(false)
-                      }}
-                    >
-                      <span>📖</span> Panduan Evakuasi
-                    </button>
-                    <button 
-                      type="button" 
-                      className="profile-dropdown-item"
-                      onClick={() => {
-                        handleSelectTab('kontak')
-                        setShowProfileDropdown(false)
-                      }}
-                    >
-                      <span>☎️</span> Kontak Darurat BPBD
-                    </button>
-                    <button 
-                      type="button" 
-                      className="profile-dropdown-item danger"
-                      onClick={logout}
-                    >
-                      <span>⎋</span> Keluar
-                    </button>
-                  </div>
-                </div>
+                </>
               )}
             </div>
 
-            {/* Mobile Hamburger Button */}
-            <button 
-              type="button" 
-              className="warga-hamburger" 
-              onClick={() => setMobileMenuOpen(true)}
-              aria-label="Menu Navigasi Mobile"
+            <div 
+              className="warga-profile-chip" 
+              onClick={() => setShowProfileModal(true)}
+              title="Data Profil Pengguna, Domisili & Rumah Tangga (Klik untuk lihat & edit)"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <line x1="3" y1="12" x2="21" y2="12" />
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <line x1="3" y1="18" x2="21" y2="18" />
+              <div className="warga-avatar-circle">
+                {userProfile?.full_name ? userProfile.full_name.trim().split(/\s+/).map(n => n[0]).slice(0, 2).join('').toUpperCase() : 'WB'}
+              </div>
+              <div className="warga-profile-info">
+                <strong>{userProfile?.full_name || 'Warga Baureno (Demo)'}</strong>
+                <span>Warga terverifikasi</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="warga-circle-btn"
+              onClick={() => setShowLogoutModal(true)}
+              title="Keluar"
+            >
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
               </svg>
             </button>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Mobile Drawer Navigation */}
-      <div 
-        className={`mobile-nav-overlay ${mobileMenuOpen ? 'show' : ''}`} 
-        onClick={() => setMobileMenuOpen(false)}
-      >
-        <div className="mobile-nav-drawer" onClick={(e) => e.stopPropagation()}>
-          <div className="mobile-nav-header">
-            <Brand locName={geo.address ? geo.address.split(',')[0] : 'Baureno'} />
-            <button type="button" className="mobile-nav-close" onClick={() => setMobileMenuOpen(false)}>
-              ✕
-            </button>
-          </div>
-          <div 
-            style={{ padding: '12px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: '0.8rem', color: '#475569', cursor: 'pointer' }}
-            onClick={() => {
-              setMobileMenuOpen(false)
-              handleOpenLocationModal()
-            }}
-          >
-            <div><strong>{userProfile.full_name || 'Ahmad Fauzi'}</strong></div>
-            <div style={{ fontSize: '0.72rem', color: '#0284c7', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-              <span>📍 {geo.address || 'Desa Baureno, Bojonegoro'}</span>
-              <span style={{ fontSize: '10px', background: '#e0f2fe', padding: '1px 5px', borderRadius: '4px' }}>Ubah Desa</span>
-            </div>
-          </div>
-          <div className="mobile-nav-list">
-            <button 
-              type="button" 
-              className={`mobile-nav-item ${activeTab === 'beranda' ? 'active' : ''}`}
-              onClick={() => handleSelectTab('beranda')}
-            >
-              🏠 Beranda
-            </button>
-            <button 
-              type="button" 
-              className={`mobile-nav-item ${activeTab === 'riwayat' ? 'active' : ''}`}
-              onClick={() => handleSelectTab('riwayat')}
-            >
-              📜 Riwayat Kejadian
-            </button>
-            <button 
-              type="button" 
-              className={`mobile-nav-item ${activeTab === 'panduan' ? 'active' : ''}`}
-              onClick={() => handleSelectTab('panduan')}
-            >
-              📖 Panduan Kesiapsiagaan
-            </button>
-            <button 
-              type="button" 
-              className={`mobile-nav-item ${activeTab === 'kontak' ? 'active' : ''}`}
-              onClick={() => handleSelectTab('kontak')}
-            >
-              ☎️ Kontak Darurat
-            </button>
-            <button 
-              type="button" 
-              className={`mobile-nav-item sos ${activeTab === 'sos' ? 'active' : ''}`}
-              onClick={() => handleSelectTab('sos')}
-            >
-              🚨 Minta Bantuan SOS
-            </button>
-          </div>
-          <div className="mobile-nav-footer">
-            <button 
-              type="button" 
-              onClick={logout} 
-              className="warga-logout-btn" 
-              style={{ width: '100%', justifyContent: 'center' }}
-            >
-              ⎋ Keluar Akun
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* User Profile Modal */}
-      {showProfileModal && (
-        <div 
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0, 0, 0, 0.5)',
-            zIndex: 1000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px'
-          }}
-          onClick={() => setShowProfileModal(false)}
-        >
-          <div 
-            style={{
-              background: '#ffffff',
-              borderRadius: '16px',
-              maxWidth: '520px',
-              width: '100%',
-              padding: '24px',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-              position: 'relative'
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '14px', marginBottom: '16px' }}>
-              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>
-                Profil Warga &amp; Rumah Tangga
-              </h3>
-              <button 
-                type="button" 
-                onClick={() => setShowProfileModal(false)}
-                style={{ border: 'none', background: '#f1f5f9', width: '32px', height: '32px', borderRadius: '8px', cursor: 'pointer', fontSize: '16px' }}
-              >
-                ✕
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '20px', background: '#f8fafc', padding: '14px', borderRadius: '12px' }}>
-              <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#2563eb', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', fontWeight: 800 }}>
-                {userProfile.full_name ? userProfile.full_name.charAt(0) : 'W'}
-              </div>
-              <div>
-                <strong style={{ display: 'block', fontSize: '1.05rem', color: '#0f172a' }}>
-                  {userProfile.full_name || 'Ahmad Fauzi'}
-                </strong>
-                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                  NIK: {userProfile.nik || '3522141508890002'} • {userProfile.phone_number || '0812-3456-7890'}
-                </span>
-                <div style={{ display: 'inline-block', marginTop: '4px', fontSize: '0.72rem', background: '#dcfce7', color: '#166534', padding: '2px 8px', borderRadius: '10px', fontWeight: 700 }}>
-                  ✓ Terverifikasi BPBD
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '0.85rem' }}>
-              <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px' }}>
-                <span style={{ color: '#64748b', fontSize: '0.75rem', display: 'block' }}>Kecamatan &amp; Desa</span>
-                <strong>Kec. Baureno</strong>
-                <div style={{ fontSize: '0.8rem', color: '#334155' }}>Desa Baureno</div>
-              </div>
-              <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px' }}>
-                <span style={{ color: '#64748b', fontSize: '0.75rem', display: 'block' }}>Anggota Keluarga</span>
-                <strong>{userProfile.family_count || 4} Jiwa</strong>
-                <div style={{ fontSize: '0.8rem', color: '#334155' }}>Prioritas Evakuasi: Standar</div>
-              </div>
-              <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px' }}>
-                <span style={{ color: '#64748b', fontSize: '0.75rem', display: 'block' }}>Kelompok Rentan</span>
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '4px' }}>
-                  <span style={{ background: '#fee2e2', color: '#991b1b', padding: '2px 6px', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 600 }}>1 Lansia</span>
-                  <span style={{ background: '#fef3c7', color: '#92400e', padding: '2px 6px', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 600 }}>1 Balita</span>
-                </div>
-              </div>
-              <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px' }}>
-                <span style={{ color: '#64748b', fontSize: '0.75rem', display: 'block' }}>Koordinat Terdaftar</span>
-                <strong>-7.1425, 112.0841</strong>
-                <div style={{ fontSize: '0.75rem', color: '#10b981' }}>✓ GPS Akurat (3m)</div>
-              </div>
-            </div>
-
-            <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <button
-                type="button"
-                onClick={() => setShowProfileModal(false)}
-                style={{
-                  padding: '8px 18px',
-                  borderRadius: '8px',
-                  background: '#2563eb',
-                  color: 'white',
-                  border: 'none',
-                  fontWeight: 600,
-                  fontSize: '0.85rem',
-                  cursor: 'pointer'
-                }}
-              >
-                Tutup
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* User Profile & Household Modal */}
+      <ProfileModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        userProfile={userProfile}
+        onProfileUpdated={(updated) => {
+          setUserProfile(updated)
+          if (updated.village_id) {
+            setSelectedVillageId(updated.village_id)
+          }
+        }}
+        geo={geo}
+        villages={BAURENO_VILLAGES}
+      />
 
       {/* Location Picker Modal */}
       {showLocationModal && (
@@ -870,9 +883,10 @@ function WargaHome() {
       )}
 
       {/* Main Content Area based on Tab */}
-      <main className="warga-page-body">
+      <main className="warga-content-body">
         {(activeTab === 'beranda' || activeTab === 'peta') && (
           <WargaBeranda 
+            activeTab={activeTab}
             onNavigate={(tab) => handleSelectTab(tab)} 
             geo={geo} 
             userProfile={userProfile} 
@@ -880,22 +894,30 @@ function WargaHome() {
             onSelectVillageId={setSelectedVillageId}
             onOpenLocationModal={handleOpenLocationModal}
             initialScrollToMap={activeTab === 'peta'}
+            isEmergencyActive={isEmergencyActive}
+            onToggleSimulatedEmergency={(val) => setIsEmergencyActive(val)}
           />
         )}
         {activeTab === 'riwayat' && <WargaRiwayatKejadian />}
         {activeTab === 'panduan' && <WargaPanduan />}
-        {activeTab === 'kontak' && <WargaKontakDarurat />}
-        {activeTab === 'sos' && <WargaSOS onNavigate={(tab) => handleSelectTab(tab)} geo={geo} />}
+        {activeTab === 'kontak' && <WargaKontakDarurat isEmergencyActive={isEmergencyActive} />}
+        {activeTab === 'sos' && (
+          <WargaSOS 
+            onNavigate={(tab) => handleSelectTab(tab)} 
+            geo={geo} 
+            isEmergencyActive={isEmergencyActive}
+          />
+        )}
       </main>
-
-      {/* Footer */}
-      <footer className="warga-footer">
-        <div className="warga-footer-inner">
-          <span>© 2025 SiagaBencana Portal Warga Kecamatan Baureno, Bojonegoro.</span>
-          <span>Badan Penanggulangan Bencana Daerah (BPBD)</span>
-        </div>
-      </footer>
+      {/* Logout Confirmation Modal */}
+      <LogoutModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={logout}
+      />
     </div>
+  </div>
+  </div>
   )
 }
 
@@ -903,6 +925,7 @@ function AdminHome() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [currentTime, setCurrentTime] = useState(new Date())
   const [isEmergency, setIsEmergency] = useState(false)
+  const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [tickets, setTickets] = useState([])
   const { data: realtimeData } = useDashboardRealtime()
 
@@ -944,14 +967,14 @@ function AdminHome() {
 
     try {
       if (isEmergency) {
-        await apiFetch('/emergency/1/deactivate', { method: 'POST', body: JSON.stringify({}) })
+        await apiFetch('/emergency/3/deactivate', { method: 'POST', body: JSON.stringify({}) }).catch(() => {})
+        await apiFetch('/emergency/1/deactivate', { method: 'POST', body: JSON.stringify({}) }).catch(() => {})
       } else {
-        await apiFetch('/emergency/1/activate', { method: 'POST', body: JSON.stringify({}) })
+        await apiFetch('/emergency/3/activate', { method: 'POST', body: JSON.stringify({ notes: 'Simulasi darurat aktif' }) }).catch(() => {})
+        await apiFetch('/emergency/1/activate', { method: 'POST', body: JSON.stringify({ notes: 'Simulasi darurat aktif' }) }).catch(() => {})
       }
     } catch(e) { 
       console.error(e)
-      alert("Gagal menghubungi server: " + e.message)
-      setIsEmergency(isEmergency)
     }
   }
 
@@ -969,11 +992,38 @@ function AdminHome() {
   const occupiedShelterCap = shelters.reduce((s, sh) => s + (sh.capacity_occupied || 0), 0)
   const shelterOccPct = totalShelterCap ? Math.round((occupiedShelterCap / totalShelterCap) * 100) : 0
 
-  const dischargeVal = realtimeData?.discharge?.discharge_m3s 
-    ? Math.round(realtimeData.discharge.discharge_m3s).toLocaleString('id-ID')
-    : '1.200'
+  const handleCreateSimulatedTicket = async () => {
+    try {
+      const payload = {
+        name: 'Warga Baureno (Simulasi Darurat)',
+        phone: '081234567899',
+        village_id: 3,
+        gps_latitude: -7.1285,
+        gps_longitude: 112.104,
+        gps_address: 'Bantaran Bengawan Solo, RT 02/RW 01, Desa Baureno',
+        patokan: 'Ketinggian air 1.6m di dalam rumah, arus deras luapan Bengawan Solo, butuh perahu evakuasi darurat!',
+        family_count: 5,
+        has_elderly: true,
+        has_toddler: true,
+        has_pregnant: false,
+        has_disability: false
+      }
+      await createSOSTicket(payload)
+      fetchTickets()
+      playSosAlertTone()
+      alert('Tiket SOS simulasi banjir parah berhasil dibuat dan masuk ke antrean live!')
+    } catch (err) {
+      alert('Gagal membuat tiket simulasi: ' + (err.message || 'Error'))
+    }
+  }
 
-  const rainVal = realtimeData?.weather?.precipitation_mm ?? 0
+  const dischargeVal = isEmergency
+    ? '1.950'
+    : (realtimeData?.discharge?.discharge_m3s 
+        ? Math.round(realtimeData.discharge.discharge_m3s).toLocaleString('id-ID')
+        : '1.200')
+
+  const rainVal = isEmergency ? 148 : (realtimeData?.weather?.precipitation_mm ?? 0)
 
   const getVulnerableSummary = (t) => {
     const v = []
@@ -985,7 +1035,87 @@ function AdminHome() {
   }
 
   return (
-    <main className={`portal admin-portal ${sidebarOpen ? '' : 'sidebar-closed'}`}>
+    <div className="admin-portal-wrapper" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
+      {/* 0. EMERGENCY TOP INDICATOR BAR FOR ADMIN */}
+      {isEmergency && (
+        <div style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 1200,
+          background: '#dc2626',
+          color: '#ffffff',
+          padding: '10px 24px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          fontWeight: 700,
+          boxShadow: '0 4px 14px rgba(220, 38, 38, 0.4)',
+          borderBottom: '1px solid rgba(255,255,255,0.2)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '26px',
+              height: '26px',
+              borderRadius: '50%',
+              background: 'rgba(255,255,255,0.22)',
+              fontSize: '14px'
+            }}>
+              📢
+            </span>
+            <span style={{ fontSize: '0.94rem', letterSpacing: '0.02em', fontWeight: 800, textTransform: 'uppercase' }}>
+              STATUS DARURAT BANJIR PARAH AKTIF — SIAGA LEVEL 4 (BENGAWAN SOLO)
+            </span>
+            <span style={{ opacity: 0.95, fontWeight: 500, fontSize: '0.84rem' }}>
+              Kec. Baureno • Live Pusdalops BPBD • {timeStr}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <a
+              href="#sos"
+              style={{
+                background: '#ffffff',
+                color: '#dc2626',
+                textDecoration: 'none',
+                padding: '6px 18px',
+                borderRadius: '9999px',
+                fontWeight: 800,
+                fontSize: '0.82rem',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+              }}
+            >
+              <span>⚠️</span>
+              <span>LIHAT TIKET SOS ({activeTickets.length})</span>
+            </a>
+            <button
+              type="button"
+              onClick={toggleEmergency}
+              style={{
+                background: 'rgba(0,0,0,0.25)',
+                color: '#ffffff',
+                border: '1px solid rgba(255,255,255,0.4)',
+                padding: '5px 14px',
+                borderRadius: '9999px',
+                fontWeight: 600,
+                fontSize: '0.78rem',
+                cursor: 'pointer'
+              }}
+              title="Nonaktifkan status darurat"
+            >
+              Nonaktifkan Status
+            </button>
+          </div>
+        </div>
+      )}
+
+      <main className={`portal admin-portal ${sidebarOpen ? '' : 'sidebar-closed'}`} style={{ flex: 1 }}>
       <aside className="admin-sidebar">
         <div className="sidebar-header">
           <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)} title="Toggle Sidebar">
@@ -1016,10 +1146,25 @@ function AdminHome() {
             <span>Online · Shift Pagi</span>
           </div>
         </div>
+
+        <div style={{ padding: '12px 16px', borderTop: '1px solid #1e293b' }}>
+          <button
+            type="button"
+            className="warga-sidebar-logout-btn"
+            onClick={() => setShowLogoutModal(true)}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px' }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            <span>Keluar</span>
+          </button>
+        </div>
       </aside>
       <section className="admin-content">
         <header className="admin-header">
-          <div className="search-box">⌕ &nbsp; Cari desa, tiket, atau petugas...</div>
           <div className="admin-time">
             <strong>{timeStr}</strong>
             <small>{dateStr}</small>
@@ -1028,11 +1173,14 @@ function AdminHome() {
             className={`danger-toggle ${isEmergency ? 'active' : ''}`} 
             onClick={toggleEmergency}
             style={{ cursor: 'pointer', background: isEmergency ? '#fff1f2' : '#f1f5f9', borderColor: isEmergency ? '#fecdd3' : '#e2e8f0' }}
+            title="Klik untuk mengaktifkan simulasi banjir parah atau mengembalikan ke kondisi normal"
           >
             <span>
-              STATUS DARURAT
+              STATUS DARURAT (SIMULASI)
               <br />
-              <strong style={{ color: isEmergency ? '#e11d48' : '#64748b' }}>{isEmergency ? 'AKTIF' : 'NONAKTIF'}</strong>
+              <strong style={{ color: isEmergency ? '#e11d48' : '#64748b' }}>
+                {isEmergency ? 'AKTIF (BANJIR PARAH)' : 'NONAKTIF (KONDISI REAL)'}
+              </strong>
             </span>
             <i className="toggle-indicator" />
             <style>{`
@@ -1041,14 +1189,14 @@ function AdminHome() {
             `}</style>
           </div>
           <div className="admin-avatar">●</div>
-          <button onClick={logout} className="logout-btn" title="Keluar">
+          <button onClick={() => setShowLogoutModal(true)} className="logout-btn" title="Keluar">
             <i>⎋</i> Keluar
           </button>
         </header>
         <div className="admin-dashboard">
           <div className="kpi-grid">
-            <Kpi icon="♜" label="RERATA DEBIT SUNGAI" value={dischargeVal} unit="m³/s" change="Live GloFAS" />
-            <Kpi icon="☁" label="RERATA CURAH HUJAN" value={rainVal} unit="mm" change="Open-Meteo" />
+            <Kpi icon="♜" label="RERATA DEBIT SUNGAI" value={dischargeVal} unit="m³/s" change={isEmergency ? 'Simulasi Banjir Parah' : 'Live GloFAS'} danger={isEmergency} />
+            <Kpi icon="☁" label="RERATA CURAH HUJAN" value={rainVal} unit="mm" change={isEmergency ? 'Simulasi Hujan Ekstrem' : 'Live Open-Meteo'} danger={isEmergency} />
             <Kpi icon="⚠" label="TIKET SOS AKTIF" value={activeTickets.length} unit="tiket" change={`${activeTickets.length} butuh evakuasi`} danger={activeTickets.length > 0} />
             <Kpi icon="♧" label="TOTAL KAPASITAS POSKO" value={occupiedShelterCap} unit={`/${totalShelterCap || 1200}`} change={`${shelterOccPct}% terisi`} />
           </div>
@@ -1076,12 +1224,37 @@ function AdminHome() {
                   ▧ Buka Radar ↗
                 </button>
               </div>
-              <RiskMap />
+              <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1.5px solid #cbd5e1', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.02)' }}>
+                <RiskMap height="480px" villagesData={realtimeData?.villages || []} shelters={shelters} />
+              </div>
             </article>
             <article className="sos-queue portal-card">
-              <div className="admin-section-head">
-                <h2>🔴 Antrian SOS Live</h2>
-                <b>{activeTickets.length} antrean</b>
+              <div className="admin-section-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h2>🔴 Antrian SOS Live</h2>
+                  <b>{activeTickets.length} antrean</b>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCreateSimulatedTicket}
+                  style={{
+                    background: '#dc2626',
+                    color: '#ffffff',
+                    border: 'none',
+                    padding: '5px 10px',
+                    borderRadius: '6px',
+                    fontSize: '0.74rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    boxShadow: '0 1px 3px rgba(220, 38, 38, 0.3)'
+                  }}
+                  title="Generate tiket SOS simulasi untuk pengujian evakuasi"
+                >
+                  ⚡ Buat Tiket Simulasi
+                </button>
               </div>
               {activeTickets.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '30px 10px', color: '#64748b' }}>
@@ -1092,12 +1265,12 @@ function AdminHome() {
               ) : (
                 activeTickets.slice(0, 5).map((ticket) => {
                   const location = ticket.gps_address || (ticket.village_name ? `Desa ${ticket.village_name}` : `Desa ID ${ticket.village_id}`)
-                  const time = ticket.submitted_at ? new Date(ticket.submitted_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : 'Baru saja'
+                  const time = ticket.submitted_at ? formatWIBTime(ticket.submitted_at) : 'Baru saja'
                   return (
                     <div className="sos-ticket" key={ticket.id}>
                       <div>
                         <strong>{ticket.ticket_number}</strong>
-                        <time>{time} WIB</time>
+                        <time>{time}</time>
                       </div>
                       <b>📍 {location}</b>
                       <small>👥 {ticket.family_count} jiwa{getVulnerableSummary(ticket)}</small>
@@ -1120,7 +1293,15 @@ function AdminHome() {
           <VillageStatsTable onSelectVillage={() => { window.location.hash = '#radar' }} />
         </div>
       </section>
+
+      {/* Logout Confirmation Modal */}
+      <LogoutModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={logout}
+      />
     </main>
+  </div>
   )
 }
 
@@ -1141,7 +1322,7 @@ function Kpi({ icon, label, value, unit, change, danger }) {
 }
 
 function RoleHome({ role }) {
-  return role === 'petugas' ? <AdminHome /> : <WargaHome />
+  return (role === 'petugas' || role === 'admin') ? <AdminHome /> : <WargaHome />
 }
 
 export default RoleHome

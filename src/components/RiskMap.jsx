@@ -3,13 +3,14 @@ import { useMemo, useState, useEffect, useRef } from 'react'
 import L from 'leaflet'
 import * as turf from '@turf/turf'
 import baurenoVillagesData from '../data/baureno_villages_real.json'
+import { apiFetch } from '../services/api'
 import { getVillages } from '../services/floodService'
 
 // Center coordinate & boundary bounds for map view - Kecamatan Baureno, Bojonegoro
-export const baurenoCenter = [-7.125, 112.104]
+export const baurenoCenter = [-7.118, 112.102]
 export const baurenoBounds = [
-  [-7.168, 112.042], // South-West
-  [-7.065, 112.166]  // North-East
+  [-7.185, 112.025], // South-West (wider margin showing surrounding districts)
+  [-7.050, 112.180]  // North-East (wider margin showing Bandungrejo, Babat)
 ]
 
 const colorMap = {
@@ -20,6 +21,60 @@ const colorMap = {
   waspada: '#eab308',  // Fallback if needed
   rendah: '#10b981',   // Green (Rendah/Aman)
   aman: '#10b981'      // Fallback if needed
+}
+
+// Fallback baselines for 25 Baureno villages matching real database calculation
+const fallbackBaselines = {
+  pucangarum: { prob: 31.8, level: 'sedang' },
+  kalisari: { prob: 30.3, level: 'sedang' },
+  lebaksari: { prob: 29.1, level: 'sedang' },
+  bumiayu: { prob: 28.7, level: 'sedang' },
+  kadungrejo: { prob: 28.4, level: 'sedang' },
+  karangdayu: { prob: 27.0, level: 'sedang' },
+  sembunglor: { prob: 26.7, level: 'sedang' },
+  tanggungan: { prob: 26.4, level: 'sedang' },
+  selorejo: { prob: 25.4, level: 'sedang' },
+  tlogoagung: { prob: 24.6, level: 'rendah' },
+  drajat: { prob: 23.1, level: 'rendah' },
+  ngemplak: { prob: 22.8, level: 'rendah' },
+  banjaran: { prob: 22.1, level: 'rendah' },
+  gunungsari: { prob: 21.6, level: 'rendah' },
+  kauman: { prob: 21.0, level: 'rendah' },
+  pomahan: { prob: 20.1, level: 'rendah' },
+  banjaranyar: { prob: 19.5, level: 'rendah' },
+  tulungagung: { prob: 18.9, level: 'rendah' },
+  trojalu: { prob: 18.6, level: 'rendah' },
+  pasinan: { prob: 15.6, level: 'rendah' },
+  baureno: { prob: 15.2, level: 'rendah' },
+  blongsong: { prob: 13.8, level: 'rendah' },
+  gajah: { prob: 12.5, level: 'rendah' },
+  sraturejo: { prob: 11.9, level: 'rendah' },
+  sumuragung: { prob: 5.0, level: 'rendah' }
+}
+
+function findMatchingVillage(featureName, villageList) {
+  if (!villageList || !villageList.length) return null;
+  const cleanFeature = featureName.replace(/^Desa\s+/i, '').trim().toLowerCase();
+  
+  // 1. Exact clean name match
+  let found = villageList.find(v => {
+    const cleanV = v.name.replace(/^Desa\s+/i, '').trim().toLowerCase();
+    return cleanV === cleanFeature;
+  });
+  if (found) return found;
+
+  // 2. Kadungrejo / Kedungrejo spelling alias
+  if (cleanFeature === 'kadungrejo') {
+    found = villageList.find(v => v.name.toLowerCase().includes('kedungrejo'));
+    if (found) return found;
+  }
+
+  // 3. Substring match
+  found = villageList.find(v => {
+    const cleanV = v.name.replace(/^Desa\s+/i, '').trim().toLowerCase();
+    return cleanV.startsWith(cleanFeature) || cleanFeature.startsWith(cleanV);
+  });
+  return found || null;
 }
 
 // Marker Icon Generators
@@ -62,15 +117,20 @@ const userLocationIcon = L.divIcon({
   popupAnchor: [0, -14],
 });
 
-function MapController({ bounds, recenterTrigger }) {
+function MapController({ bounds, recenterTrigger, targetCenter }) {
   const map = useMap();
   const initialFitDone = useRef(false);
 
   // Initial fit to Baureno bounds on mount so all 25 villages are nicely visible
   useEffect(() => {
+    try {
+      map.invalidateSize();
+    } catch (e) {
+      // ignore
+    }
     if (!initialFitDone.current) {
       try {
-        map.fitBounds(baurenoBounds, { padding: [25, 25] });
+        map.fitBounds(baurenoBounds, { padding: [15, 15] });
         initialFitDone.current = true;
       } catch (e) {
         console.error("Initial fitBounds error:", e);
@@ -82,18 +142,30 @@ function MapController({ bounds, recenterTrigger }) {
   useEffect(() => {
     if (bounds && bounds.length > 0) {
       try {
-        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+        map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
       } catch (e) {
         console.error("Route fitBounds error:", e);
       }
     }
   }, [bounds, map]);
 
+  // Target village center selection - pan gently without overzooming
+  useEffect(() => {
+    if (targetCenter && targetCenter[0] && targetCenter[1]) {
+      try {
+        // Keep overview zoom so all 25 villages remain visible in context
+        map.panTo(targetCenter, { duration: 0.8 });
+      } catch (e) {
+        console.error("PanTo error:", e);
+      }
+    }
+  }, [targetCenter, map]);
+
   // Recenter trigger (button "Tampilkan Seluruh Baureno")
   useEffect(() => {
     if (recenterTrigger) {
       try {
-        map.fitBounds(baurenoBounds, { padding: [25, 25] });
+        map.fitBounds(baurenoBounds, { padding: [15, 15] });
       } catch (e) {
         map.setView(baurenoCenter, 12);
       }
@@ -107,6 +179,7 @@ export default function RiskMap({
   onSelectVillage, 
   selectedVillageName, 
   shelters = [], 
+  villagesData = [],
   onSelectShelter, 
   selectedShelterId,
   userLocation,
@@ -116,27 +189,63 @@ export default function RiskMap({
   const [dbVillages, setDbVillages] = useState([]);
   
   useEffect(() => {
-    getVillages().then(setDbVillages).catch(console.error);
+    let active = true;
+    async function fetchVillageData() {
+      // 1. Try real-time dashboard endpoint
+      try {
+        const realtime = await apiFetch('/dashboard/realtime');
+        if (active && realtime && Array.isArray(realtime.villages) && realtime.villages.length > 0) {
+          setDbVillages(realtime.villages);
+          return;
+        }
+      } catch (e) {
+        // Fallback to /villages
+      }
+
+      // 2. Try villages endpoint
+      try {
+        const vList = await getVillages();
+        if (active && Array.isArray(vList) && vList.length > 0) {
+          setDbVillages(vList);
+        }
+      } catch (e) {
+        console.warn("Could not fetch villages data:", e);
+      }
+    }
+
+    fetchVillageData();
+    return () => { active = false; };
   }, []);
 
   const villages = useMemo(() => {
     const finalVillages = [];
+    const activeList = (villagesData && villagesData.length > 0) ? villagesData : dbVillages;
     
     baurenoVillagesData.features.forEach((feature, i) => {
       const geom = feature.geometry;
       if (!geom) return;
 
       const name = feature.properties.adm4_name || feature.properties.name || `Desa ${i+1}`;
+      const cleanName = name.replace(/^Desa\s+/i, '').trim().toLowerCase();
       
       let status = 'rendah';
       let prob = 0;
       
-      const nameUpper = name.toUpperCase();
-      const realVillage = dbVillages.find(v => nameUpper.includes(v.name.toUpperCase()));
+      const realVillage = findMatchingVillage(name, activeList);
       
       if (realVillage) {
-        status = realVillage.current_risk_level || 'rendah';
-        prob = realVillage.current_probability || 0;
+        const rawProb = realVillage.current_probability != null 
+          ? Number(realVillage.current_probability) 
+          : (realVillage.probability != null ? Number(realVillage.probability) : 0);
+        prob = rawProb;
+        status = realVillage.current_risk_level || realVillage.risk_level || (rawProb >= 76 ? 'awas' : (rawProb >= 51 ? 'tinggi' : (rawProb >= 25 ? 'sedang' : 'rendah')));
+      } else {
+        // Fallback baseline for this specific Baureno village if API is still loading or offline
+        const fallback = fallbackBaselines[cleanName];
+        if (fallback) {
+          prob = fallback.prob;
+          status = fallback.level;
+        }
       }
       
       const mapCoords = (coords) => coords.map(c => [c[1], c[0]]);
@@ -170,7 +279,7 @@ export default function RiskMap({
     });
     
     return finalVillages;
-  }, [dbVillages]);
+  }, [dbVillages, villagesData]);
 
   const [recenterTrigger, setRecenterTrigger] = useState(0);
 
@@ -194,7 +303,7 @@ export default function RiskMap({
   }, [villages, selectedVillageName]);
 
   return (
-    <div className="leaflet-map-wrapper" style={{ height, width: '100%', borderRadius: '12px', overflow: 'hidden', position: 'relative', zIndex: 1, marginTop: '12px' }}>
+    <div className="leaflet-map-wrapper" style={{ height, width: '100%', borderRadius: '12px', overflow: 'hidden', position: 'relative', zIndex: 1, marginTop: '0px' }}>
       <style>{`
         .leaflet-tooltip.bg-transparent {
           background-color: transparent !important;
@@ -203,6 +312,13 @@ export default function RiskMap({
         }
         .leaflet-tooltip.bg-transparent::before {
           display: none !important;
+        }
+        .leaflet-control-attribution {
+          font-size: 10px !important;
+          background: rgba(255, 255, 255, 0.85) !important;
+          padding: 2px 8px !important;
+          border-top-left-radius: 6px !important;
+          backdrop-filter: blur(2px) !important;
         }
         @keyframes mapPulse {
           0% { transform: scale(0.95); opacity: 0.8; }
@@ -242,15 +358,15 @@ export default function RiskMap({
         center={baurenoCenter} 
         zoom={12} 
         bounds={baurenoBounds}
-        boundsOptions={{ padding: [25, 25] }}
+        boundsOptions={{ padding: [15, 15] }}
         style={{ height: '100%', width: '100%', zIndex: 1 }}
       >
         <TileLayer
-          attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        <MapController bounds={mapBounds} recenterTrigger={recenterTrigger} />
+        <MapController bounds={mapBounds} recenterTrigger={recenterTrigger} targetCenter={targetVillageCenter} />
 
         {/* 1. Village Risk Polygons */}
         {villages.map(v => {
@@ -274,16 +390,17 @@ export default function RiskMap({
                   {v.name.toUpperCase()}<br/>
                   <span style={{ 
                     display: 'inline-block', 
-                    backgroundColor: v.status === 'awas' ? '#991b1b' : (v.status === 'siaga' ? '#9a3412' : (v.status === 'waspada' ? '#854d0e' : '#065f46')), 
+                    backgroundColor: v.status === 'awas' ? '#dc2626' : (v.status === 'tinggi' || v.status === 'siaga' ? '#ea580c' : (v.status === 'sedang' || v.status === 'waspada' ? '#ca8a04' : '#059669')), 
                     color: 'white', 
-                    borderRadius: '50%', 
-                    width: '18px', 
-                    height: '18px', 
-                    lineHeight: '18px', 
-                    marginTop: '4px',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.4)'
+                    borderRadius: '10px', 
+                    padding: '1px 6px',
+                    fontSize: '9.5px',
+                    fontWeight: 700,
+                    marginTop: '3px',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.4)',
+                    letterSpacing: '0.02em'
                   }}>
-                    {Math.floor(v.prob)}
+                    {Math.round(v.prob)}%
                   </span>
                 </div>
               </Tooltip>

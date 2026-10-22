@@ -8,6 +8,9 @@ from sqlalchemy.orm import relationship
 from ..core.database import Base
 
 
+from ..core.timezone import get_wib_now
+
+
 class AuditLog(Base):
     __tablename__ = "audit_logs"
 
@@ -26,7 +29,7 @@ class AuditLog(Base):
     notes = Column(Text, nullable=True)
     details = Column(Text, nullable=True)  # JSON snapshot payload
     ip_address = Column(String(50), nullable=True)
-    created_at = Column(DateTime, server_default=func.now(), nullable=False, index=True)
+    created_at = Column(DateTime, default=get_wib_now, nullable=False, index=True)
 
     admin = relationship("User", foreign_keys=[admin_id])
     shelter = relationship("Shelter", foreign_keys=[shelter_id])

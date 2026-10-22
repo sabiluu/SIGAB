@@ -7,13 +7,28 @@ export default function VillageStatsTable({ onSelectVillage }) {
   const [search, setSearch] = useState('')
   const [filterRisk, setFilterRisk] = useState('all')
   const [sortBy, setSortBy] = useState('prob_desc')
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
 
   const fetchVillagesData = () => {
     setLoading(true)
     getVillages()
       .then((data) => {
         if (Array.isArray(data)) {
-          setVillages(data)
+          // Pastikan deduplikasi nama desa (tepat 25 desa unik Kecamatan Baureno)
+          const unique = []
+          const seen = new Set()
+          for (const item of data) {
+            const clean = (item.name || '').replace(/^Desa\s+/i, '').trim().toLowerCase()
+            if (!seen.has(clean)) {
+              seen.add(clean)
+              unique.push({
+                ...item,
+                displayName: (item.name || '').replace(/^Desa\s+/i, '').trim()
+              })
+            }
+          }
+          setVillages(unique)
         }
       })
       .catch((err) => {
@@ -25,6 +40,11 @@ export default function VillageStatsTable({ onSelectVillage }) {
   useEffect(() => {
     fetchVillagesData()
   }, [])
+
+  // Reset page when filtering or searching
+  useEffect(() => {
+    setPage(1)
+  }, [search, filterRisk, sortBy, pageSize])
 
   // Risk counts summary
   const counts = useMemo(() => {
@@ -43,7 +63,7 @@ export default function VillageStatsTable({ onSelectVillage }) {
   const filteredVillages = useMemo(() => {
     return villages
       .filter((v) => {
-        const matchesSearch = v.name.toLowerCase().includes(search.toLowerCase())
+        const matchesSearch = (v.displayName || v.name).toLowerCase().includes(search.toLowerCase())
         if (!matchesSearch) return false
 
         const r = (v.current_risk_level || 'aman').toLowerCase()
@@ -59,77 +79,255 @@ export default function VillageStatsTable({ onSelectVillage }) {
         const probB = Number(b.current_probability || 0)
         if (sortBy === 'prob_desc') return probB - probA
         if (sortBy === 'prob_asc') return probA - probB
-        if (sortBy === 'name_asc') return a.name.localeCompare(b.name)
+        if (sortBy === 'name_asc') return (a.displayName || a.name).localeCompare(b.displayName || b.name)
         if (sortBy === 'elevation_asc') return Number(a.elevation_index || 0) - Number(b.elevation_index || 0)
         return 0
       })
   }, [villages, search, filterRisk, sortBy])
 
-  const getRiskPillClass = (level) => {
+  // Pagination calculation
+  const totalItems = filteredVillages.length
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize))
+  const paginatedVillages = useMemo(() => {
+    const start = (page - 1) * pageSize
+    return filteredVillages.slice(start, start + pageSize)
+  }, [filteredVillages, page, pageSize])
+
+  const getRiskBadge = (level) => {
     const l = (level || 'aman').toLowerCase()
-    if (l === 'awas' || l === 'sangat tinggi') return 'risk-pill awas'
-    if (l === 'siaga' || l === 'tinggi') return 'risk-pill tinggi'
-    if (l === 'waspada' || l === 'sedang') return 'risk-pill sedang'
-    return 'risk-pill aman'
+    if (l === 'awas' || l === 'sangat tinggi') {
+      return <span className="risk-badge awas">● Awas</span>
+    }
+    if (l === 'siaga' || l === 'tinggi') {
+      return <span className="risk-badge siaga">● Siaga</span>
+    }
+    if (l === 'waspada' || l === 'sedang') {
+      return <span className="risk-badge waspada">● Waspada</span>
+    }
+    return <span className="risk-badge aman">● Aman</span>
   }
 
   const getProbColor = (prob) => {
-    if (prob >= 75) return '#ef4444'
-    if (prob >= 50) return '#f97316'
-    if (prob >= 25) return '#eab308'
-    return '#10b981'
+    if (prob >= 75) return '#dc2626'
+    if (prob >= 50) return '#ea580c'
+    if (prob >= 25) return '#d97706'
+    return '#059669'
   }
 
   const formatProb = (prob) => {
     const val = Number(prob || 0)
-    // If value is between 0 and 1, convert to percentage
     return val <= 1 && val > 0 ? Math.round(val * 100) : Math.round(val)
   }
 
   return (
-    <article className="village-stats-table-card portal-card" style={{ marginTop: '24px' }}>
-      <div className="village-stats-header" style={{ flexWrap: 'wrap', gap: '16px' }}>
+    <article className="village-stats-table-card">
+      <style>{`
+        .village-stats-table-card {
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 14px;
+          box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+          overflow: hidden;
+          margin-top: 24px;
+          max-width: 100%;
+        }
+        .village-stats-header {
+          padding: 18px 24px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border-bottom: 1px solid #e2e8f0;
+          background: #ffffff;
+        }
+        .village-filters-bar {
+          padding: 12px 20px;
+          background: #f8fafc;
+          border-bottom: 1px solid #e2e8f0;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          align-items: center;
+          justify-content: space-between;
+        }
+        .village-table-container {
+          width: 100%;
+          overflow-x: auto;
+          background: #ffffff;
+        }
+        .village-stats-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 0.84rem;
+          text-align: left;
+          min-width: 820px;
+        }
+        .village-stats-table th {
+          background: #f8fafc;
+          color: #475569;
+          font-size: 0.72rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          padding: 12px 16px;
+          border-bottom: 1.5px solid #e2e8f0;
+          white-space: nowrap;
+        }
+        .village-stats-table td {
+          padding: 13px 16px;
+          border-bottom: 1px solid #f1f5f9;
+          color: #334155;
+          vertical-align: middle;
+        }
+        .village-stats-table tr:hover td {
+          background-color: #f8fafc;
+        }
+        .risk-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          padding: 4px 10px;
+          border-radius: 99px;
+          font-size: 0.74rem;
+          font-weight: 700;
+          line-height: 1;
+          white-space: nowrap;
+        }
+        .risk-badge.awas {
+          background: #fef2f2;
+          color: #dc2626;
+          border: 1px solid #fecaca;
+        }
+        .risk-badge.siaga {
+          background: #fff7ed;
+          color: #ea580c;
+          border: 1px solid #ffedd5;
+        }
+        .risk-badge.waspada {
+          background: #fefce8;
+          color: #ca8a04;
+          border: 1px solid #fef08a;
+        }
+        .risk-badge.aman {
+          background: #f0fdf4;
+          color: #16a34a;
+          border: 1px solid #bbf7d0;
+        }
+        .prob-bar-track {
+          background: #e2e8f0;
+          height: 6px;
+          border-radius: 99px;
+          overflow: hidden;
+          width: 85px;
+        }
+        .prob-bar-fill {
+          height: 100%;
+          border-radius: 99px;
+          transition: width 0.3s ease;
+        }
+        .village-pagination-row {
+          padding: 12px 20px;
+          background: #f8fafc;
+          border-top: 1px solid #e2e8f0;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 12px;
+          font-size: 0.8rem;
+          color: #64748b;
+        }
+        .pagination-controls {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .pagination-btn {
+          border: 1px solid #cbd5e1;
+          background: #ffffff;
+          color: #334155;
+          padding: 5px 11px;
+          border-radius: 6px;
+          font-size: 0.78rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.15s ease;
+        }
+        .pagination-btn:hover:not(:disabled) {
+          background: #f1f5f9;
+          border-color: #94a3b8;
+        }
+        .pagination-btn.active {
+          background: #0f172a;
+          color: #ffffff;
+          border-color: #0f172a;
+        }
+        .pagination-btn:disabled {
+          opacity: 0.45;
+          cursor: not-allowed;
+        }
+        .radar-action-btn {
+          padding: 6px 12px;
+          border-radius: 6px;
+          border: 1px solid #bfdbfe;
+          background: #eff6ff;
+          color: #1d4ed8;
+          font-size: 0.74rem;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+        }
+        .radar-action-btn:hover {
+          background: #2563eb;
+          color: #ffffff;
+          border-color: #2563eb;
+        }
+      `}</style>
+
+      {/* Header */}
+      <div className="village-stats-header">
         <div>
-          <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1rem', color: '#0f172a' }}>
             <span>📊</span>
             <span>Statistik Risiko &amp; Banjir 25 Desa</span>
-            <span style={{ fontSize: '0.78rem', background: '#eff6ff', color: '#2563eb', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
+            <span style={{ fontSize: '0.75rem', background: '#eff6ff', color: '#2563eb', padding: '2px 8px', borderRadius: '12px', fontWeight: 700, border: '1px solid #dbeafe' }}>
               {villages.length} Desa Terdaftar
             </span>
           </h3>
-          <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: '#64748b' }}>
+          <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#64748b' }}>
             Kecamatan Baureno — Monitoring komputasi probabilitas genangan dan elevasi spasial
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <button 
-            type="button" 
-            onClick={fetchVillagesData}
-            style={{
-              padding: '6px 14px',
-              borderRadius: '8px',
-              border: '1px solid #cbd5e1',
-              background: '#f8fafc',
-              color: '#334155',
-              fontSize: '0.8rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-            title="Muat ulang data desa"
-          >
-            <span>↻</span> Segarkan
-          </button>
-        </div>
+        <button 
+          type="button" 
+          onClick={fetchVillagesData}
+          style={{
+            padding: '6px 14px',
+            borderRadius: '8px',
+            border: '1px solid #cbd5e1',
+            background: '#ffffff',
+            color: '#334155',
+            fontSize: '0.78rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+          }}
+          title="Muat ulang data desa"
+        >
+          <span>↻</span> Segarkan
+        </button>
       </div>
 
       {/* Filter and Search Bar */}
-      <div style={{ padding: '14px 20px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="village-filters-bar">
         {/* Search input */}
-        <div style={{ position: 'relative', minWidth: '240px', flex: '1 1 240px', maxWidth: '360px' }}>
+        <div style={{ position: 'relative', minWidth: '220px', flex: '1 1 220px', maxWidth: '340px' }}>
           <input
             type="text"
             placeholder="Cari nama desa..."
@@ -137,21 +335,22 @@ export default function VillageStatsTable({ onSelectVillage }) {
             onChange={(e) => setSearch(e.target.value)}
             style={{
               width: '100%',
-              padding: '8px 12px 8px 32px',
-              borderRadius: '8px',
+              padding: '7px 12px 7px 32px',
+              borderRadius: '7px',
               border: '1px solid #cbd5e1',
-              fontSize: '0.85rem',
+              fontSize: '0.82rem',
               outline: 'none',
-              background: '#ffffff'
+              background: '#ffffff',
+              boxSizing: 'border-box'
             }}
           />
-          <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '0.9rem' }}>
+          <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '0.85rem' }}>
             🔍
           </span>
           {search && (
             <button
               onClick={() => setSearch('')}
-              style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '12px' }}
+              style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '11px' }}
             >
               ✕
             </button>
@@ -164,9 +363,9 @@ export default function VillageStatsTable({ onSelectVillage }) {
             type="button"
             onClick={() => setFilterRisk('all')}
             style={{
-              padding: '5px 12px',
+              padding: '4px 11px',
               borderRadius: '20px',
-              fontSize: '0.75rem',
+              fontSize: '0.74rem',
               fontWeight: 700,
               border: 'none',
               cursor: 'pointer',
@@ -180,9 +379,9 @@ export default function VillageStatsTable({ onSelectVillage }) {
             type="button"
             onClick={() => setFilterRisk('awas')}
             style={{
-              padding: '5px 12px',
+              padding: '4px 11px',
               borderRadius: '20px',
-              fontSize: '0.75rem',
+              fontSize: '0.74rem',
               fontWeight: 700,
               border: 'none',
               cursor: 'pointer',
@@ -196,9 +395,9 @@ export default function VillageStatsTable({ onSelectVillage }) {
             type="button"
             onClick={() => setFilterRisk('siaga')}
             style={{
-              padding: '5px 12px',
+              padding: '4px 11px',
               borderRadius: '20px',
-              fontSize: '0.75rem',
+              fontSize: '0.74rem',
               fontWeight: 700,
               border: 'none',
               cursor: 'pointer',
@@ -212,9 +411,9 @@ export default function VillageStatsTable({ onSelectVillage }) {
             type="button"
             onClick={() => setFilterRisk('waspada')}
             style={{
-              padding: '5px 12px',
+              padding: '4px 11px',
               borderRadius: '20px',
-              fontSize: '0.75rem',
+              fontSize: '0.74rem',
               fontWeight: 700,
               border: 'none',
               cursor: 'pointer',
@@ -228,9 +427,9 @@ export default function VillageStatsTable({ onSelectVillage }) {
             type="button"
             onClick={() => setFilterRisk('aman')}
             style={{
-              padding: '5px 12px',
+              padding: '4px 11px',
               borderRadius: '20px',
-              fontSize: '0.75rem',
+              fontSize: '0.74rem',
               fontWeight: 700,
               border: 'none',
               cursor: 'pointer',
@@ -249,10 +448,10 @@ export default function VillageStatsTable({ onSelectVillage }) {
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
             style={{
-              padding: '6px 10px',
+              padding: '5px 8px',
               borderRadius: '6px',
               border: '1px solid #cbd5e1',
-              fontSize: '0.78rem',
+              fontSize: '0.76rem',
               background: '#ffffff',
               color: '#334155',
               outline: 'none',
@@ -268,18 +467,18 @@ export default function VillageStatsTable({ onSelectVillage }) {
       </div>
 
       {/* Table Content */}
-      <div style={{ overflowX: 'auto' }}>
+      <div className="village-table-container">
         <table className="village-stats-table">
           <thead>
             <tr>
-              <th style={{ width: '40px', textAlign: 'center' }}>#</th>
-              <th>Nama Desa</th>
-              <th>Tingkat Risiko</th>
-              <th>Probabilitas Banjir</th>
-              <th>Elevasi</th>
-              <th>Skor Historis</th>
-              <th>Kalkulasi Terakhir</th>
-              <th style={{ textAlign: 'right' }}>Aksi</th>
+              <th style={{ width: '44px', textAlign: 'center' }}>#</th>
+              <th style={{ minWidth: '160px' }}>Nama Desa</th>
+              <th style={{ minWidth: '120px' }}>Tingkat Risiko</th>
+              <th style={{ minWidth: '160px' }}>Probabilitas Banjir</th>
+              <th style={{ minWidth: '95px' }}>Elevasi</th>
+              <th style={{ minWidth: '100px' }}>Skor Historis</th>
+              <th style={{ minWidth: '120px' }}>Kalkulasi Terakhir</th>
+              <th style={{ minWidth: '100px', textAlign: 'right' }}>Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -298,7 +497,8 @@ export default function VillageStatsTable({ onSelectVillage }) {
                 </td>
               </tr>
             ) : (
-              filteredVillages.map((village, idx) => {
+              paginatedVillages.map((village, idx) => {
+                const rowIndex = (page - 1) * pageSize + idx + 1
                 const prob = formatProb(village.current_probability)
                 const probColor = getProbColor(prob)
                 const lastCalc = village.last_calculated_at
@@ -306,29 +506,27 @@ export default function VillageStatsTable({ onSelectVillage }) {
                   : 'Realtime'
 
                 return (
-                  <tr key={village.id || idx}>
+                  <tr key={village.id || village.displayName || idx}>
                     <td style={{ textAlign: 'center', fontWeight: 600, color: '#94a3b8' }}>
-                      {idx + 1}
+                      {rowIndex}
                     </td>
                     <td>
                       <strong style={{ color: '#0f172a', fontSize: '0.88rem' }}>
-                        Desa {village.name.replace(/^Desa\s+/i, '')}
+                        Desa {village.displayName || village.name.replace(/^Desa\s+/i, '')}
                       </strong>
-                      <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                      <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '2px' }}>
                         {Number(village.latitude).toFixed(4)}, {Number(village.longitude).toFixed(4)}
                       </div>
                     </td>
                     <td>
-                      <span className={getRiskPillClass(village.current_risk_level)}>
-                        ● {village.current_risk_level || 'Aman'}
-                      </span>
+                      {getRiskBadge(village.current_risk_level)}
                     </td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <strong style={{ minWidth: '38px', color: probColor }}>
+                        <strong style={{ minWidth: '36px', color: probColor, fontSize: '0.86rem' }}>
                           {prob}%
                         </strong>
-                        <div className="prob-bar-track" style={{ width: '90px' }}>
+                        <div className="prob-bar-track">
                           <div 
                             className="prob-bar-fill" 
                             style={{ 
@@ -346,7 +544,7 @@ export default function VillageStatsTable({ onSelectVillage }) {
                       <small style={{ color: '#64748b' }}>mdpl</small>
                     </td>
                     <td>
-                      <span style={{ color: '#475569', fontWeight: 500 }}>
+                      <span style={{ color: '#475569', fontWeight: 600 }}>
                         {village.history_score ? Number(village.history_score).toFixed(2) : '0.50'}
                       </span>
                     </td>
@@ -358,31 +556,13 @@ export default function VillageStatsTable({ onSelectVillage }) {
                     <td style={{ textAlign: 'right' }}>
                       <button
                         type="button"
+                        className="radar-action-btn"
                         onClick={() => {
                           if (onSelectVillage) {
                             onSelectVillage(village)
                           } else {
                             window.location.hash = '#radar'
                           }
-                        }}
-                        style={{
-                          padding: '5px 12px',
-                          borderRadius: '6px',
-                          border: '1px solid #bfdbfe',
-                          background: '#eff6ff',
-                          color: '#1d4ed8',
-                          fontSize: '0.75rem',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          transition: 'all 0.15s'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = '#2563eb'
-                          e.currentTarget.style.color = '#ffffff'
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = '#eff6ff'
-                          e.currentTarget.style.color = '#1d4ed8'
                         }}
                       >
                         Buka Radar ↗
@@ -395,6 +575,68 @@ export default function VillageStatsTable({ onSelectVillage }) {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination Footer */}
+      {!loading && totalItems > 0 && (
+        <div className="village-pagination-row">
+          <div>
+            Menampilkan <strong>{Math.min(totalItems, (page - 1) * pageSize + 1)}</strong> - <strong>{Math.min(totalItems, page * pageSize)}</strong> dari <strong>{totalItems}</strong> desa
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '0.75rem' }}>Baris:</span>
+              <select
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+                style={{
+                  padding: '3px 6px',
+                  borderRadius: '4px',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '0.75rem',
+                  background: '#ffffff',
+                  color: '#334155',
+                  outline: 'none'
+                }}
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+              </select>
+            </div>
+
+            <div className="pagination-controls">
+              <button
+                type="button"
+                className="pagination-btn"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              >
+                ‹ Sebelumnya
+              </button>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pNum) => (
+                <button
+                  key={pNum}
+                  type="button"
+                  className={`pagination-btn ${page === pNum ? 'active' : ''}`}
+                  onClick={() => setPage(pNum)}
+                >
+                  {pNum}
+                </button>
+              ))}
+
+              <button
+                type="button"
+                className="pagination-btn"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              >
+                Selanjutnya ›
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </article>
   )
 }

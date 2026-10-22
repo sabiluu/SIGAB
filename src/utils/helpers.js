@@ -18,6 +18,68 @@ export function formatDate(date) {
 }
 
 /**
+ * Format tanggal & jam ke format Indonesia resmi (WIB).
+ * Contoh: "22 Okt 2026 • 09:24 WIB"
+ * @param {string|Date} date
+ * @param {boolean} withSeconds
+ * @returns {string}
+ */
+export function formatWIBDateTime(date, withSeconds = false) {
+  if (!date) return '-';
+  try {
+    const normalized = typeof date === 'string' && date.includes(' ') && !date.includes('T') 
+      ? date.replace(' ', 'T') 
+      : date;
+    const d = new Date(normalized);
+    if (isNaN(d.getTime())) return String(date);
+
+    const datePart = d.toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+    const timeOptions = {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    };
+    if (withSeconds) timeOptions.second = '2-digit';
+    const timePart = d.toLocaleTimeString('id-ID', timeOptions).replace(/\./g, ':');
+
+    return `${datePart} • ${timePart} WIB`;
+  } catch {
+    return String(date);
+  }
+}
+
+/**
+ * Format jam ke format WIB (contoh: "09:24 WIB")
+ * @param {string|Date} date
+ * @param {boolean} withSeconds
+ * @returns {string}
+ */
+export function formatWIBTime(date, withSeconds = false) {
+  if (!date) return '-';
+  try {
+    const normalized = typeof date === 'string' && date.includes(' ') && !date.includes('T') 
+      ? date.replace(' ', 'T') 
+      : date;
+    const d = new Date(normalized);
+    if (isNaN(d.getTime())) return String(date);
+
+    const timeOptions = {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    };
+    if (withSeconds) timeOptions.second = '2-digit';
+    return `${d.toLocaleTimeString('id-ID', timeOptions).replace(/\./g, ':')} WIB`;
+  } catch {
+    return String(date);
+  }
+}
+
+/**
  * Warna indikator berdasarkan level risiko.
  * @param {string} level - Aman | Waspada | Siaga | Awas
  * @returns {string} hex color

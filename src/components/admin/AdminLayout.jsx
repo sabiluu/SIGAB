@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { logout } from '../../services/authService'
 import { apiFetch } from '../../services/api'
 import wsService from '../../services/wsService'
+import LogoutModal from '../common/LogoutModal'
 import '../../styles/role-home.css'
 
 const brandIcon = 'https://www.figma.com/api/mcp/asset/d84f02db-e7d0-4c80-8d2c-7b2c55160913/375ad.svg'
@@ -10,6 +11,7 @@ export default function AdminLayout({ children, activeMenu }) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [currentTime, setCurrentTime] = useState(new Date())
   const [isEmergency, setIsEmergency] = useState(false)
+  const [showLogoutModal, setShowLogoutModal] = useState(false)
 
   const [sosCount, setSosCount] = useState(0)
 
@@ -98,11 +100,26 @@ export default function AdminLayout({ children, activeMenu }) {
             <span>Online · Shift Pagi</span>
           </div>
         </div>
+
+        <div style={{ padding: '12px 16px', borderTop: '1px solid #1e293b' }}>
+          <button
+            type="button"
+            className="warga-sidebar-logout-btn"
+            onClick={() => setShowLogoutModal(true)}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px' }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            <span>Keluar</span>
+          </button>
+        </div>
       </aside>
 
       <section className="admin-content">
         <header className="admin-header">
-          <div className="search-box">⌕ &nbsp; Cari desa, tiket, atau petugas...</div>
           <div className="admin-time">
             <strong>{timeStr}</strong>
             <small>{dateStr}</small>
@@ -124,13 +141,20 @@ export default function AdminLayout({ children, activeMenu }) {
             `}</style>
           </div>
           <div className="admin-avatar">●</div>
-          <button onClick={logout} className="logout-btn"><i>⎋</i> Keluar</button>
+          <button onClick={() => setShowLogoutModal(true)} className="logout-btn"><i>⎋</i> Keluar</button>
         </header>
         
         <main className="admin-dashboard">
           {children}
         </main>
       </section>
+
+      {/* Logout Confirmation Modal */}
+      <LogoutModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={logout}
+      />
     </div>
   )
 }

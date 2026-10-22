@@ -2,12 +2,39 @@ import { useState, useEffect } from 'react'
 import { ErrorState, LoadingState } from '../components/common/AsyncState'
 import { login, register } from '../services/authService'
 import { getVillages } from '../services/floodService'
+import '../styles/auth.css'
 
-const assetPathPrefix = 'https://www.figma.com/api/mcp/asset/187de7f3-3e0e-42e4-9bfe-938d4a46eeaf'
-const icons = {
-  brand: `data:image/svg+xml;utf8,${encodeURIComponent('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="6" fill="#2563eb"/><path d="M4 8c1.5-1 3.5-1 5 0s3.5 1 5 0 3.5-1 5 0" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 12c1.5-1 3.5-1 5 0s3.5 1 5 0 3.5-1 5 0" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 16c1.5-1 3.5-1 5 0s3.5 1 5 0 3.5-1 5 0" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>')}`,
-  user: `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>')}`,
-  petugas: `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/></svg>')}`,
+const SVG_ICONS = {
+  brandWave: (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.4" strokeLinecap="round">
+      <path d="M3 7c2-1.5 4.5-1.5 6.5 0s4.5 1.5 6.5 0 4.5-1.5 5 0" />
+      <path d="M3 12c2-1.5 4.5-1.5 6.5 0s4.5 1.5 6.5 0 4.5-1.5 5 0" />
+      <path d="M3 17c2-1.5 4.5-1.5 6.5 0s4.5 1.5 6.5 0 4.5-1.5 5 0" />
+    </svg>
+  ),
+  close: (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  ),
+  user: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  ),
+  shield: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    </svg>
+  ),
+  arrowRight: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="5" y1="12" x2="19" y2="12" />
+      <polyline points="12 5 19 12 12 19" />
+    </svg>
+  )
 }
 
 const DEFAULT_VILLAGES = [
@@ -27,14 +54,28 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
   const [role, setRole] = useState(initialRole)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [rememberMe, setRememberMe] = useState(true)
   const [villages, setVillages] = useState(DEFAULT_VILLAGES)
+  const [loginEmail, setLoginEmail] = useState(initialRole === 'petugas' ? 'admin@bpbd.go.id' : 'warga@baureno.id')
+  const [loginPassword, setLoginPassword] = useState(initialRole === 'petugas' ? 'admin123' : 'warga123')
+  
   const isRegister = mode === 'register'
+
+  function fillDemoCredentials() {
+    setError('')
+    if (role === 'petugas') {
+      setLoginEmail('admin@bpbd.go.id')
+      setLoginPassword('admin123')
+    } else {
+      setLoginEmail('warga@baureno.id')
+      setLoginPassword('warga123')
+    }
+  }
 
   useEffect(() => {
     getVillages()
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
-          // Take first 25 unique villages
           const unique = []
           const seen = new Set()
           for (const item of data) {
@@ -60,7 +101,18 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
   function switchRole(nextRole) {
     setRole(nextRole)
     setError('')
+    if (nextRole === 'petugas') {
+      setLoginEmail('admin@bpbd.go.id')
+      setLoginPassword('admin123')
+    } else {
+      setLoginEmail('warga@baureno.id')
+      setLoginPassword('warga123')
+    }
     window.history.replaceState(null, '', `#${mode === 'login' ? 'masuk' : 'daftar'}-${nextRole}`)
+  }
+
+  function handleClose() {
+    window.location.hash = ''
   }
 
   async function handleSubmit(event) {
@@ -81,81 +133,327 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
       const response = isRegister
         ? await register({ ...formData, role })
         : await login(formData.email, formData.password, role)
+      
       const target = response?.user?.role || role
       window.location.hash = target === 'admin' || target === 'petugas' ? '#petugas' : '#warga'
     } catch (requestError) {
-      setError(requestError.message)
+      setError(requestError.message || 'Terjadi kesalahan saat memproses permintaan.')
     } finally {
       setSubmitting(false)
     }
   }
 
   return (
-    <main className="auth-page">
-      <section className="auth-hero"><div className="auth-brand"><span><img src={icons.brand} alt="" /></span><strong>SiagaBencana<small>Sistem Peringatan Dini Banjir</small></strong></div><div className="auth-hero-copy"><h1>Selamat datang di garda terdepan kesiapsiagaan banjir.</h1><p>Pantau risiko banjir real-time, terima peringatan dini, dan minta bantuan evakuasi langsung dari genggaman Anda.</p><ul><li>✓ <span>Peringatan dini berbasis debit Bengawan Solo & BMKG</span></li><li>✓ <span>Rute evakuasi & tombol SOS saat darurat</span></li><li>✓ <span>Terhubung langsung dengan Pusdalops BPBD</span></li></ul></div><small className="auth-copyright">© 2026 SiagaBencana</small></section>
-      <section className="auth-panel">
-        <div className="auth-form-wrap">
-          <a href="#" className="auth-back">← Kembali ke Beranda</a>
-          <div className="auth-tabs">
-            <button className={!isRegister ? 'active' : ''} onClick={() => switchMode('login')} type="button">Masuk</button>
-            <button className={isRegister ? 'active' : ''} onClick={() => switchMode('register')} type="button">Daftar</button>
+    <div className="auth-modal-backdrop">
+      {/* Blurred overlay */}
+      <div className="auth-backdrop-overlay" onClick={handleClose} />
+
+      {/* Centered Modal Card */}
+      <div className="auth-modal-card" role="dialog" aria-modal="true">
+        {/* Header: Logo, Brand Text, and Close Button */}
+        <div className="auth-header">
+          <div className="auth-brand-wrap">
+            <div className="auth-brand-icon">
+              {SVG_ICONS.brandWave}
+            </div>
+            <div className="auth-brand-text">
+              <strong>SIGAB</strong>
+              <span>Siaga Banjir Bojonegoro</span>
+            </div>
           </div>
-          <h2>{isRegister ? 'Buat akun baru' : 'Masuk ke akun Anda'}</h2>
-          <p className="auth-subtitle">{isRegister ? 'Daftar untuk menerima peringatan dini banjir.' : 'Lanjutkan memantau kondisi wilayah Anda.'}</p>
-          <div className="role-switch">
-            <button className={role === 'warga' ? 'selected' : ''} onClick={() => switchRole('warga')} type="button">
-              <span><img src={icons.user} alt="" /></span><strong>Warga</strong><small>Publik / masyarakat</small>
-            </button>
-            <button className={role === 'petugas' ? 'selected' : ''} onClick={() => switchRole('petugas')} type="button">
-              <span><img src={icons.petugas} alt="" /></span><strong>Petugas BPBD</strong><small>Pusdalops / admin</small>
-            </button>
-          </div>
-          {error && <ErrorState message={error} onRetry={() => setError('')} />}
-          <form onSubmit={handleSubmit}>
-            {isRegister ? (
-              role === 'warga' ? (
-                <>
-                  <label className="auth-field"><input name="name" type="text" placeholder="Nama lengkap" required autoComplete="name" /></label>
-                  <label className="auth-field"><input name="nik" type="text" placeholder="NIK (16 digit)" required minLength={16} maxLength={16} /></label>
-                  <label className="auth-field"><input name="phone" type="tel" placeholder="Nomor telepon (WhatsApp)" required /></label>
-                  <label className="auth-field">
-                    <select name="village_id" required defaultValue="">
-                      <option value="" disabled>Pilih Desa Domisili (Kec. Baureno)</option>
-                      {villages.map((v) => (
-                        <option key={v.id} value={v.id}>Desa {v.name}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="auth-field"><input name="email" type="email" placeholder="Email" required autoComplete="email" /></label>
-                  <label className="auth-field"><input name="password" type="password" placeholder="Kata sandi (minimal 6 karakter)" required minLength={6} autoComplete="new-password" /></label>
-                </>
-              ) : (
-                <>
-                  <label className="auth-field"><input name="name" type="text" placeholder="Nama lengkap petugas" required autoComplete="name" /></label>
-                  <label className="auth-field"><input name="phone" type="tel" placeholder="Nomor telepon dinas" required /></label>
-                  <label className="auth-field"><input name="employeeId" type="text" placeholder="NIP / Kode Petugas Pusdalops" required /></label>
-                  <label className="auth-field"><input name="email" type="email" placeholder="Email dinas (@bpbd.go.id)" required autoComplete="email" /></label>
-                  <label className="auth-field"><input name="password" type="password" placeholder="Kata sandi" required minLength={6} autoComplete="new-password" /></label>
-                </>
-              )
-            ) : (
-              <>
-                <label className="auth-field"><input name="email" type="email" placeholder={role === 'petugas' ? 'Email dinas BPBD' : 'Email warga'} required autoComplete="username" /></label>
-                <label className="auth-field"><input name="password" type="password" placeholder="Kata sandi" required autoComplete="current-password" /></label>
-                <div className="auth-options"><label><input type="checkbox" defaultChecked /> Ingat saya</label><a href="#lupa-sandi">Lupa sandi?</a></div>
-              </>
-            )}
-            {submitting ? <LoadingState label="Menghubungkan ke server..." /> : <button className="auth-submit" type="submit">{isRegister ? 'Daftar Sekarang' : 'Masuk'} <span>→</span></button>}
-          </form>
-          <p className="auth-switch">
-            {isRegister ? 'Sudah punya akun?' : 'Belum punya akun?'}
-            <button type="button" onClick={() => switchMode(isRegister ? 'login' : 'register')}>
-              {isRegister ? 'Masuk di sini' : 'Daftar di sini'}
-            </button>
+          <button 
+            type="button" 
+            className="auth-close-btn" 
+            onClick={handleClose} 
+            aria-label="Tutup modal"
+          >
+            {SVG_ICONS.close}
+          </button>
+        </div>
+
+        {/* Title Area: Kicker, Heading, and Subtitle */}
+        <div className="auth-title-area">
+          <span className="auth-kicker">
+            {isRegister ? 'BERGABUNG DENGAN SIGAB' : 'SELAMAT DATANG KEMBALI'}
+          </span>
+          <h1 className="auth-heading">
+            {isRegister ? 'Buat akun baru' : 'Masuk ke akun Anda'}
+          </h1>
+          <p className="auth-subtitle">
+            {isRegister 
+              ? 'Daftar untuk menerima peringatan dini dan bantuan evakuasi.' 
+              : 'Akses informasi wilayah dan layanan darurat SIGAB.'}
           </p>
         </div>
-      </section>
-    </main>
+
+        {/* Role Switcher Tabs */}
+        <div className="auth-role-tabs">
+          <button
+            type="button"
+            className={`auth-role-tab ${role === 'warga' ? 'active' : ''}`}
+            onClick={() => switchRole('warga')}
+          >
+            {SVG_ICONS.user}
+            <span>Warga</span>
+          </button>
+          <button
+            type="button"
+            className={`auth-role-tab ${role === 'petugas' ? 'active' : ''}`}
+            onClick={() => switchRole('petugas')}
+          >
+            {SVG_ICONS.shield}
+            <span>Petugas BPBD</span>
+          </button>
+        </div>
+
+        {/* Error Notification */}
+        {error && <ErrorState message={error} onRetry={() => setError('')} />}
+
+        {/* Form Body */}
+        <form onSubmit={handleSubmit} className="auth-form">
+          {isRegister ? (
+            /* ================= REGISTER FORMS ================= */
+            role === 'warga' ? (
+              /* Register Warga */
+              <>
+                <div className="auth-field">
+                  <label htmlFor="reg-name">Nama lengkap</label>
+                  <input 
+                    id="reg-name" 
+                    name="name" 
+                    type="text" 
+                    placeholder="Masukkan nama lengkap" 
+                    required 
+                    autoComplete="name" 
+                  />
+                </div>
+
+                <div className="auth-fields-row">
+                  <div className="auth-field">
+                    <label htmlFor="reg-nik">NIK</label>
+                    <input 
+                      id="reg-nik" 
+                      name="nik" 
+                      type="text" 
+                      placeholder="16 digit NIK" 
+                      required 
+                      minLength={16} 
+                      maxLength={16} 
+                    />
+                  </div>
+                  <div className="auth-field">
+                    <label htmlFor="reg-phone">No. WhatsApp</label>
+                    <input 
+                      id="reg-phone" 
+                      name="phone" 
+                      type="tel" 
+                      placeholder="08xx" 
+                      required 
+                      autoComplete="tel" 
+                    />
+                  </div>
+                </div>
+
+                <div className="auth-field">
+                  <label htmlFor="reg-village">Desa domisili</label>
+                  <select id="reg-village" name="village_id" required defaultValue="">
+                    <option value="" disabled>Pilih desa di Kec. Baureno</option>
+                    {villages.map((v) => (
+                      <option key={v.id} value={v.id}>Desa {v.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="auth-field">
+                  <label htmlFor="reg-email">Email</label>
+                  <input 
+                    id="reg-email" 
+                    name="email" 
+                    type="email" 
+                    placeholder="nama@email.com" 
+                    required 
+                    autoComplete="email" 
+                  />
+                </div>
+
+                <div className="auth-field">
+                  <label htmlFor="reg-pwd">Kata sandi</label>
+                  <input 
+                    id="reg-pwd" 
+                    name="password" 
+                    type="password" 
+                    placeholder="Minimal 6 karakter" 
+                    required 
+                    minLength={6} 
+                    autoComplete="new-password" 
+                  />
+                </div>
+              </>
+            ) : (
+              /* Register Petugas BPBD */
+              <>
+                <div className="auth-field">
+                  <label htmlFor="petugas-name">Nama lengkap petugas</label>
+                  <input 
+                    id="petugas-name" 
+                    name="name" 
+                    type="text" 
+                    placeholder="Masukkan nama lengkap" 
+                    required 
+                    autoComplete="name" 
+                  />
+                </div>
+
+                <div className="auth-fields-row">
+                  <div className="auth-field">
+                    <label htmlFor="petugas-code">NIP / Kode</label>
+                    <input 
+                      id="petugas-code" 
+                      name="employeeId" 
+                      type="text" 
+                      placeholder="Kode Pusdalops" 
+                      required 
+                    />
+                  </div>
+                  <div className="auth-field">
+                    <label htmlFor="petugas-phone">Telepon dinas</label>
+                    <input 
+                      id="petugas-phone" 
+                      name="phone" 
+                      type="tel" 
+                      placeholder="08xx" 
+                      required 
+                      autoComplete="tel" 
+                    />
+                  </div>
+                </div>
+
+                <div className="auth-field">
+                  <label htmlFor="petugas-email">Email dinas</label>
+                  <input 
+                    id="petugas-email" 
+                    name="email" 
+                    type="email" 
+                    placeholder="nama@bpbd.go.id" 
+                    required 
+                    autoComplete="email" 
+                  />
+                </div>
+
+                <div className="auth-field">
+                  <label htmlFor="petugas-pwd">Kata sandi</label>
+                  <input 
+                    id="petugas-pwd" 
+                    name="password" 
+                    type="password" 
+                    placeholder="Minimal 6 karakter" 
+                    required 
+                    minLength={6} 
+                    autoComplete="new-password" 
+                  />
+                </div>
+              </>
+            )
+          ) : (
+            /* ================= LOGIN FORMS ================= */
+            <>
+              <div className="auth-demo-hint">
+                <div className="auth-demo-info">
+                  <span className="auth-demo-badge">Akun Uji Coba {role === 'petugas' ? 'Petugas' : 'Warga'}</span>
+                  <span className="auth-demo-text">
+                    {role === 'petugas' ? 'admin@bpbd.go.id • admin123' : 'warga@baureno.id • warga123'}
+                  </span>
+                </div>
+                <button type="button" className="auth-demo-btn" onClick={fillDemoCredentials}>
+                  Isi Cepat
+                </button>
+              </div>
+
+              <div className="auth-field">
+                <label htmlFor="login-email">
+                  {role === 'petugas' ? 'Email dinas' : 'Email'}
+                </label>
+                <input 
+                  id="login-email" 
+                  name="email" 
+                  type="email" 
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  placeholder={role === 'petugas' ? 'admin@bpbd.go.id' : 'warga@baureno.id'} 
+                  required 
+                  autoComplete="username" 
+                />
+              </div>
+
+              <div className="auth-field">
+                <label htmlFor="login-pwd">Kata sandi</label>
+                <input 
+                  id="login-pwd" 
+                  name="password" 
+                  type="password" 
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  placeholder="Masukkan kata sandi" 
+                  required 
+                  autoComplete="current-password" 
+                />
+              </div>
+
+              <div className="auth-options-row">
+                <label className="auth-checkbox-label">
+                  <input 
+                    type="checkbox" 
+                    checked={rememberMe} 
+                    onChange={(e) => setRememberMe(e.target.checked)} 
+                  />
+                  <span>Ingat saya</span>
+                </label>
+                <a href="#lupa-sandi" className="auth-forgot-link">
+                  Lupa kata sandi?
+                </a>
+              </div>
+            </>
+          )}
+
+          {/* Submit Button */}
+          {submitting ? (
+            <LoadingState label="Menghubungkan ke server..." />
+          ) : (
+            <button className="auth-submit-btn" type="submit">
+              <span>{isRegister ? 'Daftar sekarang' : 'Masuk ke SIGAB'}</span>
+              {SVG_ICONS.arrowRight}
+            </button>
+          )}
+        </form>
+
+        {/* Footer Prompt */}
+        <div className="auth-footer-prompt">
+          {isRegister ? (
+            <>
+              Sudah punya akun?{' '}
+              <button 
+                type="button" 
+                className="auth-link-teal" 
+                onClick={() => switchMode('login')}
+              >
+                Masuk di sini
+              </button>
+            </>
+          ) : (
+            <>
+              Belum punya akun?{' '}
+              <button 
+                type="button" 
+                className="auth-link-teal" 
+                onClick={() => switchMode('register')}
+              >
+                {role === 'petugas' ? 'Daftar sebagai petugas' : 'Daftar sebagai warga'}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
   )
 }
 

@@ -333,13 +333,24 @@ export function useGeolocation() {
   }, []);
 
   useEffect(() => {
-    // Jalankan deteksi GPS device langsung saat inisialisasi
+    // Jalankan deteksi GPS device langsung & kontinu real-time
     if (navigator.geolocation) {
+      setLoading(true);
+      // 1. Initial quick GPS reading
       navigator.geolocation.getCurrentPosition(handleSuccess, handleError, {
         enableHighAccuracy: true,
         timeout: 10000,
         maximumAge: 0
       });
+      // 2. Continuous real-time location tracking
+      const watchId = navigator.geolocation.watchPosition(handleSuccess, handleError, {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 3000
+      });
+      return () => {
+        navigator.geolocation.clearWatch(watchId);
+      };
     } else {
       handleError(new Error('Browser tidak mendukung geolokasi'));
     }
