@@ -1,17 +1,21 @@
 """Pydantic schemas untuk SOS Ticket."""
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Literal
 from decimal import Decimal
 
+SOSTicketStatus = Literal[
+    "submitted", "verified", "rejected", "dispatched", "on_route", "arrived", "completed"
+]
+
 class SOSTicketCreate(BaseModel):
-    reporter_id: int
+    reporter_id: Optional[int] = None
     village_id: int
     gps_latitude: Decimal
     gps_longitude: Decimal
     gps_address: Optional[str] = None
-    family_count: int = 1
+    family_count: int = Field(1, ge=1, le=100, description="Jumlah anggota keluarga (minimal 1)")
     has_elderly: bool = False
     has_toddler: bool = False
     has_disability: bool = False
@@ -20,8 +24,8 @@ class SOSTicketCreate(BaseModel):
     is_simulation: bool = False
 
 class SOSTicketUpdate(BaseModel):
-    status: str
-    priority_score: Optional[int] = None
+    status: SOSTicketStatus
+    priority_score: Optional[int] = Field(None, ge=0)
     assigned_admin_id: Optional[int] = None
     assigned_unit: Optional[str] = None
     rejection_reason: Optional[str] = None

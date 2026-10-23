@@ -4,6 +4,13 @@ Test suite untuk Pengetatan Aturan CORS Domain Produksi & Pengamanan Secret Key 
 
 import sys
 import os
+
+try:
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8')
+except Exception:
+    pass
+
 from datetime import datetime, timedelta, timezone
 from fastapi.testclient import TestClient
 

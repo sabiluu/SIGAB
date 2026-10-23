@@ -3,10 +3,12 @@ Router: Audit Log — pencatatan dan penelusuran riwayat aksi Admin
 (Disposisi Armada, Perubahan Status SOS, dan Perubahan Status Darurat).
 """
 
+import csv
+import io
 import math
 from typing import List, Optional
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, desc
 
@@ -23,6 +25,7 @@ from ..schemas.audit_log import (
 from ..services.audit_service import (
     format_audit_log,
     compute_audit_stats,
+    ACTION_LABELS,
 )
 
 router = APIRouter(prefix="/audit-logs", tags=["Audit Log"])
@@ -137,6 +140,106 @@ def get_audit_logs_by_ticket(
         .all()
     )
     return [format_audit_log(l) for l in logs]
+
+
+@router.get("/export")
+def export_audit_logs_csv(
+    action_type: Optional[str] = Query(None, description="Filter tipe aksi: disposisi_armada, ubah_status_sos, emergency_activate, emergency_deactivate, update_system_config, update_user, toggle_user_status, atau semua"),
+    target_type: Optional[str] = Query(None, description="Filter entitas target: sos_ticket, emergency_status, system_config, user"),
+    admin_id: Optional[int] = Query(None, description="Filter ID admin pelaksana"),
+    ticket_number: Optional[str] = Query(None, description="Filter nomor tiket SOS"),
+    start_date: Optional[datetime] = Query(None, description="Rentang tanggal awal"),
+    end_date: Optional[datetime] = Query(None, description="Rentang tanggal akhir"),
+    search: Optional[str] = Query(None, description="Pencarian nama admin, catatan, unit armada, atau nomor tiket"),
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin_user),
+):
+    """
+    (Admin) Mengekspor riwayat audit log aktivitas admin BPBD ke format CSV.
+    Disediakan untuk arsip kepatuhan regulasi, akuntabilitas penanganan darurat, dan audit internal.
+    """
+    query = db.query(AuditLog)
+
+    if action_type and action_type.strip().lower() != "semua":
+        query = query.filter(AuditLog.action_type == action_type.strip().lower())
+
+    if target_type and target_type.strip():
+        query = query.filter(AuditLog.target_type == target_type.strip().lower())
+
+    if admin_id is not None:
+        query = query.filter(AuditLog.admin_id == admin_id)
+
+    if ticket_number and ticket_number.strip():
+        query = query.filter(AuditLog.ticket_number == ticket_number.strip())
+
+    if start_date is not None:
+        query = query.filter(AuditLog.created_at >= start_date)
+
+    if end_date is not None:
+        query = query.filter(AuditLog.created_at <= end_date)
+
+    if search and search.strip():
+        s = f"%{search.strip()}%"
+        query = query.filter(
+            or_(
+                AuditLog.admin_name.ilike(s),
+                AuditLog.ticket_number.ilike(s),
+                AuditLog.assigned_unit.ilike(s),
+                AuditLog.notes.ilike(s),
+                AuditLog.shelter_name.ilike(s),
+            )
+        )
+
+    records = query.order_by(AuditLog.created_at.desc(), AuditLog.id.desc()).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output, delimiter=",", quoting=csv.QUOTE_MINIMAL)
+    writer.writerow([
+        "ID Log",
+        "Waktu Kejadian (WIB)",
+        "Nama Admin Pelaksana",
+        "Tipe Aksi",
+        "Label Aksi",
+        "Entitas Target",
+        "Target ID",
+        "Nomor Tiket SOS",
+        "Status Sebelum",
+        "Status Sesudah",
+        "Unit Ditugaskan",
+        "Posko Terkait",
+        "Catatan",
+        "Alamat IP",
+    ])
+
+    for log in records:
+        admin_name = log.admin_name or (log.admin.full_name if log.admin else "Admin")
+        label = ACTION_LABELS.get(log.action_type, log.action_type.replace("_", " ").title())
+        shelter_name = log.shelter_name or (log.shelter.name if log.shelter else "-")
+        target_display = str(log.target_id) if log.target_id is not None else "-"
+
+        writer.writerow([
+            log.id,
+            log.created_at.strftime("%Y-%m-%d %H:%M:%S") if log.created_at else "-",
+            admin_name,
+            log.action_type,
+            label,
+            log.target_type,
+            target_display,
+            log.ticket_number or "-",
+            log.old_status or "-",
+            log.new_status or "-",
+            log.assigned_unit or "-",
+            shelter_name,
+            log.notes or "-",
+            log.ip_address or "-",
+        ])
+
+    filename = f"laporan_audit_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
 
 
 @router.get("/{log_id}", response_model=AuditLogResponse)

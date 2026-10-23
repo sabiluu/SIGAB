@@ -41,11 +41,15 @@ async def ws_dashboard(websocket: WebSocket):
         # Keep alive — tunggu pesan dari client (ping/pong)
         while True:
             data = await websocket.receive_text()
+            data_clean = data.strip() if isinstance(data, str) else ""
+            if data_clean.lower() == "ping":
+                await ws_manager.send_personal(websocket, {"type": "pong"})
+                continue
             try:
-                msg = json.loads(data)
-                if msg.get("type") == "ping":
+                msg = json.loads(data_clean)
+                if isinstance(msg, dict) and msg.get("type") == "ping":
                     await ws_manager.send_personal(websocket, {"type": "pong"})
-            except json.JSONDecodeError:
+            except (json.JSONDecodeError, ValueError):
                 pass
     except WebSocketDisconnect:
         await ws_manager.disconnect(websocket, channel="dashboard")
@@ -100,27 +104,32 @@ async def ws_alerts(
         # Keep-alive loop — terima ping/pesan dari client
         while True:
             data = await websocket.receive_text()
+            data_clean = data.strip() if isinstance(data, str) else ""
+            if data_clean.lower() == "ping":
+                await ws_manager.send_personal(websocket, {"type": "pong"})
+                continue
             try:
-                msg = json.loads(data)
-                # Client bisa mengirim ping untuk keep-alive
-                if msg.get("type") == "ping":
-                    await ws_manager.send_personal(websocket, {"type": "pong"})
+                msg = json.loads(data_clean)
+                if isinstance(msg, dict):
+                    # Client bisa mengirim ping untuk keep-alive
+                    if msg.get("type") == "ping":
+                        await ws_manager.send_personal(websocket, {"type": "pong"})
 
-                # Client bisa update village_id secara dinamis tanpa reconnect
-                elif msg.get("type") == "update_village":
-                    new_village_id = msg.get("village_id")
-                    if new_village_id is not None:
-                        client.village_id = int(new_village_id)
-                        await ws_manager.send_personal(websocket, {
-                            "type": "village_updated",
-                            "village_id": client.village_id,
-                            "message": f"Filter desa diperbarui ke ID {client.village_id}.",
-                        })
-                        logger.info(
-                            f"[WS alerts] Client updated village_id to {client.village_id}"
-                        )
+                    # Client bisa update village_id secara dinamis tanpa reconnect
+                    elif msg.get("type") == "update_village":
+                        new_village_id = msg.get("village_id")
+                        if new_village_id is not None:
+                            client.village_id = int(new_village_id)
+                            await ws_manager.send_personal(websocket, {
+                                "type": "village_updated",
+                                "village_id": client.village_id,
+                                "message": f"Filter desa diperbarui ke ID {client.village_id}.",
+                            })
+                            logger.info(
+                                f"[WS alerts] Client updated village_id to {client.village_id}"
+                            )
 
-            except json.JSONDecodeError:
+            except (json.JSONDecodeError, ValueError):
                 pass
     except WebSocketDisconnect:
         await ws_manager.disconnect(websocket, channel="alerts")
@@ -147,17 +156,55 @@ async def ws_sos(websocket: WebSocket):
 
         while True:
             data = await websocket.receive_text()
+            data_clean = data.strip() if isinstance(data, str) else ""
+            if data_clean.lower() == "ping":
+                await ws_manager.send_personal(websocket, {"type": "pong"})
+                continue
             try:
-                msg = json.loads(data)
-                if msg.get("type") == "ping":
+                msg = json.loads(data_clean)
+                if isinstance(msg, dict) and msg.get("type") == "ping":
                     await ws_manager.send_personal(websocket, {"type": "pong"})
-            except json.JSONDecodeError:
+            except (json.JSONDecodeError, ValueError):
                 pass
     except WebSocketDisconnect:
         await ws_manager.disconnect(websocket, channel="sos")
     except Exception as e:
         logger.error(f"[WS sos] Error: {e}")
         await ws_manager.disconnect(websocket, channel="sos")
+
+
+@router.websocket("/ws/general")
+@router.websocket("/ws")
+async def ws_general(websocket: WebSocket):
+    """
+    WebSocket endpoint kanal siaran umum (general broadcast) ke seluruh klien terhubung
+    sesuai spesifikasi PRD Bagian G.2.
+    """
+    await ws_manager.connect(websocket, channel="general")
+    try:
+        await ws_manager.send_personal(websocket, {
+            "type": "connected",
+            "channel": "general",
+            "message": "Terhubung ke kanal siaran umum SiagaBencana.",
+        })
+
+        while True:
+            data = await websocket.receive_text()
+            data_clean = data.strip() if isinstance(data, str) else ""
+            if data_clean.lower() == "ping":
+                await ws_manager.send_personal(websocket, {"type": "pong"})
+                continue
+            try:
+                msg = json.loads(data_clean)
+                if isinstance(msg, dict) and msg.get("type") == "ping":
+                    await ws_manager.send_personal(websocket, {"type": "pong"})
+            except (json.JSONDecodeError, ValueError):
+                pass
+    except WebSocketDisconnect:
+        await ws_manager.disconnect(websocket, channel="general")
+    except Exception as e:
+        logger.error(f"[WS general] Error: {e}")
+        await ws_manager.disconnect(websocket, channel="general")
 
 
 @router.get("/ws/status")

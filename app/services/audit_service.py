@@ -22,6 +22,10 @@ ACTION_LABELS = {
     "ubah_status": "Ubah Status Tiket SOS",
     "emergency_activate": "Aktivasi Darurat Desa",
     "emergency_deactivate": "Pencabutan Darurat Desa",
+    "update_system_config": "Pembaruan Konfigurasi Sistem",
+    "update_user": "Pembaruan Data Warga",
+    "toggle_user_status": "Aktivasi/Deaktivasi Akun Warga",
+    "change_password": "Ganti Kata Sandi Akun",
 }
 
 ID_MONTHS = [
@@ -255,3 +259,73 @@ def compute_audit_stats(db: Session) -> AuditLogStatsResponse:
         actions_by_type=actions_by_type,
         top_admins=top_admins,
     )
+
+
+def record_config_change(
+    db: Session,
+    admin: User,
+    config_key: str,
+    old_value: str,
+    new_value: str,
+    notes: Optional[str] = None,
+    ip_address: Optional[str] = None,
+) -> AuditLog:
+    """Mencatat perubahan konfigurasi sistem ke tabel audit_logs."""
+    details_payload = {
+        "config_key": config_key,
+        "old_value": old_value,
+        "new_value": new_value,
+    }
+    desc_notes = notes or f"Mengubah parameter {config_key}: '{old_value}' -> '{new_value}'"
+    log_entry = AuditLog(
+        admin_id=admin.id,
+        admin_name=admin.full_name,
+        action_type="update_system_config",
+        target_type="system_config",
+        target_id=None,
+        ticket_number=config_key,
+        old_status=str(old_value),
+        new_status=str(new_value),
+        notes=desc_notes,
+        details=json.dumps(details_payload, ensure_ascii=False),
+        ip_address=ip_address,
+        created_at=get_wib_now(),
+    )
+    db.add(log_entry)
+    db.flush()
+    return log_entry
+
+
+def record_user_action(
+    db: Session,
+    admin: User,
+    target_user: User,
+    action_type: str,  # 'update_user' or 'toggle_user_status'
+    old_value: Optional[str] = None,
+    new_value: Optional[str] = None,
+    notes: Optional[str] = None,
+    details: Optional[Dict[str, Any]] = None,
+    ip_address: Optional[str] = None,
+) -> AuditLog:
+    """Mencatat aktivitas pengelolaan user/warga oleh admin ke tabel audit_logs."""
+    details_str = json.dumps(details or {}, ensure_ascii=False) if details else None
+    desc_notes = notes or f"Aksi {action_type} pada akun warga #{target_user.id} ({target_user.full_name})"
+    log_entry = AuditLog(
+        admin_id=admin.id,
+        admin_name=admin.full_name,
+        action_type=action_type,
+        target_type="user",
+        target_id=target_user.id,
+        ticket_number=target_user.email,
+        old_status=old_value,
+        new_status=new_value,
+        notes=desc_notes,
+        details=details_str,
+        ip_address=ip_address,
+        created_at=get_wib_now(),
+    )
+    db.add(log_entry)
+    db.flush()
+    return log_entry
+
+

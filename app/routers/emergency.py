@@ -27,6 +27,7 @@ from ..services.ws_manager import ws_manager
 from ..services.audit_service import record_emergency_action
 
 from fastapi import File, UploadFile
+import os
 import uuid
 
 router = APIRouter(prefix="/emergency", tags=["Emergency Status"])
@@ -404,3 +405,36 @@ async def deactivate_emergency(
     )
 
     return active
+
+
+class EmergencyTogglePayload(BaseModel):
+    village_id: int
+    is_emergency_active: bool = True
+    action: Optional[str] = None  # "activate" | "deactivate"
+    notes: Optional[str] = None
+    trigger_type: Optional[str] = "manual_admin"
+
+
+@router.post("", response_model=EmergencyStatusResponse)
+async def post_emergency_status(
+    payload: EmergencyTogglePayload,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin_user),
+):
+    """
+    (Admin) Aktivasi / Deaktivasi mode darurat desa sesuai PRD Table III (POST /api/emergency).
+    """
+    if payload.action == "deactivate" or payload.is_emergency_active is False:
+        req = DeactivateRequest(notes=payload.notes)
+        return await deactivate_emergency(village_id=payload.village_id, body=req, db=db, current_admin=current_admin)
+    else:
+        existing = db.query(EmergencyStatus).filter(
+            EmergencyStatus.village_id == payload.village_id,
+            EmergencyStatus.is_emergency_active == True,
+        ).first()
+        if existing:
+            return existing
+        req = ActivateRequest(notes=payload.notes or f"Diaktifkan manual oleh {current_admin.full_name}")
+        return await activate_emergency(village_id=payload.village_id, body=req, db=db, current_admin=current_admin)
+
+

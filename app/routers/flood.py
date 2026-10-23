@@ -154,6 +154,28 @@ def get_archive_stats_endpoint(
     return compute_archive_stats(db, year=year, village_id=village_id)
 
 
+@router.post("/archive/sync-csv")
+@router.post("/incidents/sync-csv")
+def sync_flood_csv_endpoint(
+    db: Session = Depends(get_db),
+    current_admin=Depends(get_current_admin_user),
+):
+    """
+    Menyinkronkan data arsip kejadian banjir di database secara 1:1 dengan berkas rekap_banjir_baureno.csv.
+    """
+    try:
+        from sync_flood_database import sync_from_csv
+        sync_from_csv("rekap_banjir_baureno.csv")
+        total = db.query(FloodIncident).count()
+        return {
+            "success": True,
+            "message": f"Sinkronisasi berhasil! Sebanyak {total} kejadian banjir riil dari rekap_banjir_baureno.csv telah aktif.",
+            "total_incidents": total,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Gagal menyinkronkan CSV: {str(e)}")
+
+
 @router.get("/archive/export")
 def export_flood_archive(
     format: str = Query("csv", description="Format file: csv atau json"),

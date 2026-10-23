@@ -39,3 +39,8 @@ export async function getFloodArchiveStats(params = {}) {
   return apiFetch(`/flood/incidents/stats${qs}`);
 }
 
+export async function syncFloodCsv() {
+  return apiFetch('/flood/archive/sync-csv', { method: 'POST' });
+}
+
+

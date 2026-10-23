@@ -161,7 +161,7 @@ async def assess_and_update_flood_risks(db: Session) -> Dict[str, Any]:
                 emergency = EmergencyStatus(
                     village_id=village.id,
                     is_emergency_active=True,
-                    trigger_type="auto_system",
+                    trigger_type="auto_probability",
                     probability_at_trigger=prob_score,
                     notes=f"Diaktifkan otomatis oleh sistem karena level risiko {risk_level.upper()}",
                 )

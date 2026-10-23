@@ -1,6 +1,6 @@
 from .auth import router as auth_router
 from .villages import router as villages_router
-from .shelters import router as shelters_router
+from .shelters import router as shelters_router, evac_router
 from .sos import router as sos_router
 from .flood import router as flood_router
 from .websocket import router as websocket_router
@@ -8,3 +8,9 @@ from .notifications import router as notifications_router
 from .emergency import router as emergency_router
 from .dashboard import router as dashboard_router
 from .audit_logs import router as audit_logs_router
+from .system_config import router as config_router, configs_router
+from .users import router as users_router
+from .health import router as health_router
+
+
+

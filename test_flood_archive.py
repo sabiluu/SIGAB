@@ -7,6 +7,7 @@ import os
 from datetime import datetime
 from fastapi.testclient import TestClient
 
+sys.stdout.reconfigure(encoding='utf-8')
 # Ensure root directory is on python path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -183,7 +184,7 @@ def test_export_archive():
     csv_text = res_csv.text
     assert "Judul Kejadian" in csv_text
     assert "TMA (mdpl)" in csv_text
-    assert "Banjir Bandang" in csv_text
+    assert "Banjir Bengawan Solo" in csv_text
     print("✅ CSV export OK: Headers and content validated")
 
     # JSON export
@@ -220,6 +221,53 @@ def test_historical_calculation_logs_archive():
     print(f"✅ Calculation logs summary OK: total={summary_data['total_logs']}, avg_prob={summary_data['avg_probability']}")
 
 
+def test_flood_incident_category_validation():
+    """Uji validasi kategori insiden banjir (hanya awas, siaga, waspada, aman yang diterima)."""
+    # 1. Kategori tidak valid -> DITOLAK (422)
+    invalid_cat_payload = {
+        "title": "Banjir Luapan Kategori Tidak Valid",
+        "category": "bahaya",  # Hanya boleh awas, siaga, waspada, aman
+        "event_date": "2026-03-01T10:00:00",
+    }
+    res_inv_cat = client.post("/flood/incidents", headers=admin_headers, json=invalid_cat_payload)
+    assert res_inv_cat.status_code == 422, f"Expected 422, got {res_inv_cat.status_code}"
+    print("✅ POST /flood/incidents dengan category='bahaya' berhasil ditolak (422 Unprocessable Entity)")
+
+    # 2. Status tidak valid -> DITOLAK (422)
+    invalid_stat_payload = {
+        "title": "Banjir Status Tidak Valid",
+        "category": "awas",
+        "status": "status_asal",  # Hanya boleh selesai, pemulihan, aktif, arsip
+        "event_date": "2026-03-01T10:00:00",
+    }
+    res_inv_stat = client.post("/flood/incidents", headers=admin_headers, json=invalid_stat_payload)
+    assert res_inv_stat.status_code == 422, f"Expected 422, got {res_inv_stat.status_code}"
+    print("✅ POST /flood/incidents dengan status='status_asal' berhasil ditolak (422 Unprocessable Entity)")
+
+    # 3. Kategori valid 'waspada' -> BERHASIL (201)
+    valid_payload = {
+        "title": "Simulasi Banjir Waspada Kali Baureno",
+        "category": "waspada",
+        "status": "selesai",
+        "event_date": "2026-03-01T10:00:00",
+        "evacuated_count": 10,
+    }
+    res_valid = client.post("/flood/incidents", headers=admin_headers, json=valid_payload)
+    assert res_valid.status_code == 201, f"Expected 201, got {res_valid.status_code}"
+    inc_id = res_valid.json()["id"]
+    assert res_valid.json()["category"] == "waspada"
+    assert res_valid.json()["color"] == "blue"
+    print(f"✅ POST /flood/incidents dengan category='waspada' berhasil dibuat (ID #{inc_id})")
+
+    # 4. PUT update kategori tidak valid -> DITOLAK (422)
+    res_put_inv = client.put(f"/flood/incidents/{inc_id}", headers=admin_headers, json={"category": "kritis"})
+    assert res_put_inv.status_code == 422, f"Expected 422, got {res_put_inv.status_code}"
+    print("✅ PUT /flood/incidents/{id} dengan category='kritis' berhasil ditolak (422 Unprocessable Entity)")
+
+    # 5. Clean up
+    client.delete(f"/flood/incidents/{inc_id}", headers=admin_headers)
+
+
 if __name__ == "__main__":
     print("--- Menjalankan Test Suite Endpoint Data Arsip & Log Kejadian Banjir Lampau ---")
     test_get_incidents_list()
@@ -229,4 +277,5 @@ if __name__ == "__main__":
     test_admin_crud_workflow()
     test_export_archive()
     test_historical_calculation_logs_archive()
+    test_flood_incident_category_validation()
     print("\n🎉 SEMUA TEST BERHASIL (100% PASS)!")

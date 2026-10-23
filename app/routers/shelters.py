@@ -2,11 +2,12 @@
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 import math
 
 from ..core.database import get_db
 from ..models.shelter import Shelter
+from ..models.sos_ticket import SOSTicket
 from ..schemas.shelter import ShelterResponse, ShelterUpdate, NearbyAvailableShelterResponse
 from ..schemas.external import RouteResponse
 from ..services.external_api import get_evacuation_route
@@ -204,7 +205,29 @@ async def delete_shelter(
     shelter = db.query(Shelter).filter(Shelter.id == shelter_id).first()
     if not shelter:
         raise HTTPException(status_code=404, detail="Shelter not found")
-        
+
+    # Proteksi 1: Cek apakah masih terdapat pengungsi aktif di posko ini
+    if (shelter.capacity_occupied or 0) > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Tidak dapat menghapus posko '{shelter.name}'. Masih terdapat {shelter.capacity_occupied} jiwa pengungsi yang terdata di posko ini. Kosongkan kapasitas atau pindahkan pengungsi terlebih dahulu.",
+        )
+
+    # Proteksi 2: Cek apakah terdapat tiket SOS aktif yang sedang ditugaskan menuju posko ini
+    active_tickets_count = (
+        db.query(SOSTicket)
+        .filter(
+            SOSTicket.shelter_destination_id == shelter_id,
+            SOSTicket.status.in_(["submitted", "verified", "dispatched", "on_route", "arrived"]),
+        )
+        .count()
+    )
+    if active_tickets_count > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Tidak dapat menghapus posko '{shelter.name}'. Terdapat {active_tickets_count} tiket SOS aktif yang sedang ditugaskan menuju posko ini. Selesaikan evakuasi atau alihkan posko tujuan terlebih dahulu.",
+        )
+
     db.delete(shelter)
     db.commit()
     await broadcast_shelter_update(db)
@@ -214,8 +237,8 @@ async def delete_shelter(
 @router.get("/{shelter_id}/route", response_model=RouteResponse)
 async def get_route_to_shelter(
     shelter_id: int,
-    user_lat: float = Query(..., description="Latitude lokasi asal warga"),
-    user_lon: float = Query(..., description="Longitude lokasi asal warga"),
+    user_lat: float = Query(..., description="Latitude lokasi asal warga", ge=-90, le=90),
+    user_lon: float = Query(..., description="Longitude lokasi asal warga", ge=-180, le=180),
     db: Session = Depends(get_db),
 ):
     """
@@ -236,3 +259,53 @@ async def get_route_to_shelter(
         dest_lon=dest_lon,
     )
     return route_data
+
+
+evac_router = APIRouter(tags=["Evacuation Routing"])
+
+
+@evac_router.get("/evac/route", response_model=RouteResponse)
+@evac_router.get("/api/evac/route", response_model=RouteResponse)
+async def calculate_evacuation_route(
+    shelter_id: Optional[int] = Query(None, description="ID Shelter tujuan (opsional jika dest_lat/lon disertakan)"),
+    user_lat: Optional[float] = Query(None, description="Latitude lokasi asal warga", ge=-90, le=90),
+    user_lon: Optional[float] = Query(None, description="Longitude lokasi asal warga", ge=-180, le=180),
+    origin_lat: Optional[float] = Query(None, description="Alias origin latitude", ge=-90, le=90),
+    origin_lon: Optional[float] = Query(None, description="Alias origin longitude", ge=-180, le=180),
+    dest_lat: Optional[float] = Query(None, description="Latitude posko tujuan", ge=-90, le=90),
+    dest_lon: Optional[float] = Query(None, description="Longitude posko tujuan", ge=-180, le=180),
+    db: Session = Depends(get_db),
+):
+    """
+    Kalkulasi rute OSRM menuju posko evakuasi sesuai PRD Table III (GET /api/evac/route).
+    """
+    start_lat = user_lat if user_lat is not None else origin_lat
+    start_lon = user_lon if user_lon is not None else origin_lon
+    if start_lat is None or start_lon is None:
+        raise HTTPException(status_code=400, detail="Parameter user_lat dan user_lon wajib diisi.")
+
+    target_lat = dest_lat
+    target_lon = dest_lon
+
+    if shelter_id is not None:
+        shelter = db.query(Shelter).filter(Shelter.id == shelter_id).first()
+        if not shelter:
+            raise HTTPException(status_code=404, detail="Shelter tujuan tidak ditemukan.")
+        target_lat = float(shelter.latitude)
+        target_lon = float(shelter.longitude)
+    elif target_lat is None or target_lon is None:
+        shelters = db.query(Shelter).filter(Shelter.is_active == True).all()
+        if not shelters:
+            raise HTTPException(status_code=404, detail="Tidak ada posko evakuasi aktif yang terdaftar.")
+        from ..services.external_api import _calculate_haversine_distance
+        nearest = min(shelters, key=lambda s: _calculate_haversine_distance(start_lat, start_lon, float(s.latitude), float(s.longitude)))
+        target_lat = float(nearest.latitude)
+        target_lon = float(nearest.longitude)
+
+    return await get_evacuation_route(
+        origin_lat=start_lat,
+        origin_lon=start_lon,
+        dest_lat=target_lat,
+        dest_lon=target_lon,
+    )
+

@@ -22,6 +22,8 @@ USE siagabencana;
 -- =============================================================================
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS audit_logs;
+DROP TABLE IF EXISTS flood_incidents;
 DROP TABLE IF EXISTS notifications;
 DROP TABLE IF EXISTS sos_tickets;
 DROP TABLE IF EXISTS emergency_status;
@@ -77,6 +79,14 @@ CREATE TABLE users (
     avatar_url           VARCHAR(500)  NULL,
     is_active            BOOLEAN       NOT NULL DEFAULT TRUE,
     notification_enabled BOOLEAN       NOT NULL DEFAULT TRUE        COMMENT 'Toggle notifikasi push di Profil & Pengaturan (Layar U-600)',
+    nik                  VARCHAR(20)   NULL                         COMMENT 'Nomor Induk Kependudukan (NIK 16 digit)',
+    address              VARCHAR(255)  NULL                         COMMENT 'Alamat domisili detail warga',
+    family_count         INT           NULL DEFAULT 4               COMMENT 'Jumlah anggota keluarga dalam 1 KK',
+    elderly_count        INT           NULL DEFAULT 0               COMMENT 'Jumlah lansia (usia 60+ tahun)',
+    toddler_count        INT           NULL DEFAULT 0               COMMENT 'Jumlah balita (usia 0-5 tahun)',
+    pregnant_count       INT           NULL DEFAULT 0               COMMENT 'Jumlah ibu hamil dalam keluarga',
+    disabled_count       INT           NULL DEFAULT 0               COMMENT 'Jumlah anggota keluarga disabilitas/kebutuhan khusus',
+    notes                VARCHAR(500)  NULL                         COMMENT 'Catatan khusus evakuasi/kondisi kesehatan',
     created_at           TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at           TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
@@ -85,7 +95,8 @@ CREATE TABLE users (
 
     INDEX idx_users_role (role),
     INDEX idx_users_village (village_id),
-    INDEX idx_users_email (email)
+    INDEX idx_users_email (email),
+    INDEX idx_users_nik (nik)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   COMMENT='Akun pengguna platform — Warga (User) & Petugas BPBD (Admin)';
 
@@ -473,10 +484,34 @@ INSERT INTO system_config (config_key, config_value, config_type, description) V
 -- SEED DATA: Akun Admin Default BPBD
 -- Password: admin123 (bcrypt hash — GANTI di production!)
 -- =============================================================================
-INSERT INTO users (full_name, email, phone, password_hash, role, village_id) VALUES
-    ('Admin Pusdalops BPBD', 'admin@siagabencana.id', '081234567890',
-     '$2b$12$LJ3m4ys5IX8FO4BsHm9zVuP3YsQ9v5XvX5ydG6h/gNf6sRzKaMVWe',
-     'admin', NULL);
+INSERT INTO users (full_name, email, phone, password_hash, role, village_id, nik, address, is_active) VALUES
+    ('Admin BPBD Bojonegoro', 'admin@bpbd.go.id', '081234567890',
+     '$2b$12$fekZ4w7LM0N78cidERV4weYhmA3Hdd2XITneYsCWaJRQuc5TUs68S',
+     'admin', NULL, '3522000000000001', 'Kantor BPBD Kabupaten Bojonegoro', TRUE),
+    ('Admin Pusdalops BPBD', 'admin@siagabencana.id', '081234567891',
+     '$2b$12$fekZ4w7LM0N78cidERV4weYhmA3Hdd2XITneYsCWaJRQuc5TUs68S',
+     'admin', NULL, '3522000000000002', 'Posko Pusdalops BPBD Baureno', TRUE);
+
+
+-- =============================================================================
+-- SEED DATA: Arsip Kejadian Banjir Lampau (flood_incidents)
+-- Data historis hidrometeorologi banjir luapan Bengawan Solo & hujan ekstrem
+-- =============================================================================
+INSERT INTO flood_incidents (title, description, category, water_level_m, discharge_m3s, rainfall_mm, evacuated_count, affected_people_count, shelter_count, affected_villages, event_date, status, is_archived) VALUES
+    -- Data Riil Historis BPBD Baureno (2023 - 2025)
+    ('Banjir Bengawan Solo: Luapan Tanggul Kalisari', '320 KK terdampak. Jalan poros tergenang ± 6 KM. Fasilitas ibadah dan umum (Masjid, Polindes, Sekolah, Kantor Desa) tergenang air luapan Bengawan Solo. Sawah tergenang 150 Ha.', 'awas', 1.20, 1780.00, 140.00, 85, 1280, 3, 'Kalisari', '2025-05-21 07:00:00', 'selesai', TRUE),
+    ('Banjir Bengawan Solo: Luapan Permukiman Lebaksari', '66 KK terdampak luapan Bengawan Solo. Jalan Poros desa tergenang 2 Km, Sawah tergenang 10 Ha, serta 1 fasilitas pendidikan tergenang.', 'siaga', 0.80, 1550.00, 115.00, 18, 264, 1, 'Lebaksari', '2025-05-21 08:30:00', 'selesai', TRUE),
+    ('Banjir Bengawan Solo: Luapan Tanggungan', '125 KK terdampak. Jalan Poros tergenang 4 Km. Fasilitas umum (Masjid, SD, dan Polindes) tergenang luapan sungai. Sawah tergenang ± 95 Ha.', 'awas', 1.00, 1680.00, 128.00, 42, 500, 2, 'Tanggungan', '2025-05-21 09:00:00', 'selesai', TRUE),
+    ('Banjir Bengawan Solo: Genangan Sawah Trojalu', 'Area persawahan produktif warga terendam luapan sungai Bengawan Solo sebanyak 20 Ha.', 'waspada', 0.40, 980.00, 60.00, 0, 40, 0, 'Trojalu', '2025-02-26 07:00:00', 'selesai', TRUE),
+    ('Banjir Bengawan Solo: Genangan Permukiman Kadungrejo', 'Rumah warga yang terendam sebanyak 30 KK di sepanjang jalan paving 300 meter akibat luapan sungai Bengawan Solo.', 'siaga', 0.50, 1200.00, 78.00, 0, 120, 1, 'Kadungrejo (Kedungrejo)', '2025-02-26 08:00:00', 'selesai', TRUE),
+    ('Banjir Bengawan Solo: Luapan Kalisari & Warga Terisolir', 'Rumah terdampak 270 KK dengan 207 KK terisolir. Fasum tergenang: 2 TK/PAUD, 1 SD, 1 Masjid. Sawah terendam 215 Ha dan jalan lingkungan terendam sepanjang 5.200 meter.', 'awas', 1.10, 1650.00, 132.00, 60, 1080, 2, 'Kalisari', '2025-02-26 09:00:00', 'selesai', TRUE),
+    ('Banjir Bengawan Solo: Luapan Permukiman Lebaksari', 'RT 01, 02, 03, 06 RW 02 terendam. 5 rumah warga tergenang rata-rata 50 cm a.n.: Nyoto Amin, Masi''ah, Murip, Muhammad Nisar, Naful Rojib, Ngatemi.', 'waspada', 0.50, 1180.00, 70.00, 0, 20, 0, 'Lebaksari (RT 01, 02, 03, 06 RW 02)', '2025-02-26 09:30:00', 'selesai', TRUE),
+    ('Banjir Bengawan Solo: Luapan Tanggungan', 'Rumah yang terdampak sebanyak 117 KK. Tanaman padi sawah siap panen terendam seluas 15 Ha akibat luapan Bengawan Solo.', 'siaga', 0.60, 1340.00, 88.00, 15, 468, 1, 'Tanggungan', '2025-02-26 10:00:00', 'selesai', TRUE),
+    ('Banjir Luapan Sungai: Genangan Massal Tulungagung', 'Banjir luapan sungai dan genangan merendam 400 rumah warga serta 135 Ha lahan persawahan di Desa Tulungagung.', 'awas', 0.80, 1250.00, 135.00, 0, 1600, 2, 'Tulungagung', '2024-02-06 06:00:00', 'selesai', TRUE),
+    ('Banjir Luapan Sungai / Genangan: Jalan Poros Baureno', '2 Rumah terendam air 5–10 cm (a.n. Patemi, Israwan), Sawah terendam ± 30 Ha (padi 14 hari), Jalan Poros Utama Baureno–Kepohbaru terendam 2–3 cm sepanjang 500 meter.', 'waspada', 0.20, 750.00, 92.00, 0, 8, 0, 'Baureno', '2024-01-30 10:00:00', 'selesai', TRUE),
+    ('Banjir Bengawan Solo: Luapan Sungai Kalisari', '2 Fasum (SD & Balai Desa) tergenang ± 20–30 cm, ± 25 Rumah warga tergenang ± 10–20 cm, 1 Rumah tergenang di Dusun Cekalan, ± 3 km Jalan Desa terendam ± 20–50 cm, Sawah terendam (usia padi 3 bln) 50 Ha. Kerugian materil ditaksir Rp 50.000.000.', 'siaga', 0.50, 1420.00, 85.00, 0, 104, 1, 'Kalisari (Dusun Cekalan)', '2023-03-04 08:00:00', 'selesai', TRUE),
+    ('Banjir Bengawan Solo: Luapan Sungai Lebaksari', '6 Rumah warga tergenang rata-rata 50 cm a.n.: Nyoto Amin, Masi''ah, Murip, Muhammad Nisar, Naful Rojib, Ngatemi.', 'waspada', 0.50, 1150.00, 62.00, 0, 24, 0, 'Lebaksari', '2023-02-18 09:00:00', 'selesai', TRUE),
+    ('Banjir Bengawan Solo: Genangan Fasum & Jalan Kalisari', 'Jalan Dusun tergenang ± 20–50 cm. Fasum: Makam dan SDN 1 Kalisari tergenang ± 1 meter akibat luapan sungai Bengawan Solo.', 'waspada', 1.00, 1080.00, 55.00, 0, 50, 0, 'Kalisari', '2023-02-17 14:00:00', 'selesai', TRUE);
 
 
 -- =============================================================================

@@ -97,13 +97,32 @@ def mark_all_as_read(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
-    """Tandai semua notifikasi milik user sebagai sudah dibaca."""
-    db.query(Notification).filter(
-        Notification.user_id == current_user.id,
-        Notification.is_read == False,
-    ).update({"is_read": True})
+    """Tandai semua notifikasi milik user sebagai sudah dibaca secara efisien."""
+    updated_count = (
+        db.query(Notification)
+        .filter(
+            Notification.user_id == current_user.id,
+            Notification.is_read == False,
+        )
+        .update({"is_read": True}, synchronize_session=False)
+    )
     db.commit()
-    return {"message": "Semua notifikasi ditandai sebagai dibaca."}
+    return {"message": "Semua notifikasi ditandai sebagai dibaca.", "updated_count": updated_count}
+
+
+@router.delete("/clear-all")
+def clear_all_notifications(
+    read_only: bool = Query(False, description="Jika True, hanya hapus notifikasi yang telah dibaca"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """Hapus semua notifikasi milik user (atau opsional hanya yang sudah dibaca)."""
+    query = db.query(Notification).filter(Notification.user_id == current_user.id)
+    if read_only:
+        query = query.filter(Notification.is_read == True)
+    deleted_count = query.delete(synchronize_session=False)
+    db.commit()
+    return {"message": "Notifikasi berhasil dibersihkan.", "deleted_count": deleted_count}
 
 
 @router.delete("/{notification_id}", status_code=204)

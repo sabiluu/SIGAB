@@ -35,6 +35,8 @@ async def run_flood_engine_job():
         snapshot = build_dashboard_snapshot(db)
         await ws_manager.broadcast("dashboard", snapshot)
         logger.info("[Scheduler] Dashboard snapshot broadcasted to all connected clients.")
+    except asyncio.CancelledError:
+        logger.info("[Scheduler] Flood Engine job dibatalkan (shutdown).")
     except Exception as e:
         logger.error(f"[Scheduler] Terjadi kesalahan saat menjalankan Flood Engine: {e}")
     finally:
@@ -43,6 +45,15 @@ async def run_flood_engine_job():
 
 def start_scheduler():
     """Mulai scheduler saat aplikasi startup."""
+    if scheduler.running:
+        return
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        # Tidak ada asyncio event loop aktif (misal running unit test murni / script CLI)
+        logger.info("[Scheduler] Tidak ada asyncio event loop aktif. Menunda scheduler.")
+        return
+
     # Jadwalkan Flood Engine berjalan setiap 30 menit dan eksekusi langsung saat startup
     scheduler.add_job(
         run_flood_engine_job,
@@ -56,7 +67,13 @@ def start_scheduler():
     scheduler.start()
     logger.info("[Scheduler] APScheduler berhasil dimulai. Flood Engine dijadwalkan berjalan setiap 30 menit (dan dijalankan langsung saat startup).")
 
+from apscheduler.schedulers.base import STATE_RUNNING
+
 def stop_scheduler():
     """Hentikan scheduler saat aplikasi shutdown."""
-    scheduler.shutdown()
-    logger.info("[Scheduler] APScheduler dihentikan.")
+    if scheduler.state == STATE_RUNNING:
+        try:
+            scheduler.shutdown(wait=False)
+            logger.info("[Scheduler] APScheduler dihentikan.")
+        except Exception:
+            pass

@@ -9,6 +9,9 @@ export async function login(email, password, role) {
   const formBody = new URLSearchParams();
   formBody.append('username', email);
   formBody.append('password', password);
+  if (role) {
+    formBody.append('role', role);
+  }
 
   try {
     const response = await apiFetch('/auth/login', {
@@ -164,3 +167,18 @@ export async function updateProfile(data) {
   localStorage.setItem('sigab_user_profile', JSON.stringify(updated));
   return updated;
 }
+
+/**
+ * Mengubah kata sandi pengguna yang sedang login.
+ */
+export async function changePassword(currentPassword, newPassword, confirmPassword) {
+  return await apiFetch('/auth/change-password', {
+    method: 'POST',
+    body: JSON.stringify({
+      current_password: currentPassword,
+      new_password: newPassword,
+      confirm_password: confirmPassword,
+    }),
+  });
+}
+

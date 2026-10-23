@@ -1,8 +1,13 @@
 """Router: SOS / Tiket Darurat — dengan push notifikasi WebSocket."""
 
-from fastapi import APIRouter, Depends, HTTPException
+import csv
+import io
+import re
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, File, UploadFile
 from sqlalchemy.orm import Session
-from typing import List
+from sqlalchemy import or_
+from sqlalchemy.exc import IntegrityError
+from typing import List, Optional
 from datetime import datetime
 
 from ..core.timezone import get_wib_now
@@ -181,40 +186,88 @@ async def create_sos_ticket(
         except Exception as e:
             db.rollback()
 
+    # Kalkulasi priority_score sesuai PRD Persamaan (5):
+    # P_SOS = 10 * N_jiwa + 25 * I_lansia + 25 * I_balita + 30 * I_disabilitas + 20 * I_hamil
+    family_cnt = max(1, ticket.family_count if ticket.family_count is not None else 1)
+    priority_score = family_cnt * 10
+    if ticket.has_elderly:
+        priority_score += 25
+    if ticket.has_toddler:
+        priority_score += 25
+    if ticket.has_disability:
+        priority_score += 30
+    if ticket.has_pregnant:
+        priority_score += 20
+
     # Generate ticket number in format EVAC-BRN-YYYY-MMDD-SEQ per PRD specification
+    # Dilengkapi sequential detection, gap protection, dan retry loop collision handling saat lonjakan darurat
     now = get_wib_now()
     today_str = now.strftime("%Y-%m%d")
-    today_count = db.query(SOSTicket).filter(SOSTicket.ticket_number.like(f"EVAC-BRN-{today_str}-%")).count()
-    ticket_number = f"EVAC-BRN-{today_str}-{(today_count + 1):03d}"
-    
-    # Kalkulasi priority_score
-    priority_score = ticket.family_count * 2
-    if ticket.has_elderly: priority_score += 5
-    if ticket.has_toddler: priority_score += 5
-    if ticket.has_pregnant: priority_score += 5
-    if ticket.has_disability: priority_score += 10
+    prefix = f"EVAC-BRN-{today_str}-"
+    MAX_RETRIES = 5
+    new_ticket = None
 
-    new_ticket = SOSTicket(
-        ticket_number=ticket_number,
-        reporter_id=current_user.id,
-        village_id=ticket.village_id,
-        gps_latitude=ticket.gps_latitude,
-        gps_longitude=ticket.gps_longitude,
-        gps_address=ticket.gps_address,
-        family_count=ticket.family_count,
-        has_elderly=ticket.has_elderly,
-        has_toddler=ticket.has_toddler,
-        has_disability=ticket.has_disability,
-        has_pregnant=ticket.has_pregnant,
-        photo_url=ticket.photo_url,
-        status="submitted",
-        priority_score=priority_score,
-        submitted_at=now,
-        updated_at=now,
-    )
-    db.add(new_ticket)
-    db.commit()
-    db.refresh(new_ticket)
+    for attempt in range(MAX_RETRIES):
+        # Dapatkan tiket hari ini untuk mencari sequence angka tertinggi secara numerik
+        today_tickets = (
+            db.query(SOSTicket.ticket_number)
+            .filter(SOSTicket.ticket_number.like(f"{prefix}%"))
+            .all()
+        )
+        max_seq = 0
+        for row in today_tickets:
+            if row and row[0] and row[0].startswith(prefix):
+                raw_seq = row[0][len(prefix):].split("-")[0]
+                try:
+                    val = int(raw_seq)
+                    if val > max_seq:
+                        max_seq = val
+                except (ValueError, TypeError):
+                    continue
+
+        candidate_seq = max(max_seq + 1, len(today_tickets) + 1) + attempt
+        candidate_ticket_number = f"{prefix}{candidate_seq:03d}"
+
+        # Pastikan tidak tabrakan dengan nomor yang telah terdaftar
+        while db.query(SOSTicket).filter(SOSTicket.ticket_number == candidate_ticket_number).first():
+            candidate_seq += 1
+            candidate_ticket_number = f"{prefix}{candidate_seq:03d}"
+
+        new_ticket = SOSTicket(
+            ticket_number=candidate_ticket_number,
+            reporter_id=current_user.id,
+            village_id=ticket.village_id,
+            gps_latitude=ticket.gps_latitude,
+            gps_longitude=ticket.gps_longitude,
+            gps_address=ticket.gps_address,
+            family_count=family_cnt,
+            has_elderly=ticket.has_elderly,
+            has_toddler=ticket.has_toddler,
+            has_disability=ticket.has_disability,
+            has_pregnant=ticket.has_pregnant,
+            photo_url=ticket.photo_url,
+            status="submitted",
+            priority_score=priority_score,
+            submitted_at=now,
+            updated_at=now,
+        )
+
+        try:
+            db.add(new_ticket)
+            db.commit()
+            db.refresh(new_ticket)
+            break
+        except IntegrityError:
+            db.rollback()
+            if attempt == MAX_RETRIES - 1:
+                # Fallback darurat jika ada konkurensi ekstrem simultan
+                fallback_suffix = uuid.uuid4().hex[:4].upper()
+                candidate_ticket_number = f"{prefix}{candidate_seq:03d}-{fallback_suffix}"
+                new_ticket.ticket_number = candidate_ticket_number
+                db.add(new_ticket)
+                db.commit()
+                db.refresh(new_ticket)
+                break
 
     # Push notifikasi SOS baru ke admin via WebSocket
     reporter = db.query(User).filter(User.id == current_user.id).first()
@@ -222,13 +275,13 @@ async def create_sos_ticket(
         db=db,
         event_type="sos_new",
         ticket_id=new_ticket.id,
-        ticket_number=ticket_number,
+        ticket_number=new_ticket.ticket_number,
         reporter_name=reporter.full_name if reporter else "Warga",
         village_name=village.name if village else "—",
         status="submitted",
         village_id=ticket.village_id,
         extra_data={
-            "family_count": ticket.family_count,
+            "family_count": new_ticket.family_count,
             "gps_latitude": str(ticket.gps_latitude),
             "gps_longitude": str(ticket.gps_longitude),
         },
@@ -255,16 +308,124 @@ def get_my_sos_tickets(
     tickets = db.query(SOSTicket).filter(SOSTicket.reporter_id == current_user.id).order_by(SOSTicket.submitted_at.desc()).all()
     return tickets
 
+
+@router.get("/export")
+def export_sos_tickets_csv(
+    status: Optional[str] = Query(None, description="Filter status tiket: submitted, verified, dispatched, on_route, arrived, completed, rejected, atau semua"),
+    village_id: Optional[int] = Query(None, description="Filter desa domisili pelapor"),
+    has_vulnerable: Optional[bool] = Query(None, description="Hanya tiket dengan kelompok rentan (lansia/balita/bumil/disabilitas)"),
+    start_date: Optional[datetime] = Query(None, description="Rentang tanggal awal"),
+    end_date: Optional[datetime] = Query(None, description="Rentang tanggal akhir"),
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin_user),
+):
+    """(Admin) Mengekspor data tiket panggilan darurat SOS ke berkas CSV untuk rekapitulasi harian/bulanan BPBD."""
+    query = db.query(SOSTicket)
+
+    if status and status.strip().lower() != "semua":
+        query = query.filter(SOSTicket.status == status.strip().lower())
+
+    if village_id is not None:
+        query = query.filter(SOSTicket.village_id == village_id)
+
+    if has_vulnerable:
+        query = query.filter(
+            or_(
+                SOSTicket.has_elderly == True,
+                SOSTicket.has_toddler == True,
+                SOSTicket.has_pregnant == True,
+                SOSTicket.has_disability == True,
+            )
+        )
+
+    if start_date is not None:
+        query = query.filter(SOSTicket.submitted_at >= start_date)
+
+    if end_date is not None:
+        query = query.filter(SOSTicket.submitted_at <= end_date)
+
+    tickets = query.order_by(SOSTicket.submitted_at.desc()).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output, delimiter=",", quoting=csv.QUOTE_MINIMAL)
+    writer.writerow([
+        "ID",
+        "Nomor Tiket",
+        "Waktu Lapor (WIB)",
+        "Nama Pelapor",
+        "No. HP Pelapor",
+        "Desa Lokasi",
+        "Alamat / Patokan",
+        "Latitude",
+        "Longitude",
+        "Jumlah Jiwa KK",
+        "Lansia",
+        "Balita",
+        "Ibu Hamil",
+        "Disabilitas",
+        "Skor Prioritas",
+        "Status Terakhir",
+        "Unit Ditugaskan",
+        "Posko Tujuan",
+        "Alasan Penolakan",
+        "Waktu Verifikasi",
+        "Waktu Diberangkatkan",
+        "Waktu Tiba",
+        "Waktu Selesai",
+    ])
+
+    for t in tickets:
+        r_name = t.reporter.full_name if t.reporter else "-"
+        r_phone = f"'{t.reporter.phone}" if (t.reporter and t.reporter.phone) else "-"
+        v_name = t.village.name if t.village else "-"
+        s_name = t.shelter_destination.name if t.shelter_destination else "-"
+
+        writer.writerow([
+            t.id,
+            t.ticket_number,
+            t.submitted_at.strftime("%Y-%m-%d %H:%M") if t.submitted_at else "-",
+            r_name,
+            r_phone,
+            v_name,
+            t.gps_address or "-",
+            float(t.gps_latitude) if t.gps_latitude is not None else "-",
+            float(t.gps_longitude) if t.gps_longitude is not None else "-",
+            t.family_count,
+            "Ya" if t.has_elderly else "Tidak",
+            "Ya" if t.has_toddler else "Tidak",
+            "Ya" if t.has_pregnant else "Tidak",
+            "Ya" if t.has_disability else "Tidak",
+            t.priority_score,
+            t.status,
+            t.assigned_unit or "-",
+            s_name,
+            t.rejection_reason or "-",
+            t.verified_at.strftime("%Y-%m-%d %H:%M") if t.verified_at else "-",
+            t.dispatched_at.strftime("%Y-%m-%d %H:%M") if t.dispatched_at else "-",
+            t.arrived_at.strftime("%Y-%m-%d %H:%M") if t.arrived_at else "-",
+            t.completed_at.strftime("%Y-%m-%d %H:%M") if t.completed_at else "-",
+        ])
+
+    filename = f"laporan_tiket_sos_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
 @router.get("/{ticket_id}", response_model=SOSTicketResponse)
 def get_sos_ticket_by_id(
     ticket_id: int, 
     db: Session = Depends(get_db),
-    current_admin = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_active_user)
 ):
-    """(Admin) Melihat detail satu tiket SOS."""
+    """(Admin / Pelapor) Melihat detail satu tiket SOS."""
     ticket = db.query(SOSTicket).filter(SOSTicket.id == ticket_id).first()
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
+    if current_user.role != "admin" and ticket.reporter_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Akses ditolak")
     return ticket
 
 @router.delete("/{ticket_id}", status_code=204)
@@ -283,6 +444,7 @@ def delete_sos_ticket(
     return None
 
 @router.put("/{ticket_id}", response_model=SOSTicketResponse)
+@router.patch("/{ticket_id}", response_model=SOSTicketResponse)
 async def update_sos_ticket(
     ticket_id: int, 
     ticket_update: SOSTicketUpdate, 

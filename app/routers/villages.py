@@ -26,9 +26,18 @@ def get_village_by_id(village_id: int, db: Session = Depends(get_db)):
 
 from ..core.deps import get_current_admin_user
 from ..schemas.village import VillageCreate, VillageUpdate
+from ..services.dashboard_builder import build_dashboard_snapshot
+from ..services.ws_manager import ws_manager
+
+async def _broadcast_dashboard(db: Session):
+    try:
+        snapshot = build_dashboard_snapshot(db)
+        await ws_manager.broadcast("dashboard", snapshot)
+    except Exception:
+        pass
 
 @router.post("", response_model=VillageResponse, status_code=201)
-def create_village(
+async def create_village(
     village_in: VillageCreate, 
     db: Session = Depends(get_db),
     current_admin=Depends(get_current_admin_user)
@@ -38,10 +47,11 @@ def create_village(
     db.add(new_village)
     db.commit()
     db.refresh(new_village)
+    await _broadcast_dashboard(db)
     return new_village
 
 @router.put("/{village_id}", response_model=VillageResponse)
-def update_village(
+async def update_village(
     village_id: int, 
     village_in: VillageUpdate, 
     db: Session = Depends(get_db),
@@ -58,10 +68,11 @@ def update_village(
         
     db.commit()
     db.refresh(village)
+    await _broadcast_dashboard(db)
     return village
 
 @router.delete("/{village_id}", status_code=204)
-def delete_village(
+async def delete_village(
     village_id: int, 
     db: Session = Depends(get_db),
     current_admin=Depends(get_current_admin_user)
@@ -73,4 +84,5 @@ def delete_village(
         
     db.delete(village)
     db.commit()
+    await _broadcast_dashboard(db)
     return None

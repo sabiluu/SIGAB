@@ -3,15 +3,18 @@ Pydantic Schemas untuk Arsip Kejadian Banjir & Log Historis Hidrometeorologi.
 """
 
 from pydantic import BaseModel, ConfigDict, Field
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Literal
 from datetime import datetime
 from decimal import Decimal
+
+FloodCategory = Literal["awas", "siaga", "waspada", "aman"]
+FloodStatus = Literal["selesai", "pemulihan", "aktif", "arsip"]
 
 
 class FloodIncidentBase(BaseModel):
     title: str = Field(..., max_length=200, description="Judul peristiwa / insiden banjir")
     description: Optional[str] = Field(None, description="Deskripsi dampak atau detail kejadian")
-    category: str = Field("siaga", description="Kategori tingkat keparahan: awas, siaga, waspada, aman")
+    category: FloodCategory = Field("siaga", description="Kategori tingkat keparahan: awas, siaga, waspada, aman")
     village_id: Optional[int] = Field(None, description="ID desa terdampak utama (opsional jika multi-desa)")
     affected_villages: Optional[str] = Field(None, max_length=500, description="Daftar nama desa terdampak")
     water_level_m: Optional[float] = Field(None, description="Tinggi Muka Air (TMA) puncak dalam mdpl atau meter")
@@ -22,7 +25,7 @@ class FloodIncidentBase(BaseModel):
     shelter_count: int = Field(0, ge=0, description="Jumlah posko pengungsian yang difungsikan")
     event_date: datetime = Field(..., description="Waktu awal mulai kejadian")
     end_date: Optional[datetime] = Field(None, description="Waktu kejadian selesai / air surut")
-    status: str = Field("selesai", description="Status peristiwa: selesai, pemulihan, aktif, arsip")
+    status: FloodStatus = Field("selesai", description="Status peristiwa: selesai, pemulihan, aktif, arsip")
     is_archived: bool = Field(True, description="Penanda status arsip")
 
 
@@ -33,18 +36,18 @@ class FloodIncidentCreate(FloodIncidentBase):
 class FloodIncidentUpdate(BaseModel):
     title: Optional[str] = Field(None, max_length=200)
     description: Optional[str] = None
-    category: Optional[str] = None
+    category: Optional[FloodCategory] = None
     village_id: Optional[int] = None
     affected_villages: Optional[str] = None
     water_level_m: Optional[float] = None
     discharge_m3s: Optional[float] = None
     rainfall_mm: Optional[float] = None
-    evacuated_count: Optional[int] = None
-    affected_people_count: Optional[int] = None
-    shelter_count: Optional[int] = None
+    evacuated_count: Optional[int] = Field(None, ge=0)
+    affected_people_count: Optional[int] = Field(None, ge=0)
+    shelter_count: Optional[int] = Field(None, ge=0)
     event_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
-    status: Optional[str] = None
+    status: Optional[FloodStatus] = None
     is_archived: Optional[bool] = None
 
 

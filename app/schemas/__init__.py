@@ -1,4 +1,4 @@
-from .user import UserCreate, UserLogin, UserResponse
+from .user import UserCreate, UserLogin, UserResponse, ChangePasswordRequest, ChangePasswordResponse
 from .village import VillageResponse
 from .shelter import ShelterResponse
 from .sos_ticket import SOSTicketCreate, SOSTicketResponse
@@ -24,5 +24,11 @@ from .audit_log import (
     AuditLogResponse,
     AuditLogListResponse,
     AuditLogStatsResponse,
+)
+from .system_config import (
+    SystemConfigItem,
+    SystemConfigUpdate,
+    FloodWeightsUpdate,
+    FloodWeightsResponse,
 )
 

@@ -11,9 +11,24 @@ from ..core.database import get_db
 from ..core.security import hash_password, verify_password, create_access_token, check_secret_key_strength
 from ..core.config import settings
 from ..core.deps import get_current_active_user, get_current_admin_user
+from ..core.rate_limiter import login_rate_limiter
 from ..models.user import User
+from ..schemas.user import ChangePasswordRequest, ChangePasswordResponse
 
 router = APIRouter(tags=["Authentication"])
+
+
+def get_client_ip(request: Request) -> str:
+    """Ekstrak IP client, mempertimbangkan header reverse proxy / load balancer."""
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    real_ip = request.headers.get("x-real-ip")
+    if real_ip:
+        return real_ip.strip()
+    if request.client and request.client.host:
+        return request.client.host
+    return "127.0.0.1"
 
 
 class RegisterBody(BaseModel):
@@ -87,6 +102,7 @@ def handle_register(body: RegisterBody, db: Session):
         password_hash=hash_password(body.password),
         role=norm_role,
         village_id=body.village_id,
+        nik=body.nik.strip() if body.nik else None,
         is_active=True,
     )
     db.add(new_user)
@@ -96,10 +112,27 @@ def handle_register(body: RegisterBody, db: Session):
     return create_user_auth_response(new_user)
 
 
-def authenticate_user(email_or_username: str, password: str, role_filter: Optional[str], db: Session):
+def authenticate_user(
+    email_or_username: str,
+    password: str,
+    role_filter: Optional[str],
+    db: Session,
+    client_ip: str = "127.0.0.1",
+):
     clean_email = email_or_username.strip().lower()
+
+    # 1. Cek batas kegagalan login (Rate Limiting) untuk pencegahan serangan brute-force
+    allowed, retry_after = login_rate_limiter.is_allowed(client_ip, clean_email)
+    if not allowed:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Terlalu banyak percobaan login yang gagal. Silakan coba lagi dalam {retry_after} detik demi keamanan akun.",
+            headers={"Retry-After": str(retry_after)},
+        )
+
     user = db.query(User).filter(User.email == clean_email).first()
     if not user or not verify_password(password, user.password_hash):
+        login_rate_limiter.record_failure(client_ip, clean_email)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email atau kata sandi salah.",
@@ -117,6 +150,8 @@ def authenticate_user(email_or_username: str, password: str, role_filter: Option
                 detail=f"Akun ini bukan terdaftar sebagai {label}.",
             )
 
+    # Catat login sukses dan bersihkan kegagalan sebelumnya
+    login_rate_limiter.record_success(client_ip, clean_email)
     return create_user_auth_response(user)
 
 
@@ -133,17 +168,26 @@ def register_api(user_in: RegisterBody, db: Session = Depends(get_db)):
 
 # --- Login Endpoints ---
 @router.post("/auth/login")
+@router.post("/api/auth/login")
 async def login_auth(
     request: Request,
     db: Session = Depends(get_db),
 ):
-    """Mendukung Form (Swagger UI) dan JSON body."""
+    """Mendukung Form (Swagger UI) dan JSON body dengan proteksi brute-force."""
+    client_ip = get_client_ip(request)
     content_type = request.headers.get("content-type", "")
-    if "application/x-www-form-urlencoded" in content_type:
+    if "application/x-www-form-urlencoded" in content_type or "multipart/form-data" in content_type:
         form = await request.form()
-        username = form.get("username", "")
-        password = form.get("password", "")
-        return authenticate_user(username, password, None, db)
+        username = str(form.get("username") or form.get("email") or "").strip()
+        password = str(form.get("password") or "")
+        role = form.get("role")
+        if role is not None:
+            role = str(role).strip()
+            if not role:
+                role = None
+        if not username or not password:
+            raise HTTPException(status_code=400, detail="Email dan kata sandi wajib diisi.")
+        return authenticate_user(username, password, role, db, client_ip=client_ip)
 
     # JSON Body
     try:
@@ -153,20 +197,26 @@ async def login_auth(
     email = data.get("email") or data.get("username")
     password = data.get("password")
     role = data.get("role")
+    if role is not None:
+        role = str(role).strip()
+        if not role:
+            role = None
     if not email or not password:
         raise HTTPException(status_code=400, detail="Email dan kata sandi wajib diisi.")
-    return authenticate_user(email, password, role, db)
+    return authenticate_user(email, password, role, db, client_ip=client_ip)
 
 
 @router.post("/api/login")
 def login_api(
     user_in: LoginBody,
+    request: Request,
     db: Session = Depends(get_db),
 ):
+    client_ip = get_client_ip(request)
     email = user_in.email or user_in.username
     if not email or not user_in.password:
         raise HTTPException(status_code=400, detail="Email dan kata sandi wajib diisi.")
-    return authenticate_user(email, user_in.password, user_in.role, db)
+    return authenticate_user(email, user_in.password, user_in.role, db, client_ip=client_ip)
 
 
 class UpdateProfileBody(BaseModel):
@@ -266,6 +316,92 @@ def update_profile(
     db: Session = Depends(get_db),
 ):
     return update_me(body, current_user, db)
+
+
+# --- Change Password Endpoints ---
+@router.post("/auth/change-password", response_model=ChangePasswordResponse)
+def change_password_auth(
+    body: ChangePasswordRequest,
+    request: Request,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    """
+    (Warga / Admin) Mengubah kata sandi akun pengguna yang sedang aktif.
+    Validasi:
+    1. Kata sandi saat ini wajib diisi dan sesuai dengan data tersimpan.
+    2. Kata sandi baru minimal 6 karakter.
+    3. Konfirmasi kata sandi baru harus identik (jika disertakan).
+    4. Kata sandi baru tidak boleh sama dengan kata sandi saat ini.
+    """
+    curr_pwd = body.current_password or body.old_password
+    if not curr_pwd:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Kata sandi saat ini wajib diisi.",
+        )
+
+    if not verify_password(curr_pwd, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Kata sandi saat ini tidak sesuai.",
+        )
+
+    if len(body.new_password) < 6:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Kata sandi baru minimal 6 karakter.",
+        )
+
+    if body.confirm_password is not None and body.new_password != body.confirm_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Konfirmasi kata sandi baru tidak cocok.",
+        )
+
+    if verify_password(body.new_password, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Kata sandi baru tidak boleh sama dengan kata sandi saat ini.",
+        )
+
+    current_user.password_hash = hash_password(body.new_password)
+
+    # Catat audit log jika admin mengubah kata sandi
+    if current_user.role == "admin":
+        try:
+            from ..services.audit_service import record_user_action
+            client_ip = request.client.host if request.client else None
+            record_user_action(
+                db=db,
+                admin=current_user,
+                target_user=current_user,
+                action_type="change_password",
+                notes=f"Admin {current_user.full_name} memperbarui kata sandi akun.",
+                ip_address=client_ip,
+            )
+        except Exception as e:
+            # Audit log tidak boleh menggagalkan proses ganti password utama
+            pass
+
+    db.commit()
+    db.refresh(current_user)
+
+    return ChangePasswordResponse(
+        status="success",
+        message="Kata sandi berhasil diperbarui. Silakan gunakan kata sandi baru untuk login berikutnya.",
+    )
+
+
+@router.post("/api/change-password", response_model=ChangePasswordResponse)
+def change_password_api(
+    body: ChangePasswordRequest,
+    request: Request,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    """Alias endpoint ganti password untuk keselarasan dengan prefix /api."""
+    return change_password_auth(body, request, current_user, db)
 
 
 @router.get("/auth/security-check")
