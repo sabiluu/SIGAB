@@ -28,6 +28,8 @@ export default function ProfileModal({
   })
   const [isSaving, setIsSaving] = useState(false)
   const [alertStatus, setAlertStatus] = useState(null)
+  const [photoError, setPhotoError] = useState(null)
+  const fileInputRef = useRef(null)
 
   useEffect(() => {
     if (isOpen) {
@@ -85,9 +87,6 @@ export default function ProfileModal({
       return { ...prev, [field]: nextVal }
     })
   }
-
-  const fileInputRef = useRef(null)
-  const [photoError, setPhotoError] = useState(null)
 
   const handlePhotoSelect = (e) => {
     const file = e.target.files?.[0]
