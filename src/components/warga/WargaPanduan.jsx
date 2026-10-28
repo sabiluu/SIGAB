@@ -159,9 +159,16 @@ export default function WargaPanduan() {
 
               <div className="panduan-status-box">
                 <div className="panduan-sb-title" style={{ color: '#d97706' }}>
-                  <span>●</span> Siaga
+                  <span>●</span> Waspada
                 </div>
                 <div className="panduan-sb-desc">Waspada, siapkan tas siaga &amp; pantau air.</div>
+              </div>
+
+              <div className="panduan-status-box">
+                <div className="panduan-sb-title" style={{ color: '#ea580c' }}>
+                  <span>●</span> Siaga
+                </div>
+                <div className="panduan-sb-desc">Siaga evakuasi mandiri &amp; amankan barang.</div>
               </div>
 
               <div className="panduan-status-box">
