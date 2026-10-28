@@ -16,9 +16,10 @@
   white-space: nowrap; 
   height: 100vh; 
   max-height: 100vh; 
-  position: sticky; 
+  position: fixed; 
   top: 0; 
-  align-self: flex-start; 
+  left: 0;
+  bottom: 0;
   z-index: 50; 
   overflow-y: auto; 
   overflow-x: hidden; 
@@ -62,7 +63,9 @@
 .operator strong { color: white; font-size: 0.9rem; margin: 4px 0; }
 .operator span { color: #10b981; font-size: 0.7rem; display: flex; align-items: center; gap: 6px; }
 
-.admin-content { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.admin-content { flex: 1; display: flex; flex-direction: column; min-width: 0; margin-left: 260px; width: calc(100% - 260px); transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.admin-portal.sidebar-closed .admin-content { margin-left: 76px; width: calc(100% - 76px); }
+@media (max-width: 650px) { .admin-content { margin-left: 0 !important; width: 100% !important; } }
 .admin-header { display: flex; align-items: center; padding: 16px 32px; background: white; border-bottom: 1px solid #e2e8f0; height: 72px; gap: 24px; position: sticky; top: 0; z-index: 40; }
 .logout-btn, .portal-tools button.logout-btn { background: white; border: 1px solid #e2e8f0; color: #64748b; height: 38px; width: auto; padding: 0 16px; border-radius: 99px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; margin-left: 8px; }
 .logout-btn i, .portal-tools button.logout-btn i { font-style: normal; font-size: 1.1rem; width: auto; height: auto; border: none; background: transparent; color: inherit; padding: 0; margin: 0; display: inline; }

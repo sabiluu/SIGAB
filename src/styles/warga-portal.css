@@ -53,10 +53,11 @@
   flex-shrink: 0;
   height: 100vh;
   max-height: 100vh;
-  position: sticky;
+  position: fixed;
   top: 0;
-  align-self: flex-start;
-  z-index: 50;
+  left: 0;
+  bottom: 0;
+  z-index: 100;
   box-sizing: border-box;
   overflow-y: auto;
   overflow-x: hidden;
@@ -491,6 +492,26 @@
   flex-direction: column;
   min-width: 0;
   background-color: var(--warga-bg-page);
+  transition: margin-left 0.28s cubic-bezier(0.4, 0, 0.2, 1), width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (min-width: 1025px) {
+  .warga-portal-layout.sidebar-open .warga-main-container {
+    margin-left: 250px;
+    width: calc(100% - 250px);
+  }
+
+  .warga-portal-layout.sidebar-closed .warga-main-container {
+    margin-left: 76px;
+    width: calc(100% - 76px);
+  }
+}
+
+@media (max-width: 1024px) {
+  .warga-main-container {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
 }
 
 .warga-topbar {

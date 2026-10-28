@@ -229,70 +229,6 @@ function WargaHome() {
 
   return (
     <div className="warga-portal-wrapper" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
-      {/* 0. EMERGENCY TOP INDICATOR BAR (Spans 100% full-width across very top edge) */}
-      {isEmergencyActive && (
-        <div style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 1200,
-          background: '#dc2626',
-          color: '#ffffff',
-          padding: '10px 24px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          fontWeight: 700,
-          boxShadow: '0 4px 14px rgba(220, 38, 38, 0.4)',
-          borderBottom: '1px solid rgba(255,255,255,0.2)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            <span style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '26px',
-              height: '26px',
-              borderRadius: '50%',
-              background: 'rgba(255,255,255,0.22)',
-              fontSize: '14px'
-            }}>
-              📢
-            </span>
-            <span style={{ fontSize: '0.94rem', letterSpacing: '0.02em', fontWeight: 800, textTransform: 'uppercase' }}>
-              BANJIR PARAH — EVAKUASI SEKARANG
-            </span>
-            <span style={{ opacity: 0.95, fontWeight: 500, fontSize: '0.84rem' }}>
-              {geo.address ? geo.address.split(',')[0].replace(/^Desa\s+/i, '') : 'Baureno'} • Level 4 • {liveTimeStr}
-            </span>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => handleSelectTab('sos')}
-            style={{
-              background: '#ffffff',
-              color: '#dc2626',
-              border: 'none',
-              padding: '6px 18px',
-              borderRadius: '9999px',
-              fontWeight: 800,
-              fontSize: '0.82rem',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-              transition: 'transform 0.15s ease'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.04)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-          >
-            <span style={{ fontSize: '0.95rem' }}>⚠️</span>
-            <span>MINTA BANTUAN SOS</span>
-          </button>
-        </div>
-      )}
-
       {/* Mobile Sidebar Backdrop */}
       {sidebarOpen && (
         <div 
@@ -486,6 +422,70 @@ function WargaHome() {
 
       {/* 2. MAIN CONTAINER */}
       <div className="warga-main-container">
+        {/* 0. EMERGENCY TOP INDICATOR BAR */}
+        {isEmergencyActive && (
+          <div style={{
+            position: 'sticky',
+            top: 0,
+            zIndex: 1200,
+            background: '#dc2626',
+            color: '#ffffff',
+            padding: '10px 24px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            fontWeight: 700,
+            boxShadow: '0 4px 14px rgba(220, 38, 38, 0.4)',
+            borderBottom: '1px solid rgba(255,255,255,0.2)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '26px',
+                height: '26px',
+                borderRadius: '50%',
+                background: 'rgba(255,255,255,0.22)',
+                fontSize: '14px'
+              }}>
+                📢
+              </span>
+              <span style={{ fontSize: '0.94rem', letterSpacing: '0.02em', fontWeight: 800, textTransform: 'uppercase' }}>
+                BANJIR PARAH — EVAKUASI SEKARANG
+              </span>
+              <span style={{ opacity: 0.95, fontWeight: 500, fontSize: '0.84rem' }}>
+                {geo.address ? geo.address.split(',')[0].replace(/^Desa\s+/i, '') : 'Baureno'} • Level 4 • {liveTimeStr}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => handleSelectTab('sos')}
+              style={{
+                background: '#ffffff',
+                color: '#dc2626',
+                border: 'none',
+                padding: '6px 18px',
+                borderRadius: '9999px',
+                fontWeight: 800,
+                fontSize: '0.82rem',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                transition: 'transform 0.15s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.04)'}
+              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            >
+              <span style={{ fontSize: '0.95rem' }}>⚠️</span>
+              <span>MINTA BANTUAN SOS</span>
+            </button>
+          </div>
+        )}
+
         {/* Topbar */}
         <header className="warga-topbar">
           <div className="warga-topbar-left">
