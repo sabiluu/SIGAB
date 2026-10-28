@@ -268,12 +268,10 @@ export default function WargaBeranda({
     }
   }, [userLocation])
 
-  // Automatically select and draw route to nearest shelter on Peta & Posko view mount
-  useEffect(() => {
-    if (isMapView && nearest && !selectedShelter) {
-      handleSelectShelter(nearest)
-    }
-  }, [isMapView, nearest, selectedShelter, handleSelectShelter])
+  const handleClearRoute = () => {
+    setSelectedShelter(null)
+    setRouteData(null)
+  }
 
   const leafletRouteCoords = useMemo(() => {
     if (!routeData?.coordinates || routeData.coordinates.length < 2) return null
@@ -370,6 +368,14 @@ export default function WargaBeranda({
                     </svg>
                     Buka Google Maps
                   </a>
+                  <button
+                    type="button"
+                    onClick={handleClearRoute}
+                    className="btn-route-close"
+                    title="Sembunyikan rute dan kembali ke peta desa"
+                  >
+                    ✕ Tutup Rute
+                  </button>
                 </div>
               </div>
             )}
@@ -462,12 +468,18 @@ export default function WargaBeranda({
                   <button
                     type="button"
                     className="btn-nearest-route"
-                    onClick={() => handleSelectShelter(nearest)}
+                    onClick={() => {
+                      if (selectedShelter?.id === nearest.id) {
+                        handleClearRoute()
+                      } else {
+                        handleSelectShelter(nearest)
+                      }
+                    }}
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                       <polygon points="3 11 22 2 13 21 11 13 3 11" />
                     </svg>
-                    <span>{selectedShelter?.id === nearest.id ? '✓ Rute Terpilih di Peta' : 'Pilih & Lihat Rute'}</span>
+                    <span>{selectedShelter?.id === nearest.id ? '✕ Sembunyikan Rute' : 'Tampilkan Rute ke Posko'}</span>
                   </button>
 
                   {nearest.contact_phone && (
@@ -488,7 +500,13 @@ export default function WargaBeranda({
               <div 
                 key={posko.id} 
                 className={`posko-item-card ${selectedShelter?.id === posko.id ? 'selected' : ''}`}
-                onClick={() => handleSelectShelter(posko)}
+                onClick={() => {
+                  if (selectedShelter?.id === posko.id) {
+                    handleClearRoute()
+                  } else {
+                    handleSelectShelter(posko)
+                  }
+                }}
                 style={{ cursor: 'pointer' }}
               >
                 <div className="posko-card-top">
@@ -699,7 +717,6 @@ export default function WargaBeranda({
             onClick={() => {
               if (onNavigate) {
                 onNavigate('peta')
-                handleSelectShelter(nearest)
               }
             }}
           >
