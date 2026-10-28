@@ -109,6 +109,7 @@ export default function WargaBeranda({
   onNavigate,
   geo: externalGeo,
   userProfile,
+  onEditProfile,
   selectedVillageId,
   onSelectVillageId,
   onOpenLocationModal,
@@ -544,7 +545,32 @@ export default function WargaBeranda({
       {/* Header Row: Greeting & Village Selector */}
       <div className="warga-beranda-head">
         <div className="warga-greeting-wrap">
-          <span className="greeting-sub">Halo, {userProfile?.full_name ? userProfile.full_name.split(' ')[0] : 'Ahmad'}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="greeting-sub">Halo, {userProfile?.full_name ? userProfile.full_name.split(' ')[0] : 'Ahmad'}</span>
+            {onEditProfile && (
+              <button 
+                type="button" 
+                onClick={onEditProfile}
+                title="Edit data profil dan anggota keluarga"
+                style={{
+                  background: 'rgba(2, 132, 199, 0.08)',
+                  color: '#0284c7',
+                  border: '1px solid rgba(2, 132, 199, 0.25)',
+                  borderRadius: '12px',
+                  padding: '2px 8px',
+                  fontSize: '0.72rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <span>✏️</span> Edit Profil
+              </button>
+            )}
+          </div>
           <h1>Kondisi banjir di desamu</h1>
         </div>
 

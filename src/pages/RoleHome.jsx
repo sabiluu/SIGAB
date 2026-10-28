@@ -46,6 +46,7 @@ function WargaHome() {
   const [showNotifDropdown, setShowNotifDropdown] = useState(false)
   const [showProfileDropdown, setShowProfileDropdown] = useState(false)
   const [showProfileModal, setShowProfileModal] = useState(false)
+  const [profileStartInEditMode, setProfileStartInEditMode] = useState(false)
   const [showLocationModal, setShowLocationModal] = useState(false)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [tempVillageId, setTempVillageId] = useState(3)
@@ -396,6 +397,25 @@ function WargaHome() {
               <span>Kontak Darurat</span>
             </button>
 
+            <button
+              type="button"
+              className={`warga-sidebar-item ${showProfileModal ? 'active' : ''}`}
+              onClick={() => {
+                setProfileStartInEditMode(true)
+                setShowProfileModal(true)
+                if (typeof window !== 'undefined' && window.innerWidth <= 1024) {
+                  setSidebarOpen(false)
+                }
+              }}
+              title="Edit profil pengguna, domisili, dan data keluarga"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+              <span>Edit Profil</span>
+            </button>
+
             {isEmergencyActive && (
               <button
                 type="button"
@@ -623,7 +643,10 @@ function WargaHome() {
 
             <div 
               className="warga-profile-chip" 
-              onClick={() => setShowProfileModal(true)}
+              onClick={() => {
+                setProfileStartInEditMode(false)
+                setShowProfileModal(true)
+              }}
               title="Data Profil Pengguna, Domisili & Rumah Tangga (Klik untuk lihat & edit)"
             >
               <div className="warga-avatar-circle">
@@ -631,7 +654,10 @@ function WargaHome() {
               </div>
               <div className="warga-profile-info">
                 <strong>{userProfile?.full_name || 'Warga Baureno (Demo)'}</strong>
-                <span>Warga terverifikasi</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <span>Warga terverifikasi</span>
+                  <span style={{ color: '#0284c7', fontWeight: 700, fontSize: '0.72rem' }}>• Edit ✏️</span>
+                </span>
               </div>
             </div>
           </div>
@@ -640,7 +666,11 @@ function WargaHome() {
       {/* User Profile & Household Modal */}
       <ProfileModal
         isOpen={showProfileModal}
-        onClose={() => setShowProfileModal(false)}
+        onClose={() => {
+          setShowProfileModal(false)
+          setProfileStartInEditMode(false)
+        }}
+        startInEditMode={profileStartInEditMode}
         userProfile={userProfile}
         onProfileUpdated={(updated) => {
           setUserProfile(updated)
@@ -924,6 +954,10 @@ function WargaHome() {
             onNavigate={(tab) => handleSelectTab(tab)} 
             geo={geo} 
             userProfile={userProfile} 
+            onEditProfile={() => {
+              setProfileStartInEditMode(true)
+              setShowProfileModal(true)
+            }}
             selectedVillageId={selectedVillageId}
             onSelectVillageId={setSelectedVillageId}
             onOpenLocationModal={handleOpenLocationModal}

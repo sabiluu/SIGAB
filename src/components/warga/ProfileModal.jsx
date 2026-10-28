@@ -8,8 +8,9 @@ export default function ProfileModal({
   onProfileUpdated,
   geo,
   villages = [],
+  startInEditMode = false,
 }) {
-  const [isEditing, setIsEditing] = useState(false)
+  const [isEditing, setIsEditing] = useState(startInEditMode)
   const [formData, setFormData] = useState({
     full_name: '',
     nik: '',
@@ -26,6 +27,12 @@ export default function ProfileModal({
   })
   const [isSaving, setIsSaving] = useState(false)
   const [alertStatus, setAlertStatus] = useState(null)
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsEditing(startInEditMode)
+    }
+  }, [isOpen, startInEditMode])
 
   useEffect(() => {
     if (userProfile) {
@@ -148,14 +155,40 @@ export default function ProfileModal({
             <span>👤</span>
             {isEditing ? 'Edit Profil & Data Warga' : 'Profil Warga & Rumah Tangga'}
           </h3>
-          <button
-            type="button"
-            className="profile-modal-close-btn"
-            onClick={onClose}
-            title="Tutup"
-          >
-            ✕
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {!isEditing && (
+              <button
+                type="button"
+                className="profile-quick-edit-btn"
+                onClick={() => setIsEditing(true)}
+                title="Buka form untuk mengedit profil"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  background: '#0284c7',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '6px 12px',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 1px 3px rgba(2, 132, 199, 0.25)',
+                }}
+              >
+                <span>✏️</span> Edit Profil
+              </button>
+            )}
+            <button
+              type="button"
+              className="profile-modal-close-btn"
+              onClick={onClose}
+              title="Tutup"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* Body Modal */}
