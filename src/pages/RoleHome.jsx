@@ -64,19 +64,6 @@ function WargaHome() {
     return () => window.removeEventListener('resize', handleResize)
   }, [sidebarOpen])
 
-  // Otomatis aktifkan status darurat jika probabilitas desa/kecamatan >= 76% (Status Awas)
-  useEffect(() => {
-    if (realtimeData?.villages) {
-      const targetVId = selectedVillageId || userProfile?.village_id || 3
-      const myVillage = realtimeData.villages.find(v => v.id === targetVId)
-      const villageProb = myVillage ? (myVillage.current_probability ?? myVillage.probability ?? 0) : 0
-      const subdistrictProb = realtimeData?.kecamatan_summary?.average_probability ?? 0
-      if (villageProb >= 76 || subdistrictProb >= 76) {
-        setIsEmergencyActive(true)
-      }
-    }
-  }, [realtimeData, selectedVillageId, userProfile])
-
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000)
     return () => clearInterval(timer)
