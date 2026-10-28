@@ -65,12 +65,10 @@ playwright-report/
 # ===== Raw Data, Dumps & Scratch Scripts =====
 *.zip
 *.cjs
-*.csv
 data_cuaca_*.json
 app/data_cuaca_*.json
 src/data/idn_admin/
 src/data/border-desa/
 check_schema.py
 check_api.py
-sync_flood_database.py
 test_*.py
