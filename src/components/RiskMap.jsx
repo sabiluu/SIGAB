@@ -54,24 +54,28 @@ const fallbackBaselines = {
 
 function findMatchingVillage(featureName, villageList) {
   if (!villageList || !villageList.length) return null;
-  const cleanFeature = featureName.replace(/^Desa\s+/i, '').trim().toLowerCase();
+  const cleanFeature = (featureName || '').replace(/^Desa\s+/i, '').trim().toLowerCase();
   
   // 1. Exact clean name match
   let found = villageList.find(v => {
-    const cleanV = v.name.replace(/^Desa\s+/i, '').trim().toLowerCase();
+    const cleanV = (v.name || v.cleanName || '').replace(/^Desa\s+/i, '').trim().toLowerCase();
     return cleanV === cleanFeature;
   });
   if (found) return found;
 
   // 2. Kadungrejo / Kedungrejo spelling alias
   if (cleanFeature === 'kadungrejo') {
-    found = villageList.find(v => v.name.toLowerCase().includes('kedungrejo'));
+    found = villageList.find(v => (v.name || v.cleanName || '').toLowerCase().includes('kedungrejo'));
+    if (found) return found;
+  }
+  if (cleanFeature === 'kedungrejo') {
+    found = villageList.find(v => (v.name || v.cleanName || '').toLowerCase().includes('kadungrejo'));
     if (found) return found;
   }
 
   // 3. Substring match
   found = villageList.find(v => {
-    const cleanV = v.name.replace(/^Desa\s+/i, '').trim().toLowerCase();
+    const cleanV = (v.name || v.cleanName || '').replace(/^Desa\s+/i, '').trim().toLowerCase();
     return cleanV.startsWith(cleanFeature) || cleanFeature.startsWith(cleanV);
   });
   return found || null;
@@ -378,7 +382,17 @@ export default function RiskMap({
               key={v.id} 
               positions={v.coords}
               eventHandlers={{
-                click: () => onSelectVillage && onSelectVillage(v)
+                click: () => onSelectVillage && onSelectVillage({
+                  ...v,
+                  name: v.name,
+                  prob: v.prob,
+                  probability: v.prob,
+                  status: v.status,
+                  risk_level: v.status,
+                  current_probability: v.prob,
+                  current_risk_level: v.status,
+                  raw: v.raw
+                })
               }}
               pathOptions={{ 
                 color: isSelected ? '#1e40af' : '#ffffff',

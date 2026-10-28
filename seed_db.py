@@ -64,8 +64,11 @@ def seed():
         with open(json_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
             for item in data:
-                desa_name = f"Desa {item['desa']}"
-                existing = db.query(Village).filter(Village.name == desa_name).first()
+                clean_name = item['desa'].replace("Desa ", "").strip()
+                existing = db.query(Village).filter(
+                    (Village.name == clean_name) | (Village.name == f"Desa {clean_name}")
+                ).first()
+                desa_name = clean_name
                 if not existing:
                     coord = item.get("raw_data", {}).get("coord", {})
                     lat = coord.get("lat", -7.128)

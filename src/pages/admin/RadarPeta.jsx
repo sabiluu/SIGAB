@@ -5,30 +5,65 @@ import useDashboardRealtime from '../../hooks/useDashboardRealtime'
 
 export default function RadarPeta() {
   const { data } = useDashboardRealtime()
-  const [selectedVillageName, setSelectedVillageName] = useState('Baureno')
+  const [selectedVillageName, setSelectedVillageName] = useState('Pucangarum')
+  const [selectedVillageObj, setSelectedVillageObj] = useState(null)
 
-  const villages = data?.villages || []
+  const rawVillages = data?.villages || []
+
+  // Normalisasi dan pastikan 25 desa unik tanpa duplikasi
+  const villagesMap = new Map()
+  rawVillages.forEach(v => {
+    const clean = (v.name || '').replace(/^Desa\s+/i, '').trim().toLowerCase()
+    if (!villagesMap.has(clean)) {
+      const prob = v.current_probability != null ? Number(v.current_probability) : Number(v.probability || 0)
+      const risk = (v.current_risk_level || v.risk_level || (prob >= 76 ? 'awas' : (prob >= 51 ? 'tinggi' : (prob >= 25 ? 'sedang' : 'rendah')))).toLowerCase()
+      villagesMap.set(clean, {
+        ...v,
+        name: clean.charAt(0).toUpperCase() + clean.slice(1),
+        cleanName: clean,
+        probability: prob,
+        risk_level: risk
+      })
+    }
+  })
+  const villages = Array.from(villagesMap.values())
   const sortedPriority = [...villages].sort((a, b) => b.probability - a.probability).slice(0, 6)
 
-  const currentVillage = villages.find(v => 
-    v.name.toLowerCase().includes(selectedVillageName.toLowerCase()) || 
-    selectedVillageName.toLowerCase().includes(v.name.toLowerCase())
-  ) || villages[0] || {
-    name: 'Baureno',
-    risk_level: 'awas',
-    probability: 82,
-    elevation_index: 18.5
+  const cleanSelected = (selectedVillageName || '').replace(/^Desa\s+/i, '').trim().toLowerCase()
+  const currentVillage = selectedVillageObj || villages.find(v => {
+    const cName = (v.cleanName || v.name || '').replace(/^Desa\s+/i, '').trim().toLowerCase()
+    return cName === cleanSelected || cName.includes(cleanSelected) || cleanSelected.includes(cName)
+  }) || villages[0] || {
+    name: 'Pucangarum',
+    risk_level: 'sedang',
+    probability: 32,
+    elevation_index: 9
   }
 
   const dischargeVal = data?.discharge?.discharge_m3s 
     ? Math.round(data.discharge.discharge_m3s).toLocaleString('id-ID')
-    : '1.200'
+    : '1'
 
   const rainVal = data?.weather?.precipitation_mm ?? 0
 
   const handleSelectVillage = (villageObj) => {
     if (villageObj && villageObj.name) {
-      setSelectedVillageName(villageObj.name.replace(/^Desa\s+/i, ''))
+      const cName = villageObj.name.replace(/^Desa\s+/i, '').trim()
+      setSelectedVillageName(cName)
+      
+      const foundInApi = villages.find(v => 
+        (v.cleanName || v.name || '').toLowerCase() === cName.toLowerCase()
+      )
+      if (foundInApi) {
+        setSelectedVillageObj(foundInApi)
+      } else {
+        setSelectedVillageObj({
+          name: cName,
+          probability: villageObj.prob ?? villageObj.probability ?? 0,
+          risk_level: villageObj.status ?? villageObj.risk_level ?? 'rendah',
+          elevation_index: villageObj.elevation_index ?? 18
+        })
+      }
     }
   }
 
@@ -154,21 +189,43 @@ export default function RadarPeta() {
               <p style={{ fontSize: '0.85rem', color: '#64748b', padding: '10px' }}>Memuat daftar risiko desa...</p>
             ) : (
               <ul>
-                {sortedPriority.map((v) => (
-                  <li 
-                    key={v.id} 
-                    onClick={() => setSelectedVillageName(v.name.replace(/^Desa\s+/i, ''))}
-                    style={{ 
-                      cursor: 'pointer', 
-                      background: v.name.toLowerCase().includes(selectedVillageName.toLowerCase()) ? '#eff6ff' : 'transparent',
-                      padding: '4px 8px',
-                      borderRadius: '4px'
-                    }}
-                  >
-                    <span>{v.name.replace(/^Desa\s+/i, '')}</span> 
-                    <strong>{Math.round(v.probability)}% ({v.risk_level.toUpperCase()})</strong>
-                  </li>
-                ))}
+                {sortedPriority.map((v) => {
+                  const isItemActive = cleanSelected === (v.cleanName || v.name || '').toLowerCase()
+                  const itemRiskColor = v.risk_level === 'awas' 
+                    ? '#dc2626' 
+                    : (v.risk_level === 'tinggi' || v.risk_level === 'siaga' 
+                        ? '#ea580c' 
+                        : (v.risk_level === 'sedang' || v.risk_level === 'waspada' 
+                            ? '#ca8a04' 
+                            : '#059669'))
+                  return (
+                    <li 
+                      key={v.id || v.cleanName} 
+                      onClick={() => {
+                        const c = v.name.replace(/^Desa\s+/i, '')
+                        setSelectedVillageName(c)
+                        setSelectedVillageObj(v)
+                      }}
+                      style={{ 
+                        cursor: 'pointer', 
+                        background: isItemActive ? '#eff6ff' : 'transparent',
+                        padding: '6px 10px',
+                        borderRadius: '6px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        transition: 'background 0.15s'
+                      }}
+                    >
+                      <span style={{ fontWeight: isItemActive ? 700 : 500 }}>
+                        {v.name.replace(/^Desa\s+/i, '')}
+                      </span> 
+                      <strong style={{ color: itemRiskColor }}>
+                        {Math.round(v.probability)}% ({v.risk_level.toUpperCase()})
+                      </strong>
+                    </li>
+                  )
+                })}
               </ul>
             )}
           </div>

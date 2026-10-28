@@ -200,9 +200,22 @@ export default function WargaBeranda({
     })
   }, [data?.shelters, directShelters, userLocation])
 
-  // Calculation of risk probability
+  // Calculation of risk probability: cari probabilitas spesifik desa terpilih dari data real API
+  const selectedVillageObj = useMemo(() => {
+    if (!data?.villages || !Array.isArray(data.villages)) return null
+    const targetV = BAURENO_VILLAGES.find(item => item.id === Number(selectedVillageId || userProfile?.village_id))
+    if (!targetV) return null
+    const cleanTarget = targetV.name.replace(/^Desa\s+/i, '').replace(' (Pusat)', '').trim().toLowerCase()
+    return data.villages.find(v => {
+      const cleanV = (v.name || '').replace(/^Desa\s+/i, '').trim().toLowerCase()
+      return cleanV === cleanTarget || cleanV.includes(cleanTarget) || cleanTarget.includes(cleanV)
+    })
+  }, [data?.villages, selectedVillageId, userProfile?.village_id])
+
   const isSevereFlood = isEmergencyActive || simulatedEmergency
-  const rawProb = isSevereFlood ? 94 : (data?.kecamatan_summary?.average_probability ?? 22)
+  const rawProb = isSevereFlood 
+    ? 94 
+    : (selectedVillageObj?.probability ?? data?.kecamatan_summary?.average_probability ?? 22)
   const probVal = Math.round(rawProb)
   
   // Theme and status
