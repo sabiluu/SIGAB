@@ -14,7 +14,7 @@ import useDashboardRealtime from '../hooks/useDashboardRealtime'
 import useGeolocation, { BAURENO_VILLAGES } from '../hooks/useGeolocation'
 import useRealtimeNotifications from '../hooks/useRealtimeNotifications'
 import { playSosAlertTone } from '../utils/audioAlarm'
-import { formatWIBTime } from '../utils/helpers'
+import { formatWIBTime, getStoredSidebarState, setStoredSidebarState } from '../utils/helpers'
 import LogoutModal from '../components/common/LogoutModal'
 import ProfileModal from '../components/warga/ProfileModal'
 import '../styles/role-home.css'
@@ -50,10 +50,16 @@ function WargaHome() {
   const [showLocationModal, setShowLocationModal] = useState(false)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [tempVillageId, setTempVillageId] = useState(3)
-  const [sidebarOpen, setSidebarOpen] = useState(() => (typeof window !== 'undefined' ? window.innerWidth > 1024 : false))
+  const [sidebarOpen, setSidebarOpen] = useState(() => getStoredSidebarState(typeof window !== 'undefined' ? window.innerWidth > 1024 : true))
   const geo = useGeolocation()
   const [currentTime, setCurrentTime] = useState(new Date())
   const { data: realtimeData } = useDashboardRealtime()
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth > 1024) {
+      setStoredSidebarState(sidebarOpen)
+    }
+  }, [sidebarOpen])
 
   useEffect(() => {
     const handleResize = () => {
@@ -990,12 +996,18 @@ function WargaHome() {
 }
 
 function AdminHome() {
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(() => getStoredSidebarState(true))
   const [currentTime, setCurrentTime] = useState(new Date())
   const [isEmergency, setIsEmergency] = useState(false)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [tickets, setTickets] = useState([])
   const { data: realtimeData } = useDashboardRealtime()
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth > 1024) {
+      setStoredSidebarState(sidebarOpen)
+    }
+  }, [sidebarOpen])
 
   const fetchTickets = () => {
     getSOSTickets()

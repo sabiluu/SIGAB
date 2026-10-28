@@ -115,3 +115,34 @@ export function formatDistance(meters) {
   if (meters < 1000) return `${Math.round(meters)} m`;
   return `${(meters / 1000).toFixed(1)} km`;
 }
+
+/**
+ * Ambil status buka/tutup sidebar yang tersimpan di localStorage.
+ * @param {boolean} defaultValue
+ * @returns {boolean}
+ */
+export function getStoredSidebarState(defaultValue = true) {
+  if (typeof window === 'undefined') return defaultValue;
+  try {
+    const saved = localStorage.getItem('sigab_sidebar_open');
+    if (saved !== null) {
+      return JSON.parse(saved);
+    }
+  } catch (e) {
+    // fallback
+  }
+  return window.innerWidth > 1024 ? defaultValue : false;
+}
+
+/**
+ * Simpan status buka/tutup sidebar ke localStorage.
+ * @param {boolean} isOpen
+ */
+export function setStoredSidebarState(isOpen) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem('sigab_sidebar_open', JSON.stringify(Boolean(isOpen)));
+  } catch (e) {
+    // fallback
+  }
+}

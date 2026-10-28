@@ -3,15 +3,20 @@ import { logout } from '../../services/authService'
 import { apiFetch } from '../../services/api'
 import wsService from '../../services/wsService'
 import LogoutModal from '../common/LogoutModal'
+import { getStoredSidebarState, setStoredSidebarState } from '../../utils/helpers'
 import '../../styles/role-home.css'
 
 export default function AdminLayout({ children, activeMenu }) {
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(() => getStoredSidebarState(true))
   const [currentTime, setCurrentTime] = useState(new Date())
   const [isEmergency, setIsEmergency] = useState(false)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
 
   const [sosCount, setSosCount] = useState(0)
+
+  useEffect(() => {
+    setStoredSidebarState(sidebarOpen)
+  }, [sidebarOpen])
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000)
