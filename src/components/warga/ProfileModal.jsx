@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { updateProfile } from '../../services/authService'
 
 export default function ProfileModal({
@@ -24,6 +24,7 @@ export default function ProfileModal({
     pregnant_count: 0,
     disabled_count: 0,
     notes: '',
+    avatar_url: '',
   })
   const [isSaving, setIsSaving] = useState(false)
   const [alertStatus, setAlertStatus] = useState(null)
@@ -49,6 +50,7 @@ export default function ProfileModal({
         pregnant_count: userProfile.pregnant_count ?? 0,
         disabled_count: userProfile.disabled_count ?? 0,
         notes: userProfile.notes || 'Rumah lantai 2, dekat tanggul sungai',
+        avatar_url: userProfile.avatar_url || '',
       })
     }
   }, [userProfile, isOpen])
@@ -84,6 +86,65 @@ export default function ProfileModal({
     })
   }
 
+  const fileInputRef = useRef(null)
+  const [photoError, setPhotoError] = useState(null)
+
+  const handlePhotoSelect = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setPhotoError(null)
+
+    if (!file.type.startsWith('image/')) {
+      setPhotoError('Hanya file gambar (JPG, PNG, WebP) yang diperbolehkan.')
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setPhotoError('Ukuran file maksimal 5 MB.')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        const MAX_SIZE = 256
+        let width = img.width
+        let height = img.height
+
+        const minDim = Math.min(width, height)
+        const sx = (width - minDim) / 2
+        const sy = (height - minDim) / 2
+
+        canvas.width = MAX_SIZE
+        canvas.height = MAX_SIZE
+
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, MAX_SIZE, MAX_SIZE)
+
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85)
+        setFormData((prev) => ({ ...prev, avatar_url: compressedDataUrl }))
+      }
+      img.onerror = () => {
+        setPhotoError('Gagal memproses gambar. Silakan coba file lain.')
+      }
+      img.src = event.target.result
+    }
+    reader.onerror = () => {
+      setPhotoError('Gagal membaca file gambar.')
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleRemovePhoto = () => {
+    setFormData((prev) => ({ ...prev, avatar_url: '' }))
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
   const handleSubmit = async (e) => {
     if (e) e.preventDefault()
     setIsSaving(true)
@@ -104,6 +165,7 @@ export default function ProfileModal({
         pregnant_count: Number(formData.pregnant_count) || 0,
         disabled_count: Number(formData.disabled_count) || 0,
         notes: formData.notes.trim(),
+        avatar_url: formData.avatar_url || '',
       }
 
       const updated = await updateProfile(payload)
@@ -203,8 +265,46 @@ export default function ProfileModal({
             /* ================= VIEW MODE ================= */
             <>
               <div className="profile-hero">
-                <div className="profile-avatar-circle-lg">
-                  {getInitials(formData.full_name)}
+                <div className="profile-avatar-wrapper" style={{ position: 'relative' }}>
+                  <div className="profile-avatar-circle-lg" style={{ overflow: 'hidden' }}>
+                    {formData.avatar_url ? (
+                      <img
+                        src={formData.avatar_url}
+                        alt={formData.full_name}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      getInitials(formData.full_name)
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    className="profile-avatar-camera-btn"
+                    onClick={() => {
+                      setIsEditing(true)
+                      setTimeout(() => fileInputRef.current?.click(), 100)
+                    }}
+                    title="Klik untuk ganti foto profil"
+                    style={{
+                      position: 'absolute',
+                      bottom: '-4px',
+                      right: '-4px',
+                      width: '26px',
+                      height: '26px',
+                      borderRadius: '50%',
+                      background: '#0284c7',
+                      color: '#ffffff',
+                      border: '2px solid #ffffff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.75rem',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
+                    }}
+                  >
+                    📷
+                  </button>
                 </div>
                 <div className="profile-hero-info">
                   <strong>{formData.full_name}</strong>
@@ -307,6 +407,97 @@ export default function ProfileModal({
           ) : (
             /* ================= EDIT MODE ================= */
             <form onSubmit={handleSubmit}>
+              {/* Seksi Ganti Foto Profil */}
+              <div className="profile-form-section profile-avatar-edit-section">
+                <div className="profile-section-title">
+                  <span>📷</span> Foto Profil Warga
+                </div>
+                <div className="profile-avatar-upload-box" style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '16px',
+                  padding: '12px 14px',
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '12px',
+                  marginBottom: '14px',
+                  flexWrap: 'wrap'
+                }}>
+                  <div className="profile-avatar-circle-lg" style={{ overflow: 'hidden', flexShrink: 0 }}>
+                    {formData.avatar_url ? (
+                      <img
+                        src={formData.avatar_url}
+                        alt={formData.full_name}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      getInitials(formData.full_name)
+                    )}
+                  </div>
+                  <div className="profile-avatar-upload-actions" style={{ flex: 1, minWidth: '200px' }}>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/png, image/jpeg, image/jpg, image/webp"
+                      style={{ display: 'none' }}
+                      onChange={handlePhotoSelect}
+                    />
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                      <button
+                        type="button"
+                        className="profile-btn-upload-photo"
+                        onClick={() => fileInputRef.current?.click()}
+                        style={{
+                          background: '#0284c7',
+                          color: '#ffffff',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '7px 14px',
+                          fontSize: '0.8rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}
+                      >
+                        <span>📷</span> {formData.avatar_url ? 'Ganti Foto' : 'Unggah Foto'}
+                      </button>
+                      {formData.avatar_url && (
+                        <button
+                          type="button"
+                          className="profile-btn-remove-photo"
+                          onClick={handleRemovePhoto}
+                          style={{
+                            background: '#fee2e2',
+                            color: '#b91c1c',
+                            border: '1px solid #fecaca',
+                            borderRadius: '8px',
+                            padding: '7px 12px',
+                            fontSize: '0.8rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                          }}
+                        >
+                          <span>🗑️</span> Hapus Foto
+                        </button>
+                      )}
+                    </div>
+                    <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '6px' }}>
+                      Pilih foto JPG, PNG, atau WebP (otomatis dipotong persegi & dioptimalkan).
+                    </div>
+                    {photoError && (
+                      <div style={{ color: '#dc2626', fontSize: '0.75rem', marginTop: '4px', fontWeight: 600 }}>
+                        ⚠️ {photoError}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               {/* Seksi Identitas Diri */}
               <div className="profile-form-section">
                 <div className="profile-section-title">

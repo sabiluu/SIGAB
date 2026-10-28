@@ -3,7 +3,7 @@ Model User — tabel 'users'.
 Akun pengguna platform — Warga (User) & Petugas BPBD (Admin).
 """
 
-from sqlalchemy import Column, Integer, String, Enum, DateTime, Boolean, ForeignKey, func
+from sqlalchemy import Column, Integer, String, Text, Enum, DateTime, Boolean, ForeignKey, func
 from sqlalchemy.orm import relationship
 from ..core.database import Base
 
@@ -18,7 +18,7 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     role = Column(Enum("user", "admin", name="user_role_enum"), default="user", nullable=False)
     village_id = Column(Integer, ForeignKey("villages.id", ondelete="SET NULL"), nullable=True)
-    avatar_url = Column(String(500), nullable=True)
+    avatar_url = Column(Text, nullable=True)
     is_active = Column(Boolean, nullable=False, default=True)
     notification_enabled = Column(Boolean, nullable=False, default=True)
     nik = Column(String(20), nullable=True, index=True)

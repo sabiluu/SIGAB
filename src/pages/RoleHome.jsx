@@ -655,8 +655,16 @@ function WargaHome() {
               }}
               title="Data Profil Pengguna, Domisili & Rumah Tangga (Klik untuk lihat & edit)"
             >
-              <div className="warga-avatar-circle">
-                {userProfile?.full_name ? userProfile.full_name.trim().split(/\s+/).map(n => n[0]).slice(0, 2).join('').toUpperCase() : 'WB'}
+              <div className="warga-avatar-circle" style={{ overflow: 'hidden' }}>
+                {userProfile?.avatar_url ? (
+                  <img
+                    src={userProfile.avatar_url}
+                    alt={userProfile.full_name || 'Profil'}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  userProfile?.full_name ? userProfile.full_name.trim().split(/\s+/).map(n => n[0]).slice(0, 2).join('').toUpperCase() : 'WB'
+                )}
               </div>
               <div className="warga-profile-info">
                 <strong>{userProfile?.full_name || 'Warga Baureno (Demo)'}</strong>
