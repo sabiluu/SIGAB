@@ -69,14 +69,54 @@
 .logout-btn:hover, .portal-tools button.logout-btn:hover { background: #fef2f2; color: #ef4444; border-color: #fca5a5; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.15); }
 
 /* Sidebar Closed State */
-.admin-portal.sidebar-closed .admin-sidebar { flex: 0 0 76px; width: 76px; }
+.admin-portal.sidebar-closed .admin-sidebar { 
+  flex: 0 0 76px; 
+  width: 76px; 
+  overflow-x: hidden;
+}
+.admin-portal.sidebar-closed .sidebar-header {
+  justify-content: center;
+  padding: 18px 0;
+}
 .admin-portal.sidebar-closed .brand-text, 
 .admin-portal.sidebar-closed .role-brand,
 .admin-portal.sidebar-closed .admin-sidebar nav a span, 
 .admin-portal.sidebar-closed .admin-sidebar nav a b, 
-.admin-portal.sidebar-closed .op-text { opacity: 0; pointer-events: none; }
-.admin-portal.sidebar-closed .admin-sidebar nav { padding: 0 16px; }
-.admin-portal.sidebar-closed .operator { padding: 24px 16px; }
+.admin-portal.sidebar-closed .op-text { 
+  display: none !important; 
+}
+.admin-portal.sidebar-closed .admin-sidebar nav { 
+  padding: 0 16px; 
+}
+.admin-portal.sidebar-closed .admin-sidebar nav a {
+  justify-content: center;
+}
+.admin-portal.sidebar-closed .operator { 
+  padding: 16px 0; 
+  justify-content: center;
+}
+.admin-portal.sidebar-closed .op-status {
+  width: auto;
+  margin: 0;
+}
+.admin-portal.sidebar-closed .sidebar-logout-wrap {
+  padding: 12px 0 !important;
+  display: flex;
+  justify-content: center;
+}
+.admin-portal.sidebar-closed .warga-sidebar-logout-btn {
+  justify-content: center !important;
+  padding: 10px 0 !important;
+  width: 44px !important;
+  margin: 0 auto;
+}
+.admin-portal.sidebar-closed .warga-sidebar-logout-btn span {
+  display: none !important;
+}
+.sidebar-logout-wrap {
+  padding: 12px 16px;
+  border-top: 1px solid #1e293b;
+}
 .search-box { flex: 1; background: #f1f5f9; padding: 10px 16px; border-radius: 8px; color: #64748b; font-size: 0.85rem; display: flex; align-items: center; border: 1px solid #e2e8f0; max-width: 400px; }
 .admin-time { display: flex; flex-direction: column; align-items: flex-end; margin-left: auto; }
 .admin-time strong { color: #0f172a; font-size: 0.95rem; line-height: 1.2; }

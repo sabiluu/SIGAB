@@ -34,6 +34,18 @@ const SVG_ICONS = {
       <line x1="5" y1="12" x2="19" y2="12" />
       <polyline points="12 5 19 12 12 19" />
     </svg>
+  ),
+  eye: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  ),
+  eyeOff: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+      <line x1="1" y1="1" x2="23" y2="23" />
+    </svg>
   )
 }
 
@@ -58,6 +70,7 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
   const [villages, setVillages] = useState(DEFAULT_VILLAGES)
   const [loginEmail, setLoginEmail] = useState(initialRole === 'petugas' ? 'admin@bpbd.go.id' : 'warga@baureno.id')
   const [loginPassword, setLoginPassword] = useState(initialRole === 'petugas' ? 'admin123' : 'warga123')
+  const [showPassword, setShowPassword] = useState(false)
   
   const isRegister = mode === 'register'
 
@@ -153,12 +166,12 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
         {/* Header: Logo, Brand Text, and Close Button */}
         <div className="auth-header">
           <div className="auth-brand-wrap">
-            <div className="auth-brand-icon">
+            <div className={`auth-brand-icon ${role === 'petugas' ? 'admin' : ''}`}>
               {SVG_ICONS.brandWave}
             </div>
             <div className="auth-brand-text">
               <strong>SIGAB</strong>
-              <span>Siaga Banjir Bojonegoro</span>
+              <span>{role === 'petugas' ? 'Pusdalops BPBD Baureno' : 'Siaga Banjir Baureno'}</span>
             </div>
           </div>
           <button 
@@ -278,15 +291,26 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
 
                 <div className="auth-field">
                   <label htmlFor="reg-pwd">Kata sandi</label>
-                  <input 
-                    id="reg-pwd" 
-                    name="password" 
-                    type="password" 
-                    placeholder="Minimal 6 karakter" 
-                    required 
-                    minLength={6} 
-                    autoComplete="new-password" 
-                  />
+                  <div className="auth-password-wrapper">
+                    <input 
+                      id="reg-pwd" 
+                      name="password" 
+                      type={showPassword ? 'text' : 'password'} 
+                      placeholder="Minimal 6 karakter" 
+                      required 
+                      minLength={6} 
+                      autoComplete="new-password" 
+                    />
+                    <button
+                      type="button"
+                      className="auth-password-toggle"
+                      onClick={() => setShowPassword(!showPassword)}
+                      title={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+                      aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+                    >
+                      {showPassword ? SVG_ICONS.eyeOff : SVG_ICONS.eye}
+                    </button>
+                  </div>
                 </div>
               </>
             ) : (
@@ -342,15 +366,26 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
 
                 <div className="auth-field">
                   <label htmlFor="petugas-pwd">Kata sandi</label>
-                  <input 
-                    id="petugas-pwd" 
-                    name="password" 
-                    type="password" 
-                    placeholder="Minimal 6 karakter" 
-                    required 
-                    minLength={6} 
-                    autoComplete="new-password" 
-                  />
+                  <div className="auth-password-wrapper">
+                    <input 
+                      id="petugas-pwd" 
+                      name="password" 
+                      type={showPassword ? 'text' : 'password'} 
+                      placeholder="Minimal 6 karakter" 
+                      required 
+                      minLength={6} 
+                      autoComplete="new-password" 
+                    />
+                    <button
+                      type="button"
+                      className="auth-password-toggle"
+                      onClick={() => setShowPassword(!showPassword)}
+                      title={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+                      aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+                    >
+                      {showPassword ? SVG_ICONS.eyeOff : SVG_ICONS.eye}
+                    </button>
+                  </div>
                 </div>
               </>
             )
@@ -387,16 +422,27 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
 
               <div className="auth-field">
                 <label htmlFor="login-pwd">Kata sandi</label>
-                <input 
-                  id="login-pwd" 
-                  name="password" 
-                  type="password" 
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                  placeholder="Masukkan kata sandi" 
-                  required 
-                  autoComplete="current-password" 
-                />
+                <div className="auth-password-wrapper">
+                  <input 
+                    id="login-pwd" 
+                    name="password" 
+                    type={showPassword ? 'text' : 'password'} 
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    placeholder="Masukkan kata sandi" 
+                    required 
+                    autoComplete="current-password" 
+                  />
+                  <button
+                    type="button"
+                    className="auth-password-toggle"
+                    onClick={() => setShowPassword(!showPassword)}
+                    title={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+                    aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+                  >
+                    {showPassword ? SVG_ICONS.eyeOff : SVG_ICONS.eye}
+                  </button>
+                </div>
               </div>
 
               <div className="auth-options-row">

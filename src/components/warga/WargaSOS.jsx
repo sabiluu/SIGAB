@@ -526,19 +526,19 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
   const getStatusBadge = (status) => {
     switch (status) {
       case 'submitted':
-        return <span style={{ background: '#fef3c7', color: '#b45309', padding: '3px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 600 }}>Menunggu Verifikasi</span>;
+        return <span className="status-badge-pill status-waspada">Menunggu Verifikasi</span>;
       case 'verified':
-        return <span style={{ background: '#dbeafe', color: '#1d4ed8', padding: '3px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 600 }}>Terverifikasi</span>;
+        return <span className="status-badge-pill status-siaga">Terverifikasi</span>;
       case 'dispatched':
-        return <span style={{ background: '#ffedd5', color: '#c2410c', padding: '3px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 600 }}>Armada Meluncur</span>;
+        return <span className="status-badge-pill status-awas">Armada Meluncur</span>;
       case 'arrived':
-        return <span style={{ background: '#f3e8ff', color: '#7e22ce', padding: '3px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 600 }}>Tiba di Lokasi</span>;
+        return <span className="status-badge-pill" style={{ background: '#f3e8ff', color: '#7e22ce' }}>Tiba di Lokasi</span>;
       case 'completed':
-        return <span style={{ background: '#dcfce7', color: '#15803d', padding: '3px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 600 }}>Selesai</span>;
+        return <span className="status-badge-pill status-aman">Selesai</span>;
       case 'rejected':
-        return <span style={{ background: '#fee2e2', color: '#b91c1c', padding: '3px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 600 }}>Dibatalkan</span>;
+        return <span className="status-badge-pill" style={{ background: '#fee2e2', color: '#b91c1c' }}>Dibatalkan</span>;
       default:
-        return <span style={{ background: '#f1f5f9', color: '#64748b', padding: '3px 8px', borderRadius: '12px', fontSize: '12px' }}>{status}</span>;
+        return <span className="status-badge-pill">{status}</span>;
     }
   };
 
@@ -555,34 +555,46 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
     const currentIndex = order.indexOf(currentStatus);
 
     return (
-      <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
         {stepsConfig.map((s, idx) => {
           const isDone = currentIndex >= idx;
           const isCurrent = currentIndex === idx;
 
           return (
-            <div key={s.key} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+            <div key={s.key} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', position: 'relative' }}>
+              {idx < stepsConfig.length - 1 && (
+                <div style={{
+                  position: 'absolute',
+                  left: '14px',
+                  top: '28px',
+                  bottom: '-14px',
+                  width: '2px',
+                  background: isDone && !isCurrent ? '#10b981' : '#e2e8f0',
+                  zIndex: 1
+                }} />
+              )}
               <div style={{
-                width: '28px',
-                height: '28px',
+                width: '30px',
+                height: '30px',
                 borderRadius: '50%',
-                backgroundColor: isDone ? (isCurrent ? '#dc2626' : '#16a34a') : '#e2e8f0',
+                backgroundColor: isDone ? (isCurrent ? '#dc2626' : '#10b981') : '#f1f5f9',
                 color: isDone ? 'white' : '#94a3b8',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontWeight: 'bold',
+                fontWeight: 800,
                 fontSize: '12px',
                 flexShrink: 0,
+                zIndex: 2,
                 boxShadow: isCurrent ? '0 0 0 4px rgba(220, 38, 38, 0.2)' : 'none'
               }}>
                 {isDone && !isCurrent ? '✓' : idx + 1}
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: isCurrent ? 'bold' : '600', color: isCurrent ? '#dc2626' : (isDone ? '#1e293b' : '#94a3b8') }}>
+                <div style={{ fontWeight: isCurrent ? 800 : 700, color: isCurrent ? '#dc2626' : (isDone ? '#0c1a24' : '#64748b'), fontSize: '0.88rem' }}>
                   {s.title}
                 </div>
-                <div style={{ fontSize: '12px', color: isDone ? '#64748b' : '#94a3b8' }}>
+                <div style={{ fontSize: '0.78rem', color: isDone ? '#475569' : '#94a3b8', marginTop: '2px' }}>
                   {s.desc}
                 </div>
               </div>
@@ -594,134 +606,112 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
   };
 
   return (
-    <div className="warga-main" style={{ maxWidth: '820px', margin: '0 auto', paddingTop: '1.5rem', paddingBottom: '3rem' }}>
-      <button 
-        onClick={() => onNavigate('beranda')} 
-        style={{ marginBottom: '16px', background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}
-      >
-        ← Kembali ke Beranda
-      </button>
-
-      {/* Tab Switcher */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', background: '#f1f5f9', padding: '4px', borderRadius: '8px' }}>
-        <button
-          onClick={() => setActiveTab('create')}
-          style={{
-            flex: 1,
-            padding: '10px 16px',
-            borderRadius: '6px',
-            border: 'none',
-            background: activeTab === 'create' ? '#ffffff' : 'transparent',
-            color: activeTab === 'create' ? '#dc2626' : '#64748b',
-            fontWeight: 700,
-            cursor: 'pointer',
-            boxShadow: activeTab === 'create' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
-          }}
+    <div className="warga-sos-view">
+      {/* Top Action Row: Back & Live Clock */}
+      <div className="sos-top-actions">
+        <button 
+          type="button"
+          onClick={() => onNavigate('beranda')} 
+          className="sos-back-btn"
+          title="Kembali ke halaman utama"
         >
-          🚨 Buat Tiket SOS Baru
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12" />
+            <polyline points="12 19 5 12 12 5" />
+          </svg>
+          <span>Kembali ke Beranda</span>
+        </button>
+
+        <div className="sos-clock-badge">
+          <span className="sos-pulse-dot" />
+          <span>Waktu Pelaporan Real:</span>
+          <strong style={{ color: 'var(--warga-navy)' }}>{formatWIBDateTime(currentClock, true)}</strong>
+        </div>
+      </div>
+
+      {/* Header Title */}
+      <div className="peta-posko-kicker">Layanan Tanggap Darurat</div>
+      <h1 className="peta-posko-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <span>Permintaan Evakuasi (SOS)</span>
+        <span className="sos-priority-tag">Prioritas Tinggi</span>
+      </h1>
+
+      {/* Segmented Tab Switcher */}
+      <div className="sos-segmented-tabs">
+        <button
+          type="button"
+          onClick={() => setActiveTab('create')}
+          className={`sos-segmented-tab tab-danger ${activeTab === 'create' ? 'active' : ''}`}
+        >
+          <span>🚨 Buat Tiket SOS Baru</span>
         </button>
         <button
+          type="button"
           onClick={() => setActiveTab('history')}
-          style={{
-            flex: 1,
-            padding: '10px 16px',
-            borderRadius: '6px',
-            border: 'none',
-            background: activeTab === 'history' ? '#ffffff' : 'transparent',
-            color: activeTab === 'history' ? '#2563eb' : '#64748b',
-            fontWeight: 700,
-            cursor: 'pointer',
-            boxShadow: activeTab === 'history' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
-          }}
+          className={`sos-segmented-tab ${activeTab === 'history' ? 'active' : ''}`}
         >
-          📋 Status & Riwayat Tiket Saya {myTickets.length > 0 && `(${myTickets.length})`}
+          <span>📋 Riwayat & Status Tiket {myTickets.length > 0 && `(${myTickets.length})`}</span>
         </button>
       </div>
 
       {/* TAB 1: FORM SOS BARU */}
       {activeTab === 'create' && (
-        <article className="portal-card" style={{ padding: '2rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eee', paddingBottom: '12px', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '8px' }}>
-            <div>
-              <h2 style={{ color: '#dc2626', margin: 0, fontSize: '1.4rem' }}>
-                🚨 Permintaan Evakuasi Darurat (SOS)
-              </h2>
-              <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#16a34a', animation: 'pulse 1.5s infinite' }}></span>
-                <span>Waktu Pelaporan Real:</span>
-                <strong style={{ color: '#0f172a' }}>{formatWIBDateTime(currentClock, true)}</strong>
-              </div>
+        <div className="sos-card">
+          {/* Multi-step Horizontal Stepper */}
+          <div className="sos-stepper-wrap">
+            <div className={`sos-step-indicator ${step === 1 ? 'active' : step > 1 ? 'completed' : ''}`}>
+              <div className="sos-step-circle">{step > 1 ? '✓' : '1'}</div>
+              <span className="sos-step-label">Lokasi GPS</span>
             </div>
-            <span style={{ fontSize: '12px', background: '#fee2e2', color: '#b91c1c', padding: '4px 8px', borderRadius: '4px', fontWeight: 600 }}>
-              Prioritas Tinggi
-            </span>
+            <div className={`sos-step-indicator ${step === 2 ? 'active' : step > 2 ? 'completed' : ''}`}>
+              <div className="sos-step-circle">{step > 2 ? '✓' : '2'}</div>
+              <span className="sos-step-label">Data Evakuasi</span>
+            </div>
+            <div className={`sos-step-indicator ${step === 3 ? 'active' : ''}`}>
+              <div className="sos-step-circle">3</div>
+              <span className="sos-step-label">Pelacakan</span>
+            </div>
           </div>
 
           {/* Quick Simulation Data Fill Banner */}
-          <div style={{
-            background: '#fff1f2',
-            border: '1px solid #fecdd3',
-            borderRadius: '10px',
-            padding: '12px 16px',
-            marginBottom: '1.25rem',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '10px'
-          }}>
-            <div>
-              <strong style={{ color: '#be123c', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span>🧪</span> Uji Coba / Simulasi Banjir Parah
-              </strong>
-              <p style={{ margin: '2px 0 0 0', color: '#9f1239', fontSize: '12px' }}>
-                Isi otomatis formulir dengan data skenario darurat luapan sungai untuk menguji alur evakuasi.
-              </p>
+          {step < 3 && (
+            <div className="sos-simulation-card">
+              <div className="sos-sim-text">
+                <strong>
+                  <span>🧪</span> Mode Pengujian Skenario Banjir
+                </strong>
+                <p>
+                  Isi otomatis formulir dengan data skenario luapan sungai untuk menguji alur penanganan darurat.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="btn-fill-sim"
+                onClick={() => {
+                  setFamilyCount(4);
+                  setVulnerable({ elderly: true, toddler: true, pregnant: false, disability: false });
+                  setDetailPatokan('Air luapan sungai masuk ke dalam rumah setinggi 1.5 meter, arus deras, butuh evakuasi perahu karet segera!');
+                  if (!gpsLocation) {
+                    setGpsLocation({ lat: -7.1285, lng: 112.104 });
+                    setAddress('Bantaran Bengawan Solo, RT 02 / RW 01, Desa Baureno, Kec. Baureno');
+                  }
+                }}
+              >
+                <span>⚡ Isi Otomatis Simulasi</span>
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                setFamilyCount(4);
-                setVulnerable({ elderly: true, toddler: true, pregnant: false, disability: false });
-                setDetailPatokan('Air luapan Bengawan Solo masuk ke dalam rumah setinggi 1.5 meter, arus deras, butuh evakuasi perahu karet segera!');
-                if (!gpsLocation) {
-                  setGpsLocation({ lat: -7.1285, lng: 112.104 });
-                  setAddress('Bantaran Bengawan Solo, RT 02 / RW 01, Desa Baureno, Kec. Baureno');
-                }
-              }}
-              style={{
-                background: '#be123c',
-                color: 'white',
-                border: 'none',
-                padding: '7px 14px',
-                borderRadius: '6px',
-                fontSize: '12px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                boxShadow: '0 1px 3px rgba(190, 18, 60, 0.3)'
-              }}
-            >
-              ⚡ Isi Otomatis Data Simulasi
-            </button>
-          </div>
+          )}
 
           {/* STEP 1: GPS & LOKASI */}
           {step === 1 && (
             <div className="sos-step">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
-                <div>
-                  <h3 style={{ fontSize: '1.1rem', margin: '0 0 4px 0', color: '#0f172a' }}>Langkah 1: Konfirmasi Lokasi Anda</h3>
-                  <p style={{ margin: 0, color: '#64748b', fontSize: '13px' }}>
-                    Sistem mendeteksi koordinat GPS perangkat Anda secara real. Anda juga dapat menggeser pin merah atau mengklik peta untuk menyesuaikan titik lokasi secara presisi.
-                  </p>
-                </div>
-              </div>
+              <h3 className="sos-section-title">1. Konfirmasi Titik Lokasi Anda</h3>
+              <p className="sos-section-desc">
+                Sistem mendeteksi koordinat GPS perangkat Anda secara real time. Anda dapat menggeser pin merah atau mengetuk peta untuk mengatur titik evakuasi secara akurat.
+              </p>
               
               {/* Mini Map */}
-              <div style={{ height: '260px', borderRadius: '10px', overflow: 'hidden', marginBottom: '1rem', border: '1.5px solid #cbd5e1', position: 'relative', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+              <div style={{ height: '280px', borderRadius: '12px', overflow: 'hidden', marginBottom: '16px', border: '1.5px solid var(--warga-border)', position: 'relative', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
                 {gpsLocation ? (
                   <MapContainer center={[gpsLocation.lat, gpsLocation.lng]} zoom={16} style={{ height: '100%', width: '100%' }}>
                     <TileLayer
@@ -753,7 +743,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                   </MapContainer>
                 ) : (
                   <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', color: '#64748b', gap: '8px' }}>
-                    <div style={{ width: '24px', height: '24px', border: '3px solid #cbd5e1', borderTopColor: '#2563eb', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                    <div style={{ width: '26px', height: '26px', border: '3px solid #cbd5e1', borderTopColor: 'var(--warga-teal)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
                     <span style={{ fontSize: '13px', fontWeight: 600 }}>📡 Mengunci koordinat GPS perangkat Anda...</span>
                   </div>
                 )}
@@ -764,175 +754,222 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                   top: '10px',
                   right: '10px',
                   zIndex: 999,
-                  background: 'rgba(15, 23, 42, 0.75)',
+                  background: 'rgba(15, 23, 42, 0.78)',
                   backdropFilter: 'blur(4px)',
                   color: 'white',
-                  padding: '4px 10px',
+                  padding: '5px 12px',
                   borderRadius: '20px',
                   fontSize: '11px',
-                  fontWeight: 600,
+                  fontWeight: 700,
                   pointerEvents: 'none',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '4px'
+                  gap: '6px'
                 }}>
                   <span>🎯 Klik peta / geser pin untuk atur titik</span>
                 </div>
               </div>
 
-              {/* Status Lokasi & Detail GPS */}
-              <div style={{
-                background: '#f8fafc',
-                border: '1px solid #e2e8f0',
-                borderRadius: '10px',
-                padding: '12px 14px',
-                marginBottom: '14px'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap', marginBottom: '8px' }}>
+              {/* Status Lokasi & Detail GPS Card */}
+              <div className="sos-location-card">
+                <div className="sos-location-head">
                   <div style={{ flex: 1, minWidth: '220px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.4px', display: 'block', marginBottom: '2px' }}>
-                      Alamat Terdeteksi:
-                    </span>
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b', lineHeight: 1.4 }}>
+                    <div className="sos-location-label">Alamat Terdeteksi:</div>
+                    <div className="sos-location-address">
                       📍 {address}
-                    </span>
+                    </div>
                   </div>
                   <button
                     type="button"
                     onClick={detectGPS}
                     disabled={loadingGps}
-                    style={{
-                      background: loadingGps ? '#f1f5f9' : '#ecfdf5',
-                      border: '1px solid #a7f3d0',
-                      color: loadingGps ? '#94a3b8' : '#065f46',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      padding: '6px 12px',
-                      borderRadius: '8px',
-                      cursor: loadingGps ? 'not-allowed' : 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                      transition: 'all 0.15s'
-                    }}
+                    className="btn-refresh-gps"
                   >
-                    {loadingGps ? '📡 Mencari GPS...' : '🔄 Refresh GPS'}
+                    {loadingGps ? '📡 Mencari...' : '🔄 Refresh GPS'}
                   </button>
                 </div>
 
                 {gpsLocation && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', fontSize: '11.5px', color: '#64748b', borderTop: '1px solid #f1f5f9', paddingTop: '8px' }}>
+                  <div className="sos-coords-strip">
                     <span><strong>Lat:</strong> {gpsLocation.lat.toFixed(6)}</span>
                     <span><strong>Lng:</strong> {gpsLocation.lng.toFixed(6)}</span>
                     {gpsAccuracy && <span><strong>Akurasi:</strong> ±{Math.round(gpsAccuracy)}m</span>}
-                    <span style={{
-                      padding: '2px 8px',
-                      borderRadius: '12px',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      background: locationSource === 'real_gps' ? '#dcfce7' : locationSource === 'manual' ? '#eff6ff' : '#fef3c7',
-                      color: locationSource === 'real_gps' ? '#15803d' : locationSource === 'manual' ? '#1d4ed8' : '#b45309',
-                      border: `1px solid ${locationSource === 'real_gps' ? '#bbf7d0' : locationSource === 'manual' ? '#bfdbfe' : '#fde68a'}`
-                    }}>
+                    <span className={`sos-source-badge ${locationSource === 'real_gps' ? 'gps' : locationSource === 'manual' ? 'manual' : 'ip'}`}>
                       {locationSource === 'real_gps' ? '● Lokasi Perangkat Real (GPS)' : locationSource === 'manual' ? '● Titik Disesuaikan Manual' : '● Lokasi Jaringan (IP)'}
                     </span>
                   </div>
                 )}
               </div>
 
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', fontWeight: 600, fontSize: '13px', marginBottom: '4px', color: '#334155' }}>
+              {/* Detail Patokan Input */}
+              <div className="sos-form-group">
+                <label className="sos-form-label">
                   Patokan / Alamat Lengkap Tambahan (Opsional)
                 </label>
                 <input 
                   type="text" 
-                  placeholder="Contoh: Depan Musala Nurul Huda RT 03 / Rumah atap biru"
+                  className="sos-input-text"
+                  placeholder="Contoh: Depan Musala Nurul Huda RT 03 / Rumah pagar biru dekat balai desa"
                   value={detailPatokan}
                   onChange={(e) => setDetailPatokan(e.target.value)}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
                 />
               </div>
 
-              <button 
-                onClick={() => setStep(2)} 
-                disabled={!gpsLocation}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  background: '#2563eb',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  fontWeight: 'bold',
-                  cursor: gpsLocation ? 'pointer' : 'not-allowed',
-                  fontSize: '14px'
-                }}
-              >
-                Lanjutkan ke Data Evakuasi →
-              </button>
+              {/* Next Button */}
+              <div className="sos-action-row">
+                <button 
+                  type="button"
+                  onClick={() => setStep(2)} 
+                  disabled={!gpsLocation}
+                  className="btn-sos-primary"
+                  style={{ width: '100%', flex: 'none' }}
+                >
+                  <span>Lanjutkan ke Data Evakuasi</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                    <polyline points="12 5 19 12 12 19" />
+                  </svg>
+                </button>
+              </div>
             </div>
           )}
 
-          {/* STEP 2: DATA KORBAN */}
+          {/* STEP 2: DATA KORBAN & FOTO */}
           {step === 2 && (
             <div className="sos-step">
-              <h3 style={{ fontSize: '1.1rem', marginBottom: '6px' }}>Langkah 2: Data Rombongan &amp; Kelompok Rentan</h3>
-              <p style={{ marginBottom: '1rem', color: '#64748b', fontSize: '13px' }}>
-                Data ini menentukan skor prioritas penyelamatan dan kapasitas perahu SAR yang ditugaskan.
+              <h3 className="sos-section-title">2. Data Rombongan & Kelompok Rentan</h3>
+              <p className="sos-section-desc">
+                Data ini menentukan skor prioritas penyelamatan dan kapasitas perahu SAR yang ditugaskan ke lokasi Anda.
               </p>
               
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '6px', fontSize: '13px', color: '#334155' }}>
-                  Jumlah Anggota Keluarga / Jiwa
+              {/* Jumlah Anggota Keluarga Stepper */}
+              <div className="sos-form-group">
+                <label className="sos-form-label">
+                  Jumlah Jiwa yang Perlu Dievakuasi
                 </label>
-                <input 
-                  type="number" 
-                  min="1" 
-                  max="50"
-                  value={familyCount} 
-                  onChange={(e) => setFamilyCount(parseInt(e.target.value) || 1)}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px', fontWeight: 600 }}
-                />
+                <div className="sos-counter-box">
+                  <span style={{ fontSize: '0.85rem', color: 'var(--warga-text-muted)', fontWeight: 600 }}>
+                    Total anggota keluarga di lokasi:
+                  </span>
+                  <div className="sos-counter-controls">
+                    <button
+                      type="button"
+                      className="sos-counter-btn"
+                      onClick={() => setFamilyCount(Math.max(1, familyCount - 1))}
+                      title="Kurangi"
+                    >
+                      −
+                    </button>
+                    <span className="sos-counter-num">{familyCount}</span>
+                    <button
+                      type="button"
+                      className="sos-counter-btn"
+                      onClick={() => setFamilyCount(Math.min(50, familyCount + 1))}
+                      title="Tambah"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                {/* Quick Presets */}
+                <div className="sos-preset-row">
+                  {[1, 2, 4, 6].map((num) => (
+                    <button
+                      key={num}
+                      type="button"
+                      className={`sos-preset-chip ${familyCount === num ? 'active' : ''}`}
+                      onClick={() => setFamilyCount(num)}
+                    >
+                      {num === 6 ? '6+ Jiwa' : `${num} Jiwa`}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <div style={{ marginBottom: '20px', background: '#f8fafc', padding: '14px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                <label style={{ display: 'block', fontWeight: 700, marginBottom: '10px', fontSize: '13px', color: '#1e293b' }}>
-                  Kelompok Rentan (Centang jika ada):
+              {/* Kelompok Rentan Selectable Grid */}
+              <div className="sos-form-group">
+                <label className="sos-form-label">
+                  Kelompok Rentan (Pilih jika ada anggota keluarga di lokasi):
                 </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', fontSize: '13px', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={vulnerable.elderly} onChange={e => setVulnerable({...vulnerable, elderly: e.target.checked})} />
-                  <span>👵 Lansia (&gt;60 tahun) (+5 poin prioritas)</span>
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', fontSize: '13px', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={vulnerable.toddler} onChange={e => setVulnerable({...vulnerable, toddler: e.target.checked})} />
-                  <span>👶 Balita / Anak-anak (+5 poin prioritas)</span>
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', fontSize: '13px', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={vulnerable.pregnant} onChange={e => setVulnerable({...vulnerable, pregnant: e.target.checked})} />
-                  <span>🤰 Ibu Hamil (+5 poin prioritas)</span>
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', fontSize: '13px', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={vulnerable.disability} onChange={e => setVulnerable({...vulnerable, disability: e.target.checked})} />
-                  <span>♿ Penyandang Disabilitas / Sakit Parah (+10 poin prioritas)</span>
-                </label>
+                <div className="sos-vulnerable-grid">
+                  {/* Lansia */}
+                  <div 
+                    className={`sos-vulnerable-card ${vulnerable.elderly ? 'selected' : ''}`}
+                    onClick={() => setVulnerable(prev => ({ ...prev, elderly: !prev.elderly }))}
+                  >
+                    <div className="sos-vuln-left">
+                      <span className="sos-vuln-icon">👵</span>
+                      <div className="sos-vuln-info">
+                        <strong>Lansia (&gt;60 th)</strong>
+                        <span>Butuh bantuan mobilitas</span>
+                      </div>
+                    </div>
+                    <span className="sos-vuln-badge">+5 Poin</span>
+                  </div>
+
+                  {/* Balita */}
+                  <div 
+                    className={`sos-vulnerable-card ${vulnerable.toddler ? 'selected' : ''}`}
+                    onClick={() => setVulnerable(prev => ({ ...prev, toddler: !prev.toddler }))}
+                  >
+                    <div className="sos-vuln-left">
+                      <span className="sos-vuln-icon">👶</span>
+                      <div className="sos-vuln-info">
+                        <strong>Balita / Anak</strong>
+                        <span>Butuh rompi pelampung anak</span>
+                      </div>
+                    </div>
+                    <span className="sos-vuln-badge">+5 Poin</span>
+                  </div>
+
+                  {/* Ibu Hamil */}
+                  <div 
+                    className={`sos-vulnerable-card ${vulnerable.pregnant ? 'selected' : ''}`}
+                    onClick={() => setVulnerable(prev => ({ ...prev, pregnant: !prev.pregnant }))}
+                  >
+                    <div className="sos-vuln-left">
+                      <span className="sos-vuln-icon">🤰</span>
+                      <div className="sos-vuln-info">
+                        <strong>Ibu Hamil</strong>
+                        <span>Prioritas medis & ambulans</span>
+                      </div>
+                    </div>
+                    <span className="sos-vuln-badge">+5 Poin</span>
+                  </div>
+
+                  {/* Disabilitas */}
+                  <div 
+                    className={`sos-vulnerable-card ${vulnerable.disability ? 'selected' : ''}`}
+                    onClick={() => setVulnerable(prev => ({ ...prev, disability: !prev.disability }))}
+                  >
+                    <div className="sos-vuln-left">
+                      <span className="sos-vuln-icon">♿</span>
+                      <div className="sos-vuln-info">
+                        <strong>Disabilitas / Sakit</strong>
+                        <span>Butuh tandu evakuasi</span>
+                      </div>
+                    </div>
+                    <span className="sos-vuln-badge" style={{ background: '#fee2e2', color: '#b91c1c' }}>+10 Poin</span>
+                  </div>
+                </div>
               </div>
 
               {/* DOKUMENTASI FOTO SITUASI BANJIR */}
-              <div style={{ marginBottom: '20px', background: '#f8fafc', padding: '16px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+              <div className="sos-photo-box">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
-                  <label style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <label className="sos-form-label" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span>📸</span> Foto Situasi Genangan / Banjir (Opsional)
                   </label>
-                  <span style={{ fontSize: '11px', color: '#166534', background: '#dcfce7', padding: '2px 8px', borderRadius: '10px', fontWeight: 700 }}>
+                  <span className="sos-source-badge gps">
                     Sangat Dianjurkan
                   </span>
                 </div>
-                <p style={{ margin: '0 0 12px 0', color: '#64748b', fontSize: '12px', lineHeight: 1.4 }}>
+                <p style={{ margin: '0 0 14px 0', color: 'var(--warga-text-muted)', fontSize: '0.78rem', lineHeight: 1.4 }}>
                   Dokumentasi visual ketinggian air dan kondisi lingkungan sekitar membantu tim BPBD menyiapkan armada penyelamat serta menentukan rute evakuasi yang tepat.
                 </p>
 
-                {/* Input File Tersembunyi */}
+                {/* Hidden File Inputs */}
                 <input 
                   type="file" 
                   accept="image/*" 
@@ -951,25 +988,23 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
 
                 {/* Live Camera Viewfinder */}
                 {isCameraActive ? (
-                  <div style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', background: '#000000', border: '2px solid #dc2626', boxShadow: '0 10px 25px -5px rgba(220, 38, 38, 0.3)' }}>
-                    {/* Flash shutter effect overlay */}
+                  <div style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', background: '#000000', border: '2px solid #dc2626', boxShadow: '0 8px 24px rgba(220, 38, 38, 0.25)' }}>
                     {cameraFlash && (
                       <div style={{ position: 'absolute', inset: 0, background: '#ffffff', zIndex: 30, opacity: 0.85, transition: 'opacity 0.2s' }} />
                     )}
 
-                    {/* Live Video Feed */}
                     <video 
                       ref={videoRef} 
                       autoPlay 
                       playsInline 
                       muted 
-                      style={{ width: '100%', height: '340px', objectFit: 'cover', display: 'block' }} 
+                      style={{ width: '100%', height: '320px', objectFit: 'cover', display: 'block' }} 
                     />
 
                     {/* Viewfinder HUD Overlays */}
                     <div style={{ position: 'absolute', top: '12px', left: '12px', right: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 }}>
-                      <span style={{ background: 'rgba(220, 38, 38, 0.85)', color: 'white', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px', letterSpacing: '0.05em' }}>
-                        <span style={{ width: '8px', height: '8px', background: 'white', borderRadius: '50%', display: 'inline-block', animation: 'notifPulse 1.2s infinite' }} />
+                      <span style={{ background: 'rgba(220, 38, 38, 0.85)', color: 'white', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ width: '8px', height: '8px', background: 'white', borderRadius: '50%', display: 'inline-block', animation: 'pulseDotNearest 1.2s infinite' }} />
                         KAMERA AKTIF
                       </span>
 
@@ -989,18 +1024,15 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                           alignItems: 'center',
                           gap: '6px'
                         }}
-                        title="Beralih kamera depan/belakang"
                       >
                         🔄 Beralih Kamera
                       </button>
                     </div>
 
-                    {/* Reticle Focus Marks */}
                     <div style={{ position: 'absolute', inset: '40px', border: '1px dashed rgba(255,255,255,0.4)', borderRadius: '10px', pointerEvents: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <div style={{ width: '40px', height: '40px', border: '2px solid rgba(255,255,255,0.6)', borderRadius: '50%' }} />
                     </div>
 
-                    {/* Bottom Controls Bar */}
                     <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '16px', background: 'linear-gradient(transparent, rgba(0,0,0,0.85))', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 }}>
                       <button
                         type="button"
@@ -1012,20 +1044,19 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                           padding: '8px 14px',
                           borderRadius: '8px',
                           fontSize: '12px',
-                          fontWeight: 600,
+                          fontWeight: 700,
                           cursor: 'pointer'
                         }}
                       >
                         ✕ Batal
                       </button>
 
-                      {/* Main Shutter Button */}
                       <button
                         type="button"
                         onClick={capturePhotoFromCamera}
                         style={{
-                          width: '68px',
-                          height: '68px',
+                          width: '64px',
+                          height: '64px',
                           borderRadius: '50%',
                           background: '#ffffff',
                           border: '4px solid #dc2626',
@@ -1033,14 +1064,11 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          boxShadow: '0 0 20px rgba(220, 38, 38, 0.6)',
-                          transition: 'transform 0.1s'
+                          boxShadow: '0 0 20px rgba(220, 38, 38, 0.6)'
                         }}
-                        onMouseDown={e => e.currentTarget.style.transform = 'scale(0.92)'}
-                        onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
-                        title="Ambil foto situasi sekarang"
+                        title="Ambil foto"
                       >
-                        <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '20px' }}>
+                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '18px' }}>
                           📸
                         </div>
                       </button>
@@ -1049,8 +1077,8 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                     </div>
                   </div>
                 ) : cameraError ? (
-                  <div style={{ background: '#fee2e2', border: '1px solid #fecaca', borderRadius: '8px', padding: '14px', marginBottom: '12px' }}>
-                    <div style={{ color: '#dc2626', fontWeight: 700, fontSize: '13px', marginBottom: '6px' }}>
+                  <div style={{ background: '#fee2e2', border: '1px solid #fecaca', borderRadius: '10px', padding: '14px', marginBottom: '12px' }}>
+                    <div style={{ color: '#dc2626', fontWeight: 800, fontSize: '13px', marginBottom: '4px' }}>
                       ⚠️ Akses Kamera Terkendala
                     </div>
                     <p style={{ margin: '0 0 10px 0', fontSize: '12px', color: '#991b1b' }}>
@@ -1060,14 +1088,16 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                       <button
                         type="button"
                         onClick={() => startLiveCamera(cameraFacing)}
-                        style={{ padding: '6px 12px', background: '#dc2626', color: 'white', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                        className="btn-sos-primary"
+                        style={{ padding: '6px 14px', fontSize: '12px', flex: 'none' }}
                       >
-                        Coba Buka Kamera Lagi
+                        Coba Lagi
                       </button>
                       <button
                         type="button"
                         onClick={() => galleryInputRef.current?.click()}
-                        style={{ padding: '6px 12px', background: '#ffffff', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                        className="btn-sos-secondary"
+                        style={{ padding: '6px 14px', fontSize: '12px', flex: 'none' }}
                       >
                         Pilih dari File
                       </button>
@@ -1075,86 +1105,41 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                   </div>
                 ) : !photoPreview ? (
                   <div>
-                    {/* Big Action: Snap with Live Camera */}
                     <button
                       type="button"
                       onClick={() => startLiveCamera(cameraFacing)}
-                      style={{
-                        width: '100%',
-                        padding: '16px',
-                        borderRadius: '10px',
-                        background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
-                        color: 'white',
-                        border: 'none',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '12px',
-                        boxShadow: '0 4px 12px rgba(220, 38, 38, 0.25)',
-                        marginBottom: '10px',
-                        transition: 'transform 0.15s'
-                      }}
-                      onMouseDown={e => e.currentTarget.style.transform = 'scale(0.99)'}
-                      onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+                      className="btn-open-camera"
                     >
-                      <span style={{ fontSize: '26px' }}>📸</span>
-                      <div style={{ textAlign: 'left' }}>
-                        <strong style={{ display: 'block', fontSize: '14px', letterSpacing: '0.02em' }}>
-                          AMBIL FOTO DENGAN KAMERA
-                        </strong>
-                        <small style={{ fontSize: '11px', opacity: 0.9 }}>
-                          Dokumentasikan kondisi banjir secara langsung melalui kamera perangkat
-                        </small>
-                      </div>
+                      <span style={{ fontSize: '20px' }}>📸</span>
+                      <span>Ambil Foto Langsung dengan Kamera</span>
                     </button>
-
-                    <div style={{ textAlign: 'center', margin: '4px 0 8px' }}>
-                      <span style={{ fontSize: '11px', color: '#94a3b8', background: '#f8fafc', padding: '2px 8px' }}>
-                        atau unggah dari penyimpanan:
-                      </span>
-                    </div>
 
                     <button
                       type="button"
                       onClick={() => galleryInputRef.current?.click()}
-                      style={{
-                        width: '100%',
-                        padding: '10px',
-                        borderRadius: '8px',
-                        border: '1px solid #cbd5e1',
-                        background: '#ffffff',
-                        color: '#475569',
-                        fontWeight: 600,
-                        fontSize: '12px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px'
-                      }}
+                      className="btn-open-gallery"
                     >
                       <span>📁</span>
                       <span>Pilih Foto dari Galeri / Dokumen</span>
                     </button>
                   </div>
                 ) : (
-                  <div style={{ position: 'relative', borderRadius: '10px', overflow: 'hidden', border: '2px solid #16a34a', background: '#0f172a' }}>
+                  <div style={{ position: 'relative', borderRadius: '10px', overflow: 'hidden', border: '2px solid #10b981', background: '#0f172a' }}>
                     <img 
                       src={photoPreview} 
                       alt="Hasil Foto Banjir" 
-                      style={{ width: '100%', maxHeight: '280px', objectFit: 'cover', display: 'block', cursor: 'pointer' }}
+                      style={{ width: '100%', maxHeight: '260px', objectFit: 'cover', display: 'block', cursor: 'pointer' }}
                       onClick={() => setLightboxPhoto(photoPreview)}
                     />
-                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '10px 14px', background: 'rgba(15, 23, 42, 0.85)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'white', fontSize: '12px' }}>
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '10px 14px', background: 'rgba(15, 23, 42, 0.88)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'white', fontSize: '12px' }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}>
-                        <span style={{ color: '#4ade80', fontSize: '16px' }}>✓</span> Foto Berhasil Dilampirkan
+                        <span style={{ color: '#4ade80' }}>✓</span> Foto Siap Dikirim
                       </span>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <button
                           type="button"
                           onClick={() => startLiveCamera(cameraFacing)}
-                          style={{ background: '#2563eb', border: 'none', color: 'white', padding: '5px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: 700 }}
+                          style={{ background: 'var(--warga-teal)', border: 'none', color: 'white', padding: '5px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: 700 }}
                         >
                           📷 Ambil Ulang
                         </button>
@@ -1171,19 +1156,27 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                 )}
               </div>
 
-              <div style={{ display: 'flex', gap: '10px' }}>
+              {/* Action Buttons: Back & Submit */}
+              <div className="sos-action-row">
                 <button 
+                  type="button"
                   onClick={() => setStep(1)} 
-                  style={{ flex: 1, padding: '12px', background: '#e2e8f0', color: '#334155', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
+                  className="btn-sos-secondary"
                 >
-                  ← Kembali
+                  ← Kembali ke Lokasi
                 </button>
                 <button 
+                  type="button"
                   onClick={handleSubmit} 
                   disabled={loading}
-                  style={{ flex: 2, padding: '12px', background: '#dc2626', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
+                  className="btn-sos-danger-submit"
                 >
-                  {loading ? 'Mengirim Data...' : '🚨 KIRIM PERMINTAAN SOS'}
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                    <line x1="12" y1="9" x2="12" y2="13" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                  <span>{loading ? 'Mengirim Data...' : 'KIRIM PERMINTAAN SOS'}</span>
                 </button>
               </div>
             </div>
@@ -1192,42 +1185,50 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
           {/* STEP 3: TIKET BERHASIL & TRACKING LIVE */}
           {step === 3 && ticket && (
             <div className="sos-step">
-              <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-                <div style={{ fontSize: '3rem', marginBottom: '4px' }}>✅</div>
-                <h3 style={{ color: '#16a34a', margin: 0 }}>Permintaan SOS Terkirim!</h3>
-                <p style={{ color: '#64748b', fontSize: '13px', margin: '4px 0 0 0' }}>Data Anda telah diterima di Pusdalops BPBD Baureno.</p>
+              <div className="sos-success-hero">
+                <div className="sos-success-icon">✓</div>
+                <h3 className="sos-section-title" style={{ color: '#15803d' }}>
+                  Permintaan SOS Berhasil Dikirim!
+                </h3>
+                <p className="sos-section-desc" style={{ marginBottom: 0 }}>
+                  Laporan darurat Anda telah masuk ke monitor Pusdalops BPBD Baureno.
+                </p>
               </div>
 
-              <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '12px', color: '#64748b' }}>Nomor Tiket:</span>
-                  <span style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a' }}>{ticket.ticket_number}</span>
+              {/* Summary Card */}
+              <div className="sos-ticket-summary-card">
+                <div className="sos-ticket-summary-row">
+                  <span style={{ color: 'var(--warga-text-muted)' }}>Nomor Tiket:</span>
+                  <span style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--warga-navy)' }}>
+                    {ticket.ticket_number}
+                  </span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '12px', color: '#64748b' }}>Waktu Terkirim:</span>
-                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>
+                <div className="sos-ticket-summary-row">
+                  <span style={{ color: 'var(--warga-text-muted)' }}>Waktu Terkirim:</span>
+                  <span style={{ fontWeight: 700, color: 'var(--warga-navy)' }}>
                     {formatWIBDateTime(ticket.submitted_at || new Date())}
                   </span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '12px', color: '#64748b' }}>Jumlah Korban:</span>
-                  <span style={{ fontSize: '13px', fontWeight: 600 }}>{ticket.family_count} Jiwa</span>
+                <div className="sos-ticket-summary-row">
+                  <span style={{ color: 'var(--warga-text-muted)' }}>Jumlah Korban:</span>
+                  <span style={{ fontWeight: 700, color: 'var(--warga-navy)' }}>
+                    {ticket.family_count} Jiwa
+                  </span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '12px', color: '#64748b' }}>Status Saat Ini:</span>
+                <div className="sos-ticket-summary-row">
+                  <span style={{ color: 'var(--warga-text-muted)' }}>Status Saat Ini:</span>
                   {getStatusBadge(ticket.status)}
                 </div>
 
-                {/* Foto Terlampir di Step 3 */}
                 {ticket.photo_url && (
-                  <div style={{ marginTop: '12px', borderTop: '1px solid #e2e8f0', paddingTop: '10px' }}>
-                    <span style={{ fontSize: '12px', color: '#64748b', display: 'block', marginBottom: '6px', fontWeight: 600 }}>
-                      📷 Foto Situasi yang Dikirim ke Petugas:
+                  <div style={{ marginTop: '12px', borderTop: '1px solid var(--warga-border)', paddingTop: '10px' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--warga-text-muted)', display: 'block', marginBottom: '6px', fontWeight: 700 }}>
+                      📷 Foto Situasi yang Dikirim:
                     </span>
                     <img 
                       src={ticket.photo_url.startsWith('http') || ticket.photo_url.startsWith('data:') ? ticket.photo_url : `http://localhost:8000${ticket.photo_url}`} 
                       alt="Foto Lokasi" 
-                      style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #cbd5e1', cursor: 'pointer' }}
+                      style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--warga-border)', cursor: 'pointer' }}
                       onClick={() => setLightboxPhoto(ticket.photo_url.startsWith('http') || ticket.photo_url.startsWith('data:') ? ticket.photo_url : `http://localhost:8000${ticket.photo_url}`)}
                     />
                   </div>
@@ -1235,49 +1236,66 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
               </div>
 
               {/* Real-time Tracking Stepper */}
-              <div style={{ border: '2px solid #3b82f6', borderRadius: '8px', padding: '16px', background: '#eff6ff', marginBottom: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #bfdbfe', paddingBottom: '8px' }}>
-                  <h4 style={{ margin: 0, color: '#1d4ed8', fontSize: '14px' }}>📡 Pelacakan Evakuasi Real-time</h4>
-                  <span style={{ fontSize: '11px', color: '#2563eb', animation: 'pulse 2s infinite' }}>● Terhubung WebSocket</span>
+              <div className="sos-tracker-box">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #e0f2fe', paddingBottom: '10px' }}>
+                  <h4 style={{ margin: 0, color: '#0369a1', fontSize: '0.92rem', fontWeight: 800 }}>
+                    📡 Pelacakan Evakuasi Real-time
+                  </h4>
+                  <span style={{ fontSize: '0.72rem', color: '#0284c7', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span className="sos-pulse-dot" style={{ background: '#0284c7' }} /> Terhubung Live
+                  </span>
                 </div>
                 {renderTrackerSteps(ticket.status, ticket.assigned_unit)}
               </div>
 
-              <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '12px', textAlign: 'center', marginBottom: '16px' }}>
-                <p style={{ color: '#dc2626', fontWeight: 700, margin: '0 0 6px 0', fontSize: '13px' }}>
-                  Tetap tenang dan amankan diri di tempat tinggi (lantai 2 / atap).
-                </p>
-                <div style={{ fontSize: '12px', color: '#991b1b' }}>
-                  Butuh bantuan langsung via telepon? Hubungi:
-                  <a href="tel:112" style={{ display: 'inline-block', marginLeft: '6px', fontWeight: 800, color: '#dc2626', textDecoration: 'underline' }}>
-                    📞 Call Center 112
-                  </a>
+              {/* Call 112 Hotline Box */}
+              <div className="sos-call-112-box">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '1.4rem' }}>📞</span>
+                  <div>
+                    <strong style={{ color: '#b91c1c', display: 'block', fontSize: '0.85rem' }}>
+                      Butuh bantuan langsung via telepon?
+                    </strong>
+                    <span style={{ color: '#7f1d1d', fontSize: '0.76rem' }}>
+                      Tetap di tempat tinggi, hubungi petugas siaga darurat:
+                    </span>
+                  </div>
                 </div>
+                <a 
+                  href="tel:112" 
+                  className="btn-fill-sim"
+                  style={{ textDecoration: 'none' }}
+                >
+                  Panggil 112 (Bebas Pulsa)
+                </a>
               </div>
 
               <button
+                type="button"
                 onClick={() => { setStep(1); setTicket(null); setPhotoFile(null); setPhotoPreview(null); setPhotoBase64(null); }}
-                style={{ width: '100%', padding: '10px', background: '#e2e8f0', color: '#334155', border: 'none', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}
+                className="btn-sos-secondary"
+                style={{ width: '100%' }}
               >
                 + Buat Laporan SOS Baru Lainnya
               </button>
             </div>
           )}
-        </article>
+        </div>
       )}
 
       {/* TAB 2: RIWAYAT & STATUS TIKET WARGA */}
       {activeTab === 'history' && (
-        <article className="portal-card" style={{ padding: '2rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eee', paddingBottom: '12px', marginBottom: '1.5rem' }}>
-            <h2 style={{ margin: 0, fontSize: '1.3rem', color: '#0f172a' }}>
-              📋 Riwayat &amp; Status Tiket SOS Anda
+        <div className="sos-card">
+          <div className="sos-card-head">
+            <h2 className="sos-card-title">
+              📋 Riwayat & Status Tiket SOS Anda
             </h2>
             <button
+              type="button"
               onClick={loadMyTickets}
-              style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
+              className="btn-refresh-gps"
             >
-              🔄 Segarkan
+              🔄 Segarkan Data
             </button>
           </div>
 
@@ -1289,38 +1307,30 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
               gap: '10px',
               alignItems: 'center',
               justifyContent: 'space-between',
-              marginBottom: '16px',
+              marginBottom: '20px',
               padding: '12px 14px',
               background: '#f8fafc',
-              borderRadius: '10px',
-              border: '1px solid #e2e8f0'
+              borderRadius: '12px',
+              border: '1px solid var(--warga-border)'
             }}>
               {/* Search Input */}
               <div style={{ position: 'relative', flex: '1 1 200px', minWidth: '180px' }}>
                 <input
                   type="text"
-                  placeholder="Cari kode tiket (cth: SOS-2026-...) ..."
+                  placeholder="Cari kode tiket (SOS-2026-...) ..."
                   value={ticketSearch}
                   onChange={(e) => setTicketSearch(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '7px 10px 7px 32px',
-                    borderRadius: '7px',
-                    border: '1px solid #cbd5e1',
-                    fontSize: '12.5px',
-                    background: '#ffffff',
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
+                  className="sos-input-text"
+                  style={{ padding: '8px 12px 8px 34px', fontSize: '0.82rem' }}
                 />
-                <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '13px' }}>
+                <span style={{ position: 'absolute', left: '11px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '13px' }}>
                   🔍
                 </span>
                 {ticketSearch && (
                   <button
                     type="button"
                     onClick={() => setTicketSearch('')}
-                    style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '11px' }}
+                    style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '12px' }}
                   >
                     ✕
                   </button>
@@ -1332,64 +1342,28 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                 <button
                   type="button"
                   onClick={() => setTicketFilterStatus('all')}
-                  style={{
-                    padding: '5px 10px',
-                    borderRadius: '20px',
-                    fontSize: '11.5px',
-                    fontWeight: 700,
-                    border: 'none',
-                    cursor: 'pointer',
-                    background: ticketFilterStatus === 'all' ? '#0f172a' : '#e2e8f0',
-                    color: ticketFilterStatus === 'all' ? '#ffffff' : '#475569'
-                  }}
+                  className={`sos-preset-chip ${ticketFilterStatus === 'all' ? 'active' : ''}`}
                 >
                   Semua ({myTickets.length})
                 </button>
                 <button
                   type="button"
                   onClick={() => setTicketFilterStatus('waiting')}
-                  style={{
-                    padding: '5px 10px',
-                    borderRadius: '20px',
-                    fontSize: '11.5px',
-                    fontWeight: 700,
-                    border: 'none',
-                    cursor: 'pointer',
-                    background: ticketFilterStatus === 'waiting' ? '#d97706' : '#fef3c7',
-                    color: ticketFilterStatus === 'waiting' ? '#ffffff' : '#92400e'
-                  }}
+                  className={`sos-preset-chip ${ticketFilterStatus === 'waiting' ? 'active' : ''}`}
                 >
                   Menunggu ({myTickets.filter(t => t.status === 'submitted').length})
                 </button>
                 <button
                   type="button"
                   onClick={() => setTicketFilterStatus('process')}
-                  style={{
-                    padding: '5px 10px',
-                    borderRadius: '20px',
-                    fontSize: '11.5px',
-                    fontWeight: 700,
-                    border: 'none',
-                    cursor: 'pointer',
-                    background: ticketFilterStatus === 'process' ? '#2563eb' : '#dbeafe',
-                    color: ticketFilterStatus === 'process' ? '#ffffff' : '#1e40af'
-                  }}
+                  className={`sos-preset-chip ${ticketFilterStatus === 'process' ? 'active' : ''}`}
                 >
                   Diproses ({myTickets.filter(t => ['verified', 'dispatched', 'arrived'].includes(t.status)).length})
                 </button>
                 <button
                   type="button"
                   onClick={() => setTicketFilterStatus('completed')}
-                  style={{
-                    padding: '5px 10px',
-                    borderRadius: '20px',
-                    fontSize: '11.5px',
-                    fontWeight: 700,
-                    border: 'none',
-                    cursor: 'pointer',
-                    background: ticketFilterStatus === 'completed' ? '#16a34a' : '#dcfce7',
-                    color: ticketFilterStatus === 'completed' ? '#ffffff' : '#166534'
-                  }}
+                  className={`sos-preset-chip ${ticketFilterStatus === 'completed' ? 'active' : ''}`}
                 >
                   Selesai ({myTickets.filter(t => t.status === 'completed').length})
                 </button>
@@ -1398,29 +1372,31 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
           )}
 
           {loadingTickets ? (
-            <div style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>
-              ⏳ Memuat riwayat tiket...
+            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--warga-text-muted)' }}>
+              ⏳ Memuat riwayat tiket evakuasi...
             </div>
           ) : myTickets.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '3rem', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
+            <div style={{ textAlign: 'center', padding: '3rem', background: '#f8fafc', borderRadius: '12px', border: '1px dashed var(--warga-border)' }}>
               <div style={{ fontSize: '2.5rem', marginBottom: '8px' }}>🛡️</div>
-              <h3 style={{ color: '#475569', margin: '0 0 4px 0' }}>Belum Ada Tiket SOS</h3>
-              <p style={{ color: '#94a3b8', fontSize: '13px', margin: 0 }}>
+              <h3 style={{ color: 'var(--warga-navy)', margin: '0 0 4px 0', fontSize: '1.05rem', fontWeight: 800 }}>Belum Ada Tiket SOS</h3>
+              <p style={{ color: 'var(--warga-text-muted)', fontSize: '0.82rem', margin: 0 }}>
                 Anda belum pernah mengajukan tiket evakuasi darurat.
               </p>
               <button
+                type="button"
                 onClick={() => setActiveTab('create')}
-                style={{ marginTop: '16px', padding: '8px 16px', background: '#dc2626', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}
+                className="btn-sos-danger-submit"
+                style={{ marginTop: '16px', padding: '10px 20px', fontSize: '0.82rem' }}
               >
-                Buat Permintaan SOS
+                🚨 Buat Permintaan SOS
               </button>
             </div>
           ) : filteredMyTickets.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '2.5rem', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
+            <div style={{ textAlign: 'center', padding: '2.5rem', background: '#f8fafc', borderRadius: '12px', border: '1px dashed var(--warga-border)' }}>
               <div style={{ fontSize: '2rem', marginBottom: '6px' }}>🔍</div>
-              <h4 style={{ color: '#475569', margin: '0 0 4px 0' }}>Tidak Ada Tiket yang Cocok</h4>
-              <p style={{ color: '#94a3b8', fontSize: '13px', margin: 0 }}>
-                Tidak ditemukan tiket dengan kode/lokasi "{ticketSearch}" pada filter yang dipilih.
+              <h4 style={{ color: 'var(--warga-navy)', margin: '0 0 4px 0', fontWeight: 800 }}>Tidak Ada Tiket yang Cocok</h4>
+              <p style={{ color: 'var(--warga-text-muted)', fontSize: '0.82rem', margin: 0 }}>
+                Tidak ditemukan tiket dengan kata kunci "{ticketSearch}".
               </p>
             </div>
           ) : (
@@ -1429,30 +1405,30 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                 <div 
                   key={t.id} 
                   style={{
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '8px',
-                    padding: '16px',
-                    background: t.status === 'dispatched' ? '#fffbeb' : '#ffffff',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                    border: '1px solid var(--warga-border)',
+                    borderRadius: '12px',
+                    padding: '18px 20px',
+                    background: t.status === 'dispatched' ? '#fffdf5' : '#ffffff',
+                    boxShadow: '0 2px 8px rgba(12, 26, 36, 0.04)'
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
                     <div>
-                      <span style={{ fontWeight: 800, fontSize: '15px', color: '#0f172a', marginRight: '8px' }}>
+                      <span style={{ fontWeight: 800, fontSize: '0.98rem', color: 'var(--warga-navy)', marginRight: '10px' }}>
                         {t.ticket_number}
                       </span>
-                      <span style={{ fontSize: '12px', color: '#64748b' }}>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--warga-text-muted)' }}>
                         {formatWIBDateTime(t.submitted_at)}
                       </span>
                     </div>
                     {getStatusBadge(t.status)}
                   </div>
 
-                  <div style={{ fontSize: '13px', color: '#334155', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '0.84rem', color: 'var(--warga-text-body)', lineHeight: 1.5, marginBottom: '8px' }}>
                     <div>📍 <strong>Lokasi:</strong> {t.gps_address}</div>
                     <div>👥 <strong>Jumlah Korban:</strong> {t.family_count} Jiwa {t.has_elderly ? '• Lansia' : ''} {t.has_toddler ? '• Balita' : ''} {t.has_pregnant ? '• Ibu Hamil' : ''} {t.has_disability ? '• Disabilitas' : ''}</div>
                     {t.assigned_unit && (
-                      <div style={{ color: '#b45309', fontWeight: 600, marginTop: '4px' }}>
+                      <div style={{ color: '#b45309', fontWeight: 700, marginTop: '4px' }}>
                         🚤 <strong>Armada Ditugaskan:</strong> {t.assigned_unit}
                       </div>
                     )}
@@ -1460,19 +1436,19 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
 
                   {/* Foto Terlampir di Riwayat */}
                   {t.photo_url && (
-                    <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid var(--warga-border)', display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <img 
                         src={t.photo_url.startsWith('http') || t.photo_url.startsWith('data:') ? t.photo_url : `http://localhost:8000${t.photo_url}`} 
                         alt="Foto Tiket" 
-                        style={{ width: '64px', height: '64px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #cbd5e1', cursor: 'pointer' }}
+                        style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--warga-border)', cursor: 'pointer' }}
                         onClick={() => setLightboxPhoto(t.photo_url.startsWith('http') || t.photo_url.startsWith('data:') ? t.photo_url : `http://localhost:8000${t.photo_url}`)}
                       />
                       <div>
-                        <span style={{ fontSize: '12px', fontWeight: 600, color: '#0f172a', display: 'block' }}>📷 Foto Situasi Lokasi</span>
+                        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--warga-navy)', display: 'block' }}>📷 Foto Situasi Banjir</span>
                         <button
                           type="button"
                           onClick={() => setLightboxPhoto(t.photo_url.startsWith('http') || t.photo_url.startsWith('data:') ? t.photo_url : `http://localhost:8000${t.photo_url}`)}
-                          style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '11px', cursor: 'pointer', padding: 0, textDecoration: 'underline', fontWeight: 600 }}
+                          style={{ background: 'none', border: 'none', color: 'var(--warga-teal)', fontSize: '0.74rem', cursor: 'pointer', padding: 0, textDecoration: 'underline', fontWeight: 700 }}
                         >
                           Lihat Ukuran Penuh ↗
                         </button>
@@ -1482,7 +1458,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
 
                   {/* Tracker Stepper for In-Progress Tickets */}
                   {['submitted', 'verified', 'dispatched', 'arrived'].includes(t.status) && (
-                    <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px dashed #cbd5e1' }}>
+                    <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px dashed var(--warga-border)' }}>
                       {renderTrackerSteps(t.status, t.assigned_unit)}
                     </div>
                   )}
@@ -1490,7 +1466,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
               ))}
             </div>
           )}
-        </article>
+        </div>
       )}
 
       {/* Lightbox Modal untuk Melihat Foto Penuh */}
@@ -1518,4 +1494,3 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
     </div>
   );
 }
-

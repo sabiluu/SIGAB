@@ -24,10 +24,10 @@ function Brand({ admin = false, locName = '' }) {
   return (
     <div className={`role-brand ${admin ? 'role-brand-admin' : ''}`}>
       <span className="role-brand-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M4 8c1.5-1 3.5-1 5 0s3.5 1 5 0 3.5-1 5 0" />
-          <path d="M4 12c1.5-1 3.5-1 5 0s3.5 1 5 0 3.5-1 5 0" />
-          <path d="M4 16c1.5-1 3.5-1 5 0s3.5 1 5 0 3.5-1 5 0" />
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.4" strokeLinecap="round">
+          <path d="M3 7c2-1.5 4.5-1.5 6.5 0s4.5 1.5 6.5 0 4.5-1.5 5 0" />
+          <path d="M3 12c2-1.5 4.5-1.5 6.5 0s4.5 1.5 6.5 0 4.5-1.5 5 0" />
+          <path d="M3 17c2-1.5 4.5-1.5 6.5 0s4.5 1.5 6.5 0 4.5-1.5 5 0" />
         </svg>
       </span>
       <span className="role-brand-text">
@@ -49,10 +49,20 @@ function WargaHome() {
   const [showLocationModal, setShowLocationModal] = useState(false)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [tempVillageId, setTempVillageId] = useState(3)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(() => (typeof window !== 'undefined' ? window.innerWidth > 1024 : false))
   const geo = useGeolocation()
   const [currentTime, setCurrentTime] = useState(new Date())
   const { data: realtimeData } = useDashboardRealtime()
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth <= 1024 && sidebarOpen) {
+        setSidebarOpen(false)
+      }
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [sidebarOpen])
 
   // Otomatis aktifkan status darurat jika probabilitas desa/kecamatan >= 76% (Status Awas)
   useEffect(() => {
@@ -216,7 +226,9 @@ function WargaHome() {
 
   const handleSelectTab = (tab) => {
     setActiveTab(tab)
-    setMobileMenuOpen(false)
+    if (typeof window !== 'undefined' && window.innerWidth <= 1024) {
+      setSidebarOpen(false)
+    }
     if (tab === 'peta') {
       setTimeout(() => {
         const el = document.getElementById('peta-wilayah-section')
@@ -293,23 +305,48 @@ function WargaHome() {
         </div>
       )}
 
-      <div className="warga-portal-layout" style={{ flex: 1 }}>
+      {/* Mobile Sidebar Backdrop */}
+      {sidebarOpen && (
+        <div 
+          className="warga-sidebar-backdrop" 
+          onClick={() => setSidebarOpen(false)} 
+          title="Klik untuk menutup menu"
+        />
+      )}
+
+      <div className={`warga-portal-layout ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`} style={{ flex: 1 }}>
       {/* 1. LEFT SIDEBAR */}
-      <aside className="warga-sidebar">
+      <aside className={`warga-sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
         <div>
-          <a href="#" className="warga-sidebar-brand" onClick={(e) => { e.preventDefault(); handleSelectTab('beranda'); }}>
-            <div className="warga-sidebar-brand-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.4" strokeLinecap="round">
-                <path d="M3 7c2-1.5 4.5-1.5 6.5 0s4.5 1.5 6.5 0 4.5-1.5 5 0" />
-                <path d="M3 12c2-1.5 4.5-1.5 6.5 0s4.5 1.5 6.5 0 4.5-1.5 5 0" />
-                <path d="M3 17c2-1.5 4.5-1.5 6.5 0s4.5 1.5 6.5 0 4.5-1.5 5 0" />
+          <div className="warga-sidebar-header-row">
+            <button
+              type="button"
+              className="warga-sidebar-toggle-btn-inside"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              title={sidebarOpen ? "Ciutkan Sidebar" : "Buka Sidebar"}
+              aria-label="Toggle Sidebar"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
               </svg>
-            </div>
-            <div className="warga-sidebar-brand-text">
-              <strong>SIGAB</strong>
-              <span>Siaga Banjir Bojonegoro</span>
-            </div>
-          </a>
+            </button>
+
+            <a href="#" className="warga-sidebar-brand" onClick={(e) => { e.preventDefault(); handleSelectTab('beranda'); }}>
+              <div className="warga-sidebar-brand-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.4" strokeLinecap="round">
+                  <path d="M3 7c2-1.5 4.5-1.5 6.5 0s4.5 1.5 6.5 0 4.5-1.5 5 0" />
+                  <path d="M3 12c2-1.5 4.5-1.5 6.5 0s4.5 1.5 6.5 0 4.5-1.5 5 0" />
+                  <path d="M3 17c2-1.5 4.5-1.5 6.5 0s4.5 1.5 6.5 0 4.5-1.5 5 0" />
+                </svg>
+              </div>
+              <div className="warga-sidebar-brand-text">
+                <strong>SIGAB</strong>
+                <span>Siaga Banjir Baureno</span>
+              </div>
+            </a>
+          </div>
 
           <nav className="warga-sidebar-nav">
             <button
@@ -391,6 +428,29 @@ function WargaHome() {
         </div>
 
         <div className="warga-sidebar-bottom">
+          {/* Simulation Toggle in Sidebar */}
+          <button
+            type="button"
+            className={`warga-sidebar-sim-btn ${isEmergencyActive ? 'active' : ''}`}
+            onClick={() => {
+              const next = !isEmergencyActive
+              setIsEmergencyActive(next)
+              if (next) playSosAlertTone()
+            }}
+            title={isEmergencyActive ? "Nonaktifkan simulasi banjir" : "Aktifkan simulasi banjir parah"}
+          >
+            <div className="warga-sidebar-sim-info">
+              <span className="warga-sidebar-sim-icon">{isEmergencyActive ? '🚨' : '🧪'}</span>
+              <div className="warga-sidebar-sim-text">
+                <span className="sim-title">Simulasi Banjir</span>
+                <span className="sim-desc">{isEmergencyActive ? 'Status: PARAH (ON)' : 'Status: Normal (OFF)'}</span>
+              </div>
+            </div>
+            <div className={`warga-sidebar-sim-toggle ${isEmergencyActive ? 'on' : ''}`}>
+              <div className="sim-knob" />
+            </div>
+          </button>
+
           <div className="warga-sidebar-help-card">
             <div className="warga-sidebar-help-icon">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -421,63 +481,63 @@ function WargaHome() {
       <div className="warga-main-container">
         {/* Topbar */}
         <header className="warga-topbar">
-          <div className="warga-topbar-breadcrumb">
-            <strong>Portal Warga</strong>
-            <span className="divider">|</span>
-            <span 
-              onClick={() => setShowProfileModal(true)} 
-              style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
-              title="Klik untuk melihat atau mengatur data domisili, profil & keluarga Anda"
+          <div className="warga-topbar-left">
+            <button
+              type="button"
+              className="warga-sidebar-toggle-btn warga-mobile-only-toggle"
+              onClick={() => setSidebarOpen(true)}
+              title="Buka Sidebar"
+              aria-label="Buka Sidebar"
             >
-              <span style={{ fontSize: '13px' }}>📍</span>
-              {geo.loading ? (
-                <span>Mendeteksi GPS...</span>
-              ) : (
-                <span>{geo.address ? geo.address.split(',')[0].replace(/^Desa\s+/i, '') : 'Lokasi Device'}</span>
-              )}
-              {geo.isRealDevice && (
-                <span style={{ 
-                  fontSize: '9px', 
-                  background: '#dcfce7', 
-                  color: '#15803d', 
-                  padding: '1px 5px', 
-                  borderRadius: '10px', 
-                  fontWeight: 700 
-                }}>
-                  GPS Real
-                </span>
-              )}
-            </span>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
+
+            <div className="warga-topbar-breadcrumb">
+              <strong>Portal Warga</strong>
+              <span className="divider">|</span>
+              <span 
+                onClick={() => setShowProfileModal(true)} 
+                style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                title="Klik untuk melihat atau mengatur data domisili, profil & keluarga Anda"
+              >
+                <span style={{ fontSize: '13px' }}>📍</span>
+                {geo.loading ? (
+                  <span>Mendeteksi GPS...</span>
+                ) : (
+                  <span>{geo.address ? geo.address.split(',')[0].replace(/^Desa\s+/i, '') : 'Lokasi Device'}</span>
+                )}
+                {geo.isRealDevice && (
+                  <span style={{ 
+                    fontSize: '9px', 
+                    background: '#dcfce7', 
+                    color: '#15803d', 
+                    padding: '1px 5px', 
+                    borderRadius: '10px', 
+                    fontWeight: 700 
+                  }}>
+                    GPS Real
+                  </span>
+                )}
+              </span>
+            </div>
           </div>
 
           <div className="warga-topbar-actions">
-            <button
-              type="button"
-              onClick={() => {
-                const next = !isEmergencyActive
-                setIsEmergencyActive(next)
-                if (next) playSosAlertTone()
-              }}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '5px 12px',
-                borderRadius: '20px',
-                border: isEmergencyActive ? '1.5px solid #dc2626' : '1px solid #cbd5e1',
-                background: isEmergencyActive ? '#fef2f2' : '#ffffff',
-                color: isEmergencyActive ? '#dc2626' : '#475569',
-                fontSize: '0.74rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-              }}
-              title="Aktifkan simulasi banjir parah atau kembalikan ke kondisi real"
-            >
-              <span>{isEmergencyActive ? '🚨' : '🧪'}</span>
-              <span>{isEmergencyActive ? 'Simulasi Banjir Parah (ON)' : 'Simulasi Banjir (OFF)'}</span>
-            </button>
+            {isEmergencyActive && (
+              <button
+                type="button"
+                className="warga-sim-active-badge"
+                onClick={() => setIsEmergencyActive(false)}
+                title="Simulasi aktif. Klik untuk kembali ke normal"
+              >
+                <span className="sim-pulse-dot" />
+                <span>🚨 Mode Simulasi (ON)</span>
+              </button>
+            )}
 
             <div className="warga-live-chip">
               <span className="pulse-dot" />
@@ -587,19 +647,6 @@ function WargaHome() {
                 <span>Warga terverifikasi</span>
               </div>
             </div>
-
-            <button
-              type="button"
-              className="warga-circle-btn"
-              onClick={() => setShowLogoutModal(true)}
-              title="Keluar"
-            >
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
-            </button>
           </div>
         </header>
 
@@ -658,7 +705,7 @@ function WargaHome() {
                   </h3>
                 </div>
                 <p style={{ margin: '4px 0 0', fontSize: '0.78rem', color: '#64748b' }}>
-                  Kecamatan Baureno, Bojonegoro • Penentu Posko &amp; Peringatan Banjir Terdekat
+                  Kecamatan Baureno • Penentu Posko &amp; Peringatan Banjir Terdekat
                 </p>
               </div>
               <button 
@@ -729,7 +776,7 @@ function WargaHome() {
                 </span>
               </div>
               <strong style={{ fontSize: '0.98rem', color: '#0f172a', display: 'block' }}>
-                {geo.address || 'Desa Baureno, Bojonegoro'}
+                {geo.address || 'Desa Baureno, Baureno'}
               </strong>
               <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>
                 Koordinat: {geo.latitude?.toFixed(4)}, {geo.longitude?.toFixed(4)}
@@ -1147,12 +1194,12 @@ function AdminHome() {
           </div>
         </div>
 
-        <div style={{ padding: '12px 16px', borderTop: '1px solid #1e293b' }}>
+        <div className="sidebar-logout-wrap">
           <button
             type="button"
             className="warga-sidebar-logout-btn"
             onClick={() => setShowLogoutModal(true)}
-            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px' }}
+            title="Keluar dari Akun Petugas"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -1188,7 +1235,7 @@ function AdminHome() {
               .danger-toggle i.toggle-indicator::after { right: ${isEmergency ? '2px' : '22px'}; transition: all 0.3s; }
             `}</style>
           </div>
-          <div className="admin-avatar">●</div>
+          <div className="admin-avatar">BPBD</div>
           <button onClick={() => setShowLogoutModal(true)} className="logout-btn" title="Keluar">
             <i>⎋</i> Keluar
           </button>

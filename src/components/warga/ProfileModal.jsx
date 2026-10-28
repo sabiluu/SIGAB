@@ -195,7 +195,7 @@ export default function ProfileModal({
                     Desa {selectedVillage.name.replace(' (Pusat)', '')}
                   </div>
                   <div className="profile-info-sub">
-                    Kec. Baureno, Kab. Bojonegoro
+                    Kecamatan Baureno
                   </div>
                 </div>
 

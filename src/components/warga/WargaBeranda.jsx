@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import useDashboardRealtime from '../../hooks/useDashboardRealtime'
 import useGeolocation, { BAURENO_VILLAGES } from '../../hooks/useGeolocation'
 import RiskMap from '../RiskMap'
@@ -64,7 +64,7 @@ const DEFAULT_SHELTERS = [
   {
     id: 4,
     name: 'Balai Kecamatan Baureno',
-    address: 'Kecamatan Baureno, Bojonegoro',
+    address: 'Kecamatan Baureno',
     distanceStr: '1.5',
     capacity_total: 500,
     capacity_occupied: 0,
@@ -78,7 +78,7 @@ const DEFAULT_SHELTERS = [
   {
     id: 5,
     name: 'SDN Baureno 1',
-    address: 'Kecamatan Baureno, Bojonegoro',
+    address: 'Kecamatan Baureno',
     distanceStr: '0.8',
     capacity_total: 300,
     capacity_occupied: 0,
@@ -92,7 +92,7 @@ const DEFAULT_SHELTERS = [
   {
     id: 6,
     name: "Masjid Jami' Baureno",
-    address: 'Kecamatan Baureno, Bojonegoro',
+    address: 'Kecamatan Baureno',
     distanceStr: '1.0',
     capacity_total: 250,
     capacity_occupied: 0,
@@ -215,25 +215,6 @@ export default function WargaBeranda({
   const circumference = 2 * Math.PI * radius
   const strokeDashoffset = circumference - (probVal / 100) * circumference
 
-  // Route calculation
-  const handleSelectShelter = async (shelter) => {
-    setSelectedShelter(shelter)
-    setRouteLoading(true)
-    try {
-      const res = await getRouteToShelter(shelter.id, userLocation[0], userLocation[1])
-      setRouteData(res)
-    } catch {
-      setRouteData(null)
-    } finally {
-      setRouteLoading(false)
-    }
-  }
-
-  const leafletRouteCoords = useMemo(() => {
-    if (!routeData?.coordinates) return null
-    return routeData.coordinates.map(c => [c[1], c[0]])
-  }, [routeData])
-
   // Sorting posko berdasarkan jarak terdekat dari koordinat warga (PRD Section 4.2)
   const sortedShelters = useMemo(() => {
     return [...sheltersList].sort((a, b) => parseFloat(a.distanceStr || 999) - parseFloat(b.distanceStr || 999))
@@ -243,6 +224,61 @@ export default function WargaBeranda({
   const availableNearest = sortedShelters.find(s => s.capacity_available > 0)
   // Posko yang ditampilkan di Card 3: dialihkan otomatis ke yang tersedia jika terdekat penuh
   const nearest = availableNearest || physicalNearest
+
+  // Route calculation with robust multi-tier fallback
+  const handleSelectShelter = useCallback(async (shelter) => {
+    if (!shelter) return
+    setSelectedShelter(shelter)
+    setRouteLoading(true)
+    try {
+      const res = await getRouteToShelter(
+        shelter.id,
+        userLocation[0],
+        userLocation[1],
+        shelter.latitude,
+        shelter.longitude
+      )
+      if (res && res.coordinates && res.coordinates.length > 0) {
+        setRouteData(res)
+      } else {
+        // Fallback straight line between user coordinate and shelter
+        setRouteData({
+          coordinates: [
+            [userLocation[1], userLocation[0]],
+            [shelter.longitude, shelter.latitude]
+          ],
+          distance_km: shelter.distanceStr || '1.0',
+          duration_minutes: Math.max(1, Math.round(parseFloat(shelter.distanceStr || 1) * 2.5)),
+          is_fallback: true
+        })
+      }
+    } catch {
+      // Fallback straight line if network/OSRM is unavailable
+      setRouteData({
+        coordinates: [
+          [userLocation[1], userLocation[0]],
+          [shelter.longitude, shelter.latitude]
+        ],
+        distance_km: shelter.distanceStr || '1.0',
+        duration_minutes: Math.max(1, Math.round(parseFloat(shelter.distanceStr || 1) * 2.5)),
+        is_fallback: true
+      })
+    } finally {
+      setRouteLoading(false)
+    }
+  }, [userLocation])
+
+  // Automatically select and draw route to nearest shelter on Peta & Posko view mount
+  useEffect(() => {
+    if (isMapView && nearest && !selectedShelter) {
+      handleSelectShelter(nearest)
+    }
+  }, [isMapView, nearest, selectedShelter, handleSelectShelter])
+
+  const leafletRouteCoords = useMemo(() => {
+    if (!routeData?.coordinates || routeData.coordinates.length < 2) return null
+    return routeData.coordinates.map(c => [c[1], c[0]])
+  }, [routeData])
 
   // =========================================================================
   // VIEW MODE: PETA & POSKO (Screenshot 2)
@@ -290,6 +326,54 @@ export default function WargaBeranda({
         <div className="peta-split-grid">
           {/* Left: Interactive Map Card */}
           <div className="peta-map-card">
+            {selectedShelter && (
+              <div className="peta-route-active-banner">
+                <div className="route-banner-left">
+                  <div className="route-banner-pin-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="3 11 22 2 13 21 11 13 3 11" />
+                    </svg>
+                  </div>
+                  <div className="route-banner-text">
+                    <div className="route-banner-title">
+                      <span>Rute Evakuasi Menuju:</span> <strong>{selectedShelter.name}</strong>
+                      {routeLoading && <span className="route-pill-loading"> (Menghitung rute...)</span>}
+                    </div>
+                    <div className="route-banner-meta">
+                      <span className="route-meta-stat">
+                        📏 <strong>{routeData?.distance_km || selectedShelter.distanceStr} km</strong>
+                      </span>
+                      <span className="route-meta-bullet">•</span>
+                      <span className="route-meta-stat">
+                        ⏱️ Est. <strong>~{routeData?.duration_minutes || Math.max(2, Math.round(parseFloat(selectedShelter.distanceStr || 1) * 2.5))} menit</strong>
+                      </span>
+                      <span className="route-meta-bullet">•</span>
+                      <span className="route-meta-stat">
+                        Sisa kuota: <strong>{selectedShelter.capacity_available} orang</strong> ({selectedShelter.status_label})
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="route-banner-actions">
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&origin=${userLocation[0]},${userLocation[1]}&destination=${selectedShelter.latitude},${selectedShelter.longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-route-gmaps"
+                    title="Buka petunjuk navigasi langsung di Google Maps"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                      <polyline points="15 3 21 3 21 9" />
+                      <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                    Buka Google Maps
+                  </a>
+                </div>
+              </div>
+            )}
+
             <div className="peta-map-wrapper">
               <RiskMap
                 height="100%"
@@ -323,17 +407,84 @@ export default function WargaBeranda({
                 <span className="dot" style={{ backgroundColor: '#0284c7' }} />
                 <span>Lokasimu</span>
               </span>
+              <span className="peta-legend-item">
+                <span className="legend-route-line" />
+                <span>Rute Evakuasi</span>
+              </span>
             </div>
           </div>
 
-          {/* Right: Posko Resmi List */}
+          {/* Right: Posko Column with Nearest Kanban Card */}
           <div className="posko-column-wrap">
-            <div className="posko-col-header">
-              <strong>Posko resmi</strong>
-              <span>{sheltersList.length} lokasi</span>
+            {/* KANBAN / CARD UTAMA: POSKO TERDEKAT (REAL GPS DEVICE) */}
+            {nearest && (
+              <div className="posko-nearest-featured-card">
+                <div className="posko-nearest-badge-row">
+                  <div className="posko-nearest-badge">
+                    <span className="pulse-dot-nearest" />
+                    <span>🎯 POSKO TERDEKAT</span>
+                  </div>
+                  <span className="posko-gps-source-tag">
+                    {geo.isRealDevice ? '📍 GPS Real Device' : '📍 Lokasi Terdeteksi'}
+                  </span>
+                </div>
+
+                <div className="posko-nearest-title-row">
+                  <h4>{nearest.name}</h4>
+                  <span className={`status-badge-pill status-${nearest.status_color_class === 'green' ? 'aman' : nearest.status_color_class === 'yellow' ? 'waspada' : 'awas'}`}>
+                    {nearest.status_label}
+                  </span>
+                </div>
+
+                <div className="posko-nearest-distance-badge">
+                  <span className="distance-num">{nearest.distanceStr} km</span>
+                  <span className="distance-desc">
+                    dari lokasimu {geo.address ? `(${geo.address.split(',')[0].replace(/^Desa\s+/i, '')})` : ''}
+                  </span>
+                </div>
+
+                <p className="posko-nearest-address">
+                  {nearest.address}
+                </p>
+
+                <div className="posko-capacity-bar-track">
+                  <div 
+                    className={`posko-capacity-bar-fill ${nearest.status_color_class}`}
+                    style={{ width: `${nearest.occupancy_percent}%` }}
+                  />
+                </div>
+                <div className="posko-nearest-quota-row">
+                  <span>Sisa kuota: <strong>{nearest.capacity_available}</strong> dari {nearest.capacity_total} orang</span>
+                  <span>{nearest.occupancy_percent}% terisi</span>
+                </div>
+
+                <div className="posko-nearest-action-btns">
+                  <button
+                    type="button"
+                    className="btn-nearest-route"
+                    onClick={() => handleSelectShelter(nearest)}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="3 11 22 2 13 21 11 13 3 11" />
+                    </svg>
+                    <span>{selectedShelter?.id === nearest.id ? '✓ Rute Terpilih di Peta' : 'Pilih & Lihat Rute'}</span>
+                  </button>
+
+                  {nearest.contact_phone && (
+                    <a href={`tel:${nearest.contact_phone}`} className="btn-nearest-call" title="Hubungi Petugas Posko">
+                      📞 Hubungi
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="posko-col-header" style={{ marginTop: '6px' }}>
+              <strong>Daftar Semua Posko</strong>
+              <span>{sortedShelters.length} lokasi (urut terdekat)</span>
             </div>
 
-            {sheltersList.map((posko) => (
+            {sortedShelters.map((posko) => (
               <div 
                 key={posko.id} 
                 className={`posko-item-card ${selectedShelter?.id === posko.id ? 'selected' : ''}`}

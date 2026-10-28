@@ -77,6 +77,12 @@
   justify-content: center;
   box-shadow: 0 4px 10px rgba(0, 154, 166, 0.25);
   flex-shrink: 0;
+  transition: all 0.25s ease;
+}
+
+.auth-brand-icon.admin {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
 }
 
 .auth-brand-text {
@@ -236,6 +242,37 @@
 .auth-field select:focus {
   border-color: #009aa6;
   box-shadow: 0 0 0 3px rgba(0, 154, 166, 0.12);
+}
+
+.auth-password-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.auth-password-wrapper input {
+  padding-right: 44px;
+}
+
+.auth-password-toggle {
+  position: absolute;
+  right: 10px;
+  background: transparent;
+  border: none;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.auth-password-toggle:hover {
+  color: #007d87;
+  background-color: #f1f5f9;
 }
 
 .auth-field select {

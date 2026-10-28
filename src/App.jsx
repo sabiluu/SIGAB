@@ -317,8 +317,8 @@ function App() {
           <span className="announcement-title">STATUS {heroOverallRisk.level.toUpperCase()}:</span>
           <span className="announcement-text">
             {isKecamatanSafe 
-              ? `Kondisi debit Bengawan Solo (${realtimeDischarge} m³/s) & cuaca Bojonegoro terpantau normal dan aman.` 
-              : `Debit air Kali Solo Bojonegoro terpantau ${realtimeDischarge} m³/s (${heroOverallRisk.level}) — Warga bantaran sungai diimbau waspada.`}
+              ? `Kondisi debit Bengawan Solo (${realtimeDischarge} m³/s) & cuaca Baureno terpantau normal dan aman.` 
+              : `Debit air Kali Solo Baureno terpantau ${realtimeDischarge} m³/s (${heroOverallRisk.level}) — Warga bantaran sungai diimbau waspada.`}
           </span>
         </div>
         <a href="#status-wilayah" className="announcement-link">
@@ -406,7 +406,7 @@ function App() {
                   <img src="/hero-river.jpg" alt="Pemandangan sungai Bengawan Solo dari udara" />
                   <div className="hero-location-chip">
                     {SVG_ICONS.pin}
-                    <span>Kecamatan Baureno, Bojonegoro</span>
+                    <span>Kecamatan Baureno</span>
                     <span className="live-pill">LIVE</span>
                   </div>
                 </div>
@@ -768,7 +768,7 @@ function App() {
             </div>
             <div>
               <div className="footer-brand-title">SIGAB</div>
-              <div className="footer-brand-sub">Siaga Banjir Bojonegoro</div>
+              <div className="footer-brand-sub">Siaga Banjir Baureno</div>
             </div>
           </div>
 
@@ -777,7 +777,7 @@ function App() {
           </div>
 
           <div className="footer-copyright">
-            © 2026 SIGAB Bojonegoro
+            © 2026 SIGAB Baureno
           </div>
         </div>
       </footer>
@@ -949,7 +949,7 @@ function App() {
               </button>
             </div>
             <div className="sigab-modal-body" style={{ textAlign: 'center' }}>
-              <h4 style={{ fontSize: '1.15rem', color: '#0c1a24', marginBottom: '6px' }}>Pusdalops BPBD Bojonegoro</h4>
+              <h4 style={{ fontSize: '1.15rem', color: '#0c1a24', marginBottom: '6px' }}>Pusdalops BPBD Baureno</h4>
               <p style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: '20px' }}>Siaga 24 jam untuk laporan genangan dan bantuan perahu darurat.</p>
               <a 
                 href="tel:0353881234" 

@@ -5,8 +5,6 @@ import wsService from '../../services/wsService'
 import LogoutModal from '../common/LogoutModal'
 import '../../styles/role-home.css'
 
-const brandIcon = 'https://www.figma.com/api/mcp/asset/d84f02db-e7d0-4c80-8d2c-7b2c55160913/375ad.svg'
-
 export default function AdminLayout({ children, activeMenu }) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [currentTime, setCurrentTime] = useState(new Date())
@@ -77,7 +75,13 @@ export default function AdminLayout({ children, activeMenu }) {
         <div className="sidebar-header">
           <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>☰</button>
           <div className="role-brand">
-            <span className="role-brand-icon"><img src={brandIcon} alt="" /></span>
+            <span className="role-brand-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.4" strokeLinecap="round">
+                <path d="M3 7c2-1.5 4.5-1.5 6.5 0s4.5 1.5 6.5 0 4.5-1.5 5 0" />
+                <path d="M3 12c2-1.5 4.5-1.5 6.5 0s4.5 1.5 6.5 0 4.5-1.5 5 0" />
+                <path d="M3 17c2-1.5 4.5-1.5 6.5 0s4.5 1.5 6.5 0 4.5-1.5 5 0" />
+              </svg>
+            </span>
             <span className="brand-text"><strong>SiagaBencana</strong><small>Pusdalops BPBD</small></span>
           </div>
         </div>
@@ -101,12 +105,12 @@ export default function AdminLayout({ children, activeMenu }) {
           </div>
         </div>
 
-        <div style={{ padding: '12px 16px', borderTop: '1px solid #1e293b' }}>
+        <div className="sidebar-logout-wrap">
           <button
             type="button"
             className="warga-sidebar-logout-btn"
             onClick={() => setShowLogoutModal(true)}
-            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px' }}
+            title="Keluar dari Akun Petugas"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />

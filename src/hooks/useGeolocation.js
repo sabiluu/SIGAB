@@ -13,8 +13,8 @@ export const DEFAULT_BAURENO_COORDS = {
   accuracy: 10,
 };
 
-export const DEFAULT_BAURENO_LABEL = 'Desa Baureno, Bojonegoro';
-export const DEFAULT_BAURENO_FULL = 'Kecamatan Baureno, Kabupaten Bojonegoro, Jawa Timur';
+export const DEFAULT_BAURENO_LABEL = 'Desa Baureno, Baureno';
+export const DEFAULT_BAURENO_FULL = 'Kecamatan Baureno, Jawa Timur';
 
 // Daftar 25 Desa Resmi Kecamatan Baureno, Bojonegoro
 export const BAURENO_VILLAGES = [
@@ -288,8 +288,8 @@ export function useGeolocation() {
       accuracy: 10
     };
     const cleanName = village.name.replace(/^Desa\s+/i, '');
-    const label = `Desa ${cleanName}, Bojonegoro`;
-    const full = `Desa ${cleanName}, Kecamatan Baureno, Kabupaten Bojonegoro, Jawa Timur`;
+    const label = `Desa ${cleanName}, Baureno`;
+    const full = `Desa ${cleanName}, Kecamatan Baureno, Jawa Timur`;
 
     setPosition(newPos);
     setAddress(label);

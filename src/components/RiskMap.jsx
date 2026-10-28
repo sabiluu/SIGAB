@@ -82,25 +82,27 @@ const createShelterIcon = (isSelected, isFull) => L.divIcon({
   className: 'custom-shelter-marker',
   html: `
     <div style="
-      background-color: ${isFull ? '#dc2626' : isSelected ? '#1d4ed8' : '#059669'};
+      position: relative;
+      background-color: ${isFull ? '#dc2626' : isSelected ? '#0284c7' : '#059669'};
       color: white;
-      border: 2px solid white;
+      border: ${isSelected ? '3px solid #ffffff' : '2px solid white'};
       border-radius: 50%;
-      width: 32px;
-      height: 32px;
+      width: ${isSelected ? '36px' : '30px'};
+      height: ${isSelected ? '36px' : '30px'};
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 15px;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+      font-size: ${isSelected ? '17px' : '14px'};
+      box-shadow: ${isSelected ? '0 0 0 4px rgba(2, 132, 199, 0.4), 0 4px 12px rgba(0,0,0,0.35)' : '0 3px 8px rgba(0,0,0,0.35)'};
       cursor: pointer;
-      ${isSelected ? 'transform: scale(1.15); outline: 3px solid #60a5fa;' : ''}
+      transition: all 0.2s ease;
     ">
-      🏠
+      ${isSelected ? '🎯' : '🏠'}
+      ${isSelected ? '<span style="position: absolute; -top: 7px; right: -8px; background: #ef4444; color: #ffffff; font-size: 8.5px; font-weight: 800; padding: 1px 4px; border-radius: 4px; border: 1px solid #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.3); letter-spacing: 0.04em;">TUJUAN</span>' : ''}
     </div>
   `,
-  iconSize: [32, 32],
-  iconAnchor: [16, 16],
+  iconSize: isSelected ? [36, 36] : [30, 30],
+  iconAnchor: isSelected ? [18, 18] : [15, 15],
   popupAnchor: [0, -18],
 });
 
@@ -411,23 +413,37 @@ export default function RiskMap({
         {/* 2. Route Polyline (Evacuation Path) */}
         {routeCoordinates && routeCoordinates.length > 1 && (
           <>
+            {/* Outer dark casing for contrast across all tile styles */}
             <Polyline
               positions={routeCoordinates}
               pathOptions={{
-                color: '#1e3a8a',
-                weight: 7,
-                opacity: 0.9,
+                color: '#0f172a',
+                weight: 8,
+                opacity: 0.55,
                 lineCap: 'round',
                 lineJoin: 'round',
               }}
             />
+            {/* Vibrant core navigation stroke */}
             <Polyline
               positions={routeCoordinates}
               pathOptions={{
-                color: '#38bdf8',
-                weight: 4,
-                dashArray: '8, 8',
-                opacity: 1,
+                color: '#0284c7',
+                weight: 5,
+                opacity: 0.95,
+                lineCap: 'round',
+                lineJoin: 'round',
+              }}
+            />
+            {/* Dashed animated highlight line */}
+            <Polyline
+              positions={routeCoordinates}
+              pathOptions={{
+                color: '#ffffff',
+                weight: 2.2,
+                dashArray: '8, 12',
+                opacity: 0.95,
+                lineCap: 'round',
               }}
             />
           </>

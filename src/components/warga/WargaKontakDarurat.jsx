@@ -15,7 +15,7 @@ export default function WargaKontakDarurat({ isEmergencyActive = false }) {
     },
     {
       title: 'Pemadam Kebakaran',
-      sub: 'Damkar Bojonegoro',
+      sub: 'Damkar Baureno',
       number: '113',
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -119,7 +119,7 @@ export default function WargaKontakDarurat({ isEmergencyActive = false }) {
         {/* Card 1: Pusdalops BPBD (Teal) */}
         <div className="kontak-hero-card teal">
           <div className="kontak-hero-info">
-            <span className="kontak-hero-sub">Pusdalops BPBD Bojonegoro</span>
+            <span className="kontak-hero-sub">Pusdalops BPBD Baureno</span>
             <span className="kontak-hero-phone">0353-881234</span>
             <span className="kontak-hero-note">Komando &amp; evakuasi banjir</span>
           </div>
