@@ -50,7 +50,8 @@ Thumbs.db
 # ===== Private Documents & Local Database Dumps =====
 02_prd_v3.md
 PANDUAN_KOLABORASI.md
-TIMELINE_MINGGU_5_14_PRIVAT.md
+TIMELINE_*.md
+*TIMELINE*.md
 LAPORAN_*.md
 paper/
 *.tex
