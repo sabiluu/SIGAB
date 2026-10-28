@@ -47,21 +47,30 @@ Thumbs.db
 .env.local
 .env.*.local
 
-# ===== Private Documents =====
+# ===== Private Documents & Local Database Dumps =====
 02_prd_v3.md
 PANDUAN_KOLABORASI.md
 TIMELINE_MINGGU_5_14_PRIVAT.md
 LAPORAN_*.md
 paper/
 *.tex
+*.sql
 
-# ===== Local Assets & Media =====
+# ===== Local Assets, Media & Reports =====
 public/hero-river.jpg
 uploads/
+test-results/
+playwright-report/
 
-# ===== Raw Data & Scratch Scripts =====
+# ===== Raw Data, Dumps & Scratch Scripts =====
 *.zip
 *.cjs
+*.csv
+data_cuaca_*.json
+app/data_cuaca_*.json
 src/data/idn_admin/
 src/data/border-desa/
 check_schema.py
+check_api.py
+sync_flood_database.py
+test_*.py
