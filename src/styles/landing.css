@@ -488,10 +488,25 @@
 }
 
 .status-badge-wrap .status-badge {
-  color: #d97706;
   font-size: 1.45rem;
   font-weight: 800;
   line-height: 1.1;
+}
+
+.status-badge-wrap .status-badge.aman {
+  color: #059669;
+}
+
+.status-badge-wrap .status-badge.waspada {
+  color: #d97706;
+}
+
+.status-badge-wrap .status-badge.siaga {
+  color: #ea580c;
+}
+
+.status-badge-wrap .status-badge.awas {
+  color: #dc2626;
 }
 
 .status-badge-wrap .status-subtext {

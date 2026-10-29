@@ -293,17 +293,19 @@ function App() {
     })
   })()
 
-  // Ringkasan metrik real-time hero & status bar
-  const overallKecamatanStatus = realtimeData?.kecamatan_summary?.overall_status || 'sedang'
-  const isKecamatanSafe = overallKecamatanStatus === 'rendah' || overallKecamatanStatus === 'aman'
-  const heroOverallRisk = getRiskStatus(
-    overallKecamatanStatus === 'awas' ? 80 :
-    overallKecamatanStatus === 'tinggi' || overallKecamatanStatus === 'siaga' ? 60 :
-    overallKecamatanStatus === 'sedang' || overallKecamatanStatus === 'waspada' ? 35 : 18
-  )
+  // Ringkasan metrik real-time hero & status bar berdasarkan kondisi nyata API
+  const avgProbability = realtimeData?.kecamatan_summary?.average_probability != null
+    ? Number(realtimeData.kecamatan_summary.average_probability)
+    : (Array.isArray(villagesData) && villagesData.length > 0
+        ? villagesData.reduce((acc, v) => acc + (Number(v.prob) || 0), 0) / villagesData.length
+        : 21.6)
+
+  const heroOverallRisk = getRiskStatus(avgProbability)
+  const isKecamatanSafe = heroOverallRisk.status === 'aman'
+
   const realtimeDischarge = realtimeData?.discharge?.discharge_m3s != null
     ? Number(realtimeData.discharge.discharge_m3s).toFixed(2)
-    : '0.33'
+    : '1.28'
   const realtimeRainfall = realtimeData?.weather?.precipitation_mm != null
     ? Number(realtimeData.weather.precipitation_mm).toFixed(1)
     : '0.0'
@@ -421,12 +423,17 @@ function App() {
                   </div>
                   <div className="hero-card-main">
                     <div className="status-badge-wrap">
-                      <span className={`status-badge ${heroOverallRisk.status}`}>{heroOverallRisk.level}</span>
+                      <span 
+                        className={`status-badge ${heroOverallRisk.status}`}
+                        style={{ color: heroOverallRisk.color }}
+                      >
+                        {heroOverallRisk.level}
+                      </span>
                       <span className="status-subtext">Level {heroOverallRisk.levelNum} dari 4</span>
                     </div>
-                    <div className="metric-value-large">
-                      <span className="num">{realtimeDischarge}</span>
-                      <span className="unit">m³/s Debit</span>
+                    <div className="metric-value-large" title="Rata-rata probabilitas risiko banjir Kecamatan Baureno (Live API)">
+                      <span className="num">{Math.round(avgProbability)}%</span>
+                      <span className="unit">Rerata Risiko</span>
                     </div>
                   </div>
                   
