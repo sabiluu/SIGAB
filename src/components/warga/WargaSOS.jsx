@@ -6,7 +6,7 @@ import wsService from '../../services/wsService';
 import { useAuth } from '../../context/AuthContext';
 import { formatWIBDateTime } from '../../utils/helpers';
 
-import useGeolocation from '../../hooks/useGeolocation';
+import useGeolocation, { getDistanceFromBaurenoKm, BAURENO_VILLAGES, DEFAULT_BAURENO_COORDS } from '../../hooks/useGeolocation';
 
 const userPinIcon = L.divIcon({
   className: 'custom-sos-pin',
@@ -46,7 +46,7 @@ function MapClickHandler({ onLocationSelect }) {
   return null;
 }
 
-export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActive = false }) {
+export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActive = false, userProfile }) {
   const { user } = useAuth();
   const internalGeo = useGeolocation();
   const geo = externalGeo || internalGeo;
@@ -108,6 +108,8 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
     geo?.fullAddress || geo?.address || 'Mencari lokasi perangkat...'
   );
   const [detailPatokan, setDetailPatokan] = useState('');
+  const [isOutsideBaureno, setIsOutsideBaureno] = useState(false);
+  const [rawOutsideLocation, setRawOutsideLocation] = useState(null);
   const [familyCount, setFamilyCount] = useState(1);
   const [vulnerable, setVulnerable] = useState({
     elderly: false,
@@ -160,7 +162,28 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
         async (pos) => {
           const lat = pos.coords.latitude;
           const lng = pos.coords.longitude;
-          const acc = pos.coords.accuracy;
+          const acc = pos.coords.accuracy || 10;
+          const dist = getDistanceFromBaurenoKm(lat, lng);
+
+          // Cek apakah koordinat di luar jangkauan Baureno (contoh: ISP laptop terpusat di Jakarta/Surabaya)
+          if (dist > 35) {
+            const names = await reverseGeocodeCoords(lat, lng);
+            setIsOutsideBaureno(true);
+            setRawOutsideLocation({ lat, lng, dist: Math.round(dist), area: names.short });
+
+            // Hanya set posisi default jika user belum memindahkan pin secara manual
+            if (locationSource !== 'manual') {
+              const targetV = BAURENO_VILLAGES.find((v) => v.id === Number(userProfile?.village_id)) || BAURENO_VILLAGES[0];
+              setGpsLocation({ lat: targetV.latitude, lng: targetV.longitude });
+              setGpsAccuracy(10);
+              setLocationSource('baureno_safe');
+              setAddress(`Desa ${targetV.name.replace(/^Desa\s+/i, '')}, Kec. Baureno, Bojonegoro`);
+            }
+            setLoadingGps(false);
+            return;
+          }
+
+          setIsOutsideBaureno(false);
           setGpsLocation({ lat, lng });
           setGpsAccuracy(acc);
           setLocationSource('real_gps');
@@ -182,6 +205,21 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
               const ipLat = parseFloat(ipData.latitude);
               const ipLng = parseFloat(ipData.longitude);
               if (!isNaN(ipLat) && !isNaN(ipLng)) {
+                const dist = getDistanceFromBaurenoKm(ipLat, ipLng);
+                if (dist > 35) {
+                  const names = await reverseGeocodeCoords(ipLat, ipLng);
+                  setIsOutsideBaureno(true);
+                  setRawOutsideLocation({ lat: ipLat, lng: ipLng, dist: Math.round(dist), area: names.short });
+                  if (locationSource !== 'manual') {
+                    const targetV = BAURENO_VILLAGES.find((v) => v.id === Number(userProfile?.village_id)) || BAURENO_VILLAGES[0];
+                    setGpsLocation({ lat: targetV.latitude, lng: targetV.longitude });
+                    setGpsAccuracy(10);
+                    setLocationSource('baureno_safe');
+                    setAddress(`Desa ${targetV.name.replace(/^Desa\s+/i, '')}, Kec. Baureno, Bojonegoro`);
+                  }
+                  setLoadingGps(false);
+                  return;
+                }
                 setGpsLocation({ lat: ipLat, lng: ipLng });
                 setGpsAccuracy(1000);
                 setLocationSource('ip');
@@ -194,12 +232,12 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
           } catch (e) {}
           setLoadingGps(false);
         },
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
       );
     } else {
       setLoadingGps(false);
     }
-  }, [geo]);
+  }, [geo, locationSource, userProfile?.village_id]);
 
   // Handler jika user menggeser pin atau mengklik titik pada peta
   const handleMapLocationSelect = async (lat, lng) => {
@@ -219,16 +257,19 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
 
   // Sinkronkan GPS otomatis saat terdeteksi dari hook geo
   useEffect(() => {
-    if (geo?.position?.latitude && geo?.position?.longitude) {
-      setGpsLocation({ lat: geo.position.latitude, lng: geo.position.longitude });
-      if (geo.position.accuracy) {
-        setGpsAccuracy(geo.position.accuracy);
-      }
-      if (geo.fullAddress || geo.address) {
-        setAddress(geo.fullAddress || geo.address);
+    if (geo?.position?.latitude && geo?.position?.longitude && locationSource !== 'manual') {
+      const dist = getDistanceFromBaurenoKm(geo.position.latitude, geo.position.longitude);
+      if (dist <= 35) {
+        setGpsLocation({ lat: geo.position.latitude, lng: geo.position.longitude });
+        if (geo.position.accuracy) {
+          setGpsAccuracy(geo.position.accuracy);
+        }
+        if (geo.fullAddress || geo.address) {
+          setAddress(geo.fullAddress || geo.address);
+        }
       }
     }
-  }, [geo?.position?.latitude, geo?.position?.longitude, geo?.position?.accuracy, geo?.fullAddress, geo?.address]);
+  }, [geo?.position?.latitude, geo?.position?.longitude, geo?.position?.accuracy, geo?.fullAddress, geo?.address, locationSource]);
 
   // Handler Refresh GPS
   const detectGPS = () => {
@@ -710,6 +751,72 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                 Sistem mendeteksi koordinat GPS perangkat Anda secara real time. Anda dapat menggeser pin merah atau mengetuk peta untuk mengatur titik evakuasi secara akurat.
               </p>
               
+              {/* Smart ISP / Out-of-Bounds Baureno Protection Banner */}
+              {isOutsideBaureno && (
+                <div style={{
+                  background: '#fffbeb',
+                  border: '1.5px solid #fde68a',
+                  borderRadius: '10px',
+                  padding: '10px 14px',
+                  marginBottom: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '10px',
+                  flexWrap: 'wrap',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+                }}>
+                  <div style={{ fontSize: '0.8rem', color: '#92400e', lineHeight: 1.45, flex: '1 1 280px' }}>
+                    <strong>📍 Proteksi Lokasi Baureno Aktif:</strong> GPS laptop/WiFi Anda terdeteksi di {rawOutsideLocation?.area || 'Luar Bojonegoro'} (~{rawOutsideLocation?.dist || 600} km via IP provider internet). Titik evakuasi otomatis dikunci ke <strong>Desa Baureno</strong> agar akurat. Anda juga dapat menggeser pin merah di peta.
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const targetV = BAURENO_VILLAGES.find((v) => v.id === Number(userProfile?.village_id)) || BAURENO_VILLAGES[0];
+                        setGpsLocation({ lat: targetV.latitude, lng: targetV.longitude });
+                        setAddress(`Desa ${targetV.name.replace(/^Desa\s+/i, '')}, Kec. Baureno, Bojonegoro`);
+                        setLocationSource('manual');
+                      }}
+                      style={{
+                        background: '#0284c7',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '6px 12px',
+                        fontSize: '0.74rem',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      📍 Kunci ke Baureno
+                    </button>
+                    {rawOutsideLocation && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setGpsLocation({ lat: rawOutsideLocation.lat, lng: rawOutsideLocation.lng });
+                          setAddress(`Lokasi Terdeteksi Laptop (${rawOutsideLocation.area || 'Luar Bojonegoro'})`);
+                          setLocationSource('manual');
+                        }}
+                        style={{
+                          background: '#ffffff',
+                          color: '#b45309',
+                          border: '1px solid #fde68a',
+                          borderRadius: '6px',
+                          padding: '6px 12px',
+                          fontSize: '0.74rem',
+                          fontWeight: 600,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        🎯 Pakai GPS Laptop
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Mini Map */}
               <div style={{ height: '280px', borderRadius: '12px', overflow: 'hidden', marginBottom: '16px', border: '1.5px solid var(--warga-border)', position: 'relative', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
                 {gpsLocation ? (

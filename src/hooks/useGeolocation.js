@@ -98,6 +98,7 @@ export function useGeolocation() {
   const [isCustom, setIsCustom] = useState(Boolean(initialCustom));
   const [isOutsideCoverage, setIsOutsideCoverage] = useState(false);
   const [outsideAreaName, setOutsideAreaName] = useState('');
+  const [rawDeviceCoords, setRawDeviceCoords] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isRealDevice, setIsRealDevice] = useState(Boolean(cachedDevice && !initialCustom));
@@ -199,8 +200,25 @@ export function useGeolocation() {
 
     const isOutside = distFromBaureno > 35;
     setIsOutsideCoverage(isOutside);
+    setRawDeviceCoords({ latitude: lat, longitude: lon, accuracy, dist: Math.round(distFromBaureno) });
 
-    // Tetap gunakan koordinat REAL device asli
+    if (isOutside) {
+      // PERANGKAT DI LUAR BAURENO (contoh: ISP provider laptop terpusat di Jakarta/Surabaya)
+      // Jangan timpa lokasi Baureno secara otomatis agar peta tidak lompat-lompat ke Monas/Jakarta!
+      setOutsideAreaName(`Luar Bojonegoro (~${Math.round(distFromBaureno)} km via ISP)`);
+      setLoading(false);
+
+      // Pastikan posisi aktif tetap berada di Baureno jika sebelumnya keluar
+      setPosition((prev) => {
+        if (!prev || getDistanceFromBaurenoKm(prev.latitude, prev.longitude) > 35) {
+          return DEFAULT_BAURENO_COORDS;
+        }
+        return prev;
+      });
+      return;
+    }
+
+    // Jika pengguna BENAR-BENAR berada di wilayah Baureno / Bojonegoro (radius <= 35 km):
     const newPos = { latitude: lat, longitude: lon, accuracy };
     setPosition(newPos);
     setIsRealDevice(true);
@@ -226,6 +244,14 @@ export function useGeolocation() {
         const ipLat = parseFloat(ipData.latitude);
         const ipLon = parseFloat(ipData.longitude);
         if (!isNaN(ipLat) && !isNaN(ipLon)) {
+          const dist = getDistanceFromBaurenoKm(ipLat, ipLon);
+          if (dist > 35) {
+            setIsOutsideCoverage(true);
+            setRawDeviceCoords({ latitude: ipLat, longitude: ipLon, accuracy: 1000, dist: Math.round(dist) });
+            setOutsideAreaName(`Luar Bojonegoro (~${Math.round(dist)} km via IP)`);
+            setLoading(false);
+            return;
+          }
           const ipPos = { latitude: ipLat, longitude: ipLon, accuracy: 1000 };
           setPosition(ipPos);
           setIsRealDevice(true);
@@ -333,24 +359,14 @@ export function useGeolocation() {
   }, []);
 
   useEffect(() => {
-    // Jalankan deteksi GPS device langsung & kontinu real-time
+    // Jalankan deteksi GPS device secara stabil saat inisialisasi
     if (navigator.geolocation) {
       setLoading(true);
-      // 1. Initial quick GPS reading
       navigator.geolocation.getCurrentPosition(handleSuccess, handleError, {
         enableHighAccuracy: true,
         timeout: 10000,
-        maximumAge: 0
+        maximumAge: 30000
       });
-      // 2. Continuous real-time location tracking
-      const watchId = navigator.geolocation.watchPosition(handleSuccess, handleError, {
-        enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 3000
-      });
-      return () => {
-        navigator.geolocation.clearWatch(watchId);
-      };
     } else {
       handleError(new Error('Browser tidak mendukung geolokasi'));
     }
@@ -368,6 +384,7 @@ export function useGeolocation() {
     isCustom,
     isOutsideCoverage,
     outsideAreaName,
+    rawDeviceCoords,
     setVillageLocation,
     resetToBaurenoDefault,
     useRealDeviceLocation,

@@ -987,6 +987,7 @@ function WargaHome() {
           <WargaSOS 
             onNavigate={(tab) => handleSelectTab(tab)} 
             geo={geo} 
+            userProfile={userProfile}
             isEmergencyActive={isEmergencyActive}
           />
         )}
