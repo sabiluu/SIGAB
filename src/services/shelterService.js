@@ -15,6 +15,13 @@ export async function updateShelterCapacity(id, capacity) {
   });
 }
 
+export async function updateShelter(id, data) {
+  return apiFetch(`/shelters/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
 export async function createShelter(data) {
   return apiFetch('/shelters', {
     method: 'POST',

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
-import { getShelters, updateShelterCapacity, createShelter, deleteShelter } from '../../services/shelterService'
+import { getShelters, updateShelterCapacity, updateShelter, createShelter, deleteShelter } from '../../services/shelterService'
 import { getVillages } from '../../services/floodService'
 import wsService from '../../services/wsService'
 
@@ -10,6 +10,9 @@ export default function PoskoManager() {
   const [loading, setLoading] = useState(true)
   const [showAddModal, setShowAddModal] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editingShelter, setEditingShelter] = useState(null)
+  const [editSubmitting, setEditSubmitting] = useState(false)
   const [newShelter, setNewShelter] = useState({
     name: '',
     address: '',
@@ -65,6 +68,51 @@ export default function PoskoManager() {
     } catch (err) {
       alert('Gagal update kapasitas: ' + err.message)
       fetchPoskos()
+    }
+  }
+
+  const handleOpenEdit = (posko) => {
+    setEditingShelter({
+      id: posko.id,
+      name: posko.name || '',
+      address: posko.address || '',
+      village_id: posko.village_id || (villages[0]?.id || 1),
+      latitude: posko.latitude != null ? posko.latitude : -7.129,
+      longitude: posko.longitude != null ? posko.longitude : 112.105,
+      capacity_total: posko.capacity_total || 100,
+      capacity_occupied: posko.capacity_occupied || 0,
+      contact_person: posko.contact_person || '',
+      contact_phone: posko.contact_phone || '',
+      is_active: posko.is_active !== false,
+    })
+    setShowEditModal(true)
+  }
+
+  const handleSaveEditShelter = async (e) => {
+    e.preventDefault()
+    if (!editingShelter) return
+    setEditSubmitting(true)
+    try {
+      const payload = {
+        name: editingShelter.name.trim(),
+        address: editingShelter.address.trim(),
+        village_id: parseInt(editingShelter.village_id, 10),
+        capacity_total: parseInt(editingShelter.capacity_total, 10),
+        capacity_occupied: parseInt(editingShelter.capacity_occupied, 10) || 0,
+        contact_person: (editingShelter.contact_person || '').trim(),
+        contact_phone: (editingShelter.contact_phone || '').trim(),
+        latitude: parseFloat(editingShelter.latitude),
+        longitude: parseFloat(editingShelter.longitude),
+        is_active: Boolean(editingShelter.is_active),
+      }
+      await updateShelter(editingShelter.id, payload)
+      setShowEditModal(false)
+      setEditingShelter(null)
+      fetchPoskos()
+    } catch (err) {
+      alert('Gagal mengupdate posko: ' + (err.message || err))
+    } finally {
+      setEditSubmitting(false)
     }
   }
 
@@ -171,11 +219,32 @@ export default function PoskoManager() {
                   <strong>{posko.name}</strong>
                   <small>📍 {posko.address}</small>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span className={`status-badge ${status.toLowerCase().replace(' ', '-')}`}>{status}</span>
                   <button 
+                    type="button"
+                    onClick={() => handleOpenEdit(posko)}
+                    style={{ 
+                      background: '#eff6ff', 
+                      border: '1px solid #bfdbfe', 
+                      color: '#2563eb', 
+                      borderRadius: '6px',
+                      cursor: 'pointer', 
+                      fontSize: '0.78rem', 
+                      padding: '3px 8px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontWeight: 700
+                    }}
+                    title="Edit informasi posko"
+                  >
+                    ✏️ Edit
+                  </button>
+                  <button 
+                    type="button"
                     onClick={() => handleDeleteShelter(posko.id, posko.name)}
-                    style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1rem' }}
+                    style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1rem', padding: '2px 4px' }}
                     title="Hapus posko"
                   >
                     ✕
@@ -366,6 +435,178 @@ export default function PoskoManager() {
                     style={{ flex: 1, padding: '10px', borderRadius: '6px', border: 'none', background: '#2563eb', color: '#fff', fontWeight: 'bold', cursor: 'pointer' }}
                   >
                     {submitting ? 'Menyimpan...' : 'Simpan Posko'}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Modal Edit Informasi Posko */}
+      {showEditModal && editingShelter && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
+          <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: '#0f172a' }}>
+                <span>✏️</span> Edit Informasi Posko
+              </h3>
+              <button 
+                type="button"
+                onClick={() => {
+                  setShowEditModal(false)
+                  setEditingShelter(null)
+                }} 
+                style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: '#64748b' }}
+              >
+                ✕
+              </button>
+            </div>
+            
+            <form onSubmit={handleSaveEditShelter}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, marginBottom: '4px', color: '#334155' }}>
+                    Nama Posko Pengungsian *
+                  </label>
+                  <input 
+                    type="text" 
+                    required 
+                    value={editingShelter.name}
+                    onChange={e => setEditingShelter({ ...editingShelter, name: e.target.value })}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, marginBottom: '4px', color: '#334155' }}>
+                    Alamat Lengkap / Patokan *
+                  </label>
+                  <input 
+                    type="text" 
+                    required 
+                    value={editingShelter.address}
+                    onChange={e => setEditingShelter({ ...editingShelter, address: e.target.value })}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, marginBottom: '4px', color: '#334155' }}>
+                    Wilayah Desa Terkait *
+                  </label>
+                  <select 
+                    value={editingShelter.village_id}
+                    onChange={e => setEditingShelter({ ...editingShelter, village_id: Number(e.target.value) })}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                  >
+                    {villages.map(v => (
+                      <option key={v.id} value={v.id}>Desa {v.name.replace(/^Desa\s+/i, '')}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, marginBottom: '4px', color: '#334155' }}>
+                      Kapasitas Maksimal (Jiwa) *
+                    </label>
+                    <input 
+                      type="number" 
+                      min="1"
+                      required 
+                      value={editingShelter.capacity_total}
+                      onChange={e => setEditingShelter({ ...editingShelter, capacity_total: e.target.value })}
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, marginBottom: '4px', color: '#334155' }}>
+                      Pengungsi Terdata (Jiwa) *
+                    </label>
+                    <input 
+                      type="number" 
+                      min="0"
+                      required
+                      value={editingShelter.capacity_occupied}
+                      onChange={e => setEditingShelter({ ...editingShelter, capacity_occupied: e.target.value })}
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, marginBottom: '4px', color: '#334155' }}>
+                      Penanggung Jawab (PIC)
+                    </label>
+                    <input 
+                      type="text" 
+                      placeholder="Nama koordinator posko"
+                      value={editingShelter.contact_person}
+                      onChange={e => setEditingShelter({ ...editingShelter, contact_person: e.target.value })}
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, marginBottom: '4px', color: '#334155' }}>
+                      No. Telepon / WhatsApp
+                    </label>
+                    <input 
+                      type="tel" 
+                      placeholder="0812xxxxxxxx"
+                      value={editingShelter.contact_phone}
+                      onChange={e => setEditingShelter({ ...editingShelter, contact_phone: e.target.value })}
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, marginBottom: '4px', color: '#334155' }}>
+                      Latitude GPS
+                    </label>
+                    <input 
+                      type="number" 
+                      step="any"
+                      required
+                      value={editingShelter.latitude}
+                      onChange={e => setEditingShelter({ ...editingShelter, latitude: e.target.value })}
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, marginBottom: '4px', color: '#334155' }}>
+                      Longitude GPS
+                    </label>
+                    <input 
+                      type="number" 
+                      step="any"
+                      required
+                      value={editingShelter.longitude}
+                      onChange={e => setEditingShelter({ ...editingShelter, longitude: e.target.value })}
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      setShowEditModal(false)
+                      setEditingShelter(null)
+                    }}
+                    style={{ flex: 1, padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontWeight: 600 }}
+                  >
+                    Batal
+                  </button>
+                  <button 
+                    type="submit" 
+                    disabled={editSubmitting}
+                    style={{ flex: 1, padding: '10px', borderRadius: '6px', border: 'none', background: '#0284c7', color: '#fff', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 2px 4px rgba(2, 132, 199, 0.25)' }}
+                  >
+                    {editSubmitting ? 'Menyimpan...' : '💾 Simpan Perubahan'}
                   </button>
                 </div>
               </div>
