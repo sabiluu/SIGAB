@@ -207,18 +207,41 @@ export default function PoskoManager() {
                 </div>
                 <div className="stepper" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <button 
-                    onClick={() => handleUpdateCapacity(posko.id, occCap - 5, maxCap)}
-                    style={{ padding: '4px 10px', borderRadius: '4px', border: '1px solid #cbd5e1', cursor: 'pointer' }}
-                    title="Kurangi 5 jiwa"
+                    onClick={() => handleUpdateCapacity(posko.id, occCap - 1, maxCap)}
+                    disabled={occCap <= 0}
+                    style={{ 
+                      padding: '5px 12px', 
+                      borderRadius: '6px', 
+                      border: '1px solid #cbd5e1', 
+                      cursor: occCap <= 0 ? 'not-allowed' : 'pointer',
+                      background: '#ffffff',
+                      color: occCap <= 0 ? '#94a3b8' : '#0f172a',
+                      fontWeight: 700,
+                      fontSize: '0.85rem'
+                    }}
+                    title="Kurangi 1 pengungsi"
                   >
-                    -5
+                    -1
                   </button>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 800, minWidth: '40px', textAlign: 'center', color: '#0f172a' }}>
+                    {occCap}
+                  </span>
                   <button 
-                    onClick={() => handleUpdateCapacity(posko.id, occCap + 5, maxCap)}
-                    style={{ padding: '4px 10px', borderRadius: '4px', border: '1px solid #cbd5e1', cursor: 'pointer', background: '#f8fafc' }}
-                    title="Tambah 5 jiwa"
+                    onClick={() => handleUpdateCapacity(posko.id, occCap + 1, maxCap)}
+                    disabled={occCap >= maxCap}
+                    style={{ 
+                      padding: '5px 12px', 
+                      borderRadius: '6px', 
+                      border: '1px solid #cbd5e1', 
+                      cursor: occCap >= maxCap ? 'not-allowed' : 'pointer', 
+                      background: '#f8fafc',
+                      color: occCap >= maxCap ? '#94a3b8' : '#0284c7',
+                      fontWeight: 700,
+                      fontSize: '0.85rem'
+                    }}
+                    title="Tambah 1 pengungsi"
                   >
-                    +5
+                    +1
                   </button>
                 </div>
               </div>
