@@ -113,17 +113,18 @@ const createShelterIcon = (isSelected, isFull) => L.divIcon({
 const userLocationIcon = L.divIcon({
   className: 'custom-user-marker',
   html: `
-    <div style="position: relative; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
-      <div style="position: absolute; width: 24px; height: 24px; border-radius: 50%; background: rgba(37,99,235,0.4); animation: mapPulse 1.8s infinite ease-out;"></div>
-      <div style="width: 14px; height: 14px; border-radius: 50%; background: #2563eb; border: 2.5px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.4);"></div>
+    <div style="position: relative; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;">
+      <div style="position: absolute; width: 34px; height: 34px; border-radius: 50%; background: rgba(37,99,235,0.35); animation: mapPulse 1.8s infinite ease-out;"></div>
+      <div style="position: absolute; width: 22px; height: 22px; border-radius: 50%; background: rgba(37,99,235,0.6); animation: mapPulse 1.8s infinite ease-out 0.4s;"></div>
+      <div style="width: 16px; height: 16px; border-radius: 50%; background: #1d4ed8; border: 3px solid white; box-shadow: 0 3px 10px rgba(0,0,0,0.5); z-index: 2;"></div>
     </div>
   `,
-  iconSize: [24, 24],
-  iconAnchor: [12, 12],
-  popupAnchor: [0, -14],
+  iconSize: [34, 34],
+  iconAnchor: [17, 17],
+  popupAnchor: [0, -18],
 });
 
-function MapController({ bounds, recenterTrigger, targetCenter }) {
+function MapController({ bounds, recenterTrigger, targetCenter, userCenterTrigger, userLocation }) {
   const map = useMap();
   const initialFitDone = useRef(false);
 
@@ -177,6 +178,17 @@ function MapController({ bounds, recenterTrigger, targetCenter }) {
       }
     }
   }, [recenterTrigger, map]);
+
+  // User location focus trigger
+  useEffect(() => {
+    if (userCenterTrigger && userLocation && userLocation[0] && userLocation[1]) {
+      try {
+        map.flyTo([userLocation[0], userLocation[1]], 15, { duration: 0.8 });
+      } catch (e) {
+        console.error("FlyTo user location error:", e);
+      }
+    }
+  }, [userCenterTrigger, userLocation, map]);
 
   return null;
 }
@@ -288,6 +300,7 @@ export default function RiskMap({
   }, [dbVillages, villagesData]);
 
   const [recenterTrigger, setRecenterTrigger] = useState(0);
+  const [userCenterTrigger, setUserCenterTrigger] = useState(0);
 
   // Compute bounding box if route is active
   const mapBounds = useMemo(() => {
@@ -333,8 +346,33 @@ export default function RiskMap({
         }
       `}</style>
 
-      {/* Quick action button: Recenter Baureno */}
-      <div style={{ position: 'absolute', top: '10px', right: '10px', zIndex: 1000 }}>
+      {/* Quick action buttons: User location & Recenter Baureno */}
+      <div style={{ position: 'absolute', top: '10px', right: '10px', zIndex: 1000, display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        {userLocation && userLocation[0] && userLocation[1] && (
+          <button
+            type="button"
+            onClick={() => setUserCenterTrigger(prev => prev + 1)}
+            style={{
+              backgroundColor: '#eff6ff',
+              color: '#1d4ed8',
+              border: '1.5px solid #93c5fd',
+              borderRadius: '8px',
+              padding: '6px 12px',
+              fontSize: '12px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              backdropFilter: 'blur(4px)',
+              transition: 'all 0.15s ease'
+            }}
+            title="Arahkan peta ke posisi lokasi Anda saat ini"
+          >
+            <span>📍</span> Lokasi Saya
+          </button>
+        )}
         <button
           type="button"
           onClick={() => setRecenterTrigger(prev => prev + 1)}
@@ -372,7 +410,7 @@ export default function RiskMap({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        <MapController bounds={mapBounds} recenterTrigger={recenterTrigger} targetCenter={targetVillageCenter} />
+        <MapController bounds={mapBounds} recenterTrigger={recenterTrigger} targetCenter={targetVillageCenter} userCenterTrigger={userCenterTrigger} userLocation={userLocation} />
 
         {/* 1. Village Risk Polygons */}
         {villages.map(v => {
@@ -463,18 +501,32 @@ export default function RiskMap({
           </>
         )}
 
-        {/* 3. User GPS Marker */}
+        {/* 3. User GPS Marker (Titik Awal Navigasi Rute) */}
         {userLocation && userLocation[0] && userLocation[1] && (
           <Marker 
             position={[userLocation[0], userLocation[1]]} 
             icon={userLocationIcon}
+            zIndexOffset={1000}
           >
+            <Tooltip 
+              direction="top" 
+              offset={[0, -18]} 
+              permanent 
+              className="user-location-tooltip"
+            >
+              <div style={{ fontWeight: 800, fontSize: '11px', color: '#1d4ed8', whiteSpace: 'nowrap' }}>
+                📍 Posisi Anda
+              </div>
+            </Tooltip>
             <Popup>
-              <div style={{ fontSize: '12px', textAlign: 'center' }}>
-                <strong style={{ color: '#2563eb' }}>📍 Lokasi Anda Saat Ini</strong>
-                <p style={{ margin: '4px 0 0 0', color: '#64748b' }}>
+              <div style={{ fontSize: '12px', textAlign: 'center', minWidth: '130px', padding: '2px' }}>
+                <strong style={{ color: '#1d4ed8', fontSize: '13px' }}>📍 Posisi Anda Saat Ini</strong>
+                <p style={{ margin: '4px 0', color: '#475569', fontSize: '11px' }}>
                   {userLocation[0].toFixed(5)}, {userLocation[1].toFixed(5)}
                 </p>
+                <div style={{ display: 'inline-block', background: '#dcfce7', color: '#15803d', padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }}>
+                  Titik Awal Rute Evakuasi
+                </div>
               </div>
             </Popup>
           </Marker>

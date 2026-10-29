@@ -202,17 +202,23 @@ export function useGeolocation() {
     setIsOutsideCoverage(isOutside);
     setRawDeviceCoords({ latitude: lat, longitude: lon, accuracy, dist: Math.round(distFromBaureno) });
 
-    if (isOutside) {
+    const isForced = (() => {
+      try {
+        return localStorage.getItem('sigab_force_real_device') === 'true';
+      } catch {
+        return false;
+      }
+    })();
+
+    if (isOutside && !isForced) {
       // PERANGKAT DI LUAR BAURENO (contoh: ISP provider laptop terpusat di Jakarta/Surabaya)
-      // Jangan timpa lokasi Baureno secara otomatis agar peta tidak lompat-lompat ke Monas/Jakarta!
+      // Simpan koordinat asli perangkat untuk opsi 'Gunakan GPS Device', namun jangan timpa otomatis
       setOutsideAreaName(`Luar Bojonegoro (~${Math.round(distFromBaureno)} km via ISP)`);
       setLoading(false);
 
-      // Pastikan posisi aktif tetap berada di Baureno jika sebelumnya keluar
+      // Pastikan posisi aktif tetap berada di Baureno jika belum ada posisi tersimpan
       setPosition((prev) => {
-        if (!prev || getDistanceFromBaurenoKm(prev.latitude, prev.longitude) > 35) {
-          return DEFAULT_BAURENO_COORDS;
-        }
+        if (!prev) return DEFAULT_BAURENO_COORDS;
         return prev;
       });
       return;
@@ -308,6 +314,9 @@ export function useGeolocation() {
   // Fungsi untuk menetapkan desa domisili warga secara presisi
   const setVillageLocation = useCallback((village) => {
     if (!village) return;
+    try {
+      localStorage.removeItem('sigab_force_real_device');
+    } catch {}
     const newPos = {
       latitude: village.latitude || village.lat,
       longitude: village.longitude || village.lon,
@@ -340,6 +349,7 @@ export function useGeolocation() {
   const useRealDeviceLocation = useCallback(() => {
     try {
       localStorage.removeItem('sigab_custom_location');
+      localStorage.setItem('sigab_force_real_device', 'true');
     } catch {}
     setIsCustom(false);
     refresh();
@@ -350,6 +360,7 @@ export function useGeolocation() {
     try {
       localStorage.removeItem('sigab_custom_location');
       localStorage.removeItem('sigab_device_location');
+      localStorage.removeItem('sigab_force_real_device');
     } catch {}
     setPosition(DEFAULT_BAURENO_COORDS);
     setAddress(DEFAULT_BAURENO_LABEL);
