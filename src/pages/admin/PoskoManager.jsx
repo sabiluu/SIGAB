@@ -205,43 +205,56 @@ export default function PoskoManager() {
                   <span>PIC: <strong>{posko.contact_person || 'Petugas Posko'}</strong></span>
                   {posko.contact_phone && <div>📞 {posko.contact_phone}</div>}
                 </div>
-                <div className="stepper" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div className="stepper" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <button 
+                    type="button"
                     onClick={() => handleUpdateCapacity(posko.id, occCap - 1, maxCap)}
                     disabled={occCap <= 0}
                     style={{ 
-                      padding: '5px 12px', 
+                      width: '32px',
+                      height: '32px',
                       borderRadius: '6px', 
-                      border: '1px solid #cbd5e1', 
+                      border: '1.5px solid #cbd5e1', 
                       cursor: occCap <= 0 ? 'not-allowed' : 'pointer',
-                      background: '#ffffff',
+                      background: occCap <= 0 ? '#f8fafc' : '#ffffff',
                       color: occCap <= 0 ? '#94a3b8' : '#0f172a',
-                      fontWeight: 700,
-                      fontSize: '0.85rem'
+                      fontWeight: 800,
+                      fontSize: '1.15rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      lineHeight: 1,
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                      transition: 'all 0.15s ease'
                     }}
                     title="Kurangi 1 pengungsi"
                   >
-                    -1
+                    −
                   </button>
-                  <span style={{ fontSize: '0.85rem', fontWeight: 800, minWidth: '40px', textAlign: 'center', color: '#0f172a' }}>
-                    {occCap}
-                  </span>
                   <button 
+                    type="button"
                     onClick={() => handleUpdateCapacity(posko.id, occCap + 1, maxCap)}
                     disabled={occCap >= maxCap}
                     style={{ 
-                      padding: '5px 12px', 
+                      width: '32px',
+                      height: '32px',
                       borderRadius: '6px', 
-                      border: '1px solid #cbd5e1', 
+                      border: '1.5px solid #cbd5e1', 
                       cursor: occCap >= maxCap ? 'not-allowed' : 'pointer', 
-                      background: '#f8fafc',
+                      background: occCap >= maxCap ? '#f8fafc' : '#ffffff',
                       color: occCap >= maxCap ? '#94a3b8' : '#0284c7',
-                      fontWeight: 700,
-                      fontSize: '0.85rem'
+                      fontWeight: 800,
+                      fontSize: '1.15rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      lineHeight: 1,
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                      transition: 'all 0.15s ease'
                     }}
                     title="Tambah 1 pengungsi"
                   >
-                    +1
+                    +
                   </button>
                 </div>
               </div>
