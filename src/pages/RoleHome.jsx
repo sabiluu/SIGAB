@@ -40,7 +40,7 @@ function Brand({ admin = false, locName = '' }) {
 
 function WargaHome() {
   const [activeTab, setActiveTab] = useState('beranda')
-  const [userProfile, setUserProfile] = useState({ full_name: 'Ahmad Fauzi' })
+  const [userProfile, setUserProfile] = useState({ full_name: 'Ahmadi' })
   const [selectedVillageId, setSelectedVillageId] = useState(null)
   const [isEmergencyActive, setIsEmergencyActive] = useState(false)
   const [showNotifDropdown, setShowNotifDropdown] = useState(false)

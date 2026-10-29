@@ -559,7 +559,7 @@ export default function WargaBeranda({
       <div className="warga-beranda-head">
         <div className="warga-greeting-wrap">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span className="greeting-sub">Halo, {userProfile?.full_name ? userProfile.full_name.split(' ')[0] : 'Ahmad'}!</span>
+            <span className="greeting-sub">Halo, {userProfile?.full_name ? userProfile.full_name.split(' ')[0] : 'Ahmadi'}!</span>
             {onEditProfile && (
               <button 
                 type="button" 
