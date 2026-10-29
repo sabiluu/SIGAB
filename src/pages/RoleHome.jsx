@@ -748,31 +748,6 @@ function WargaHome() {
               </button>
             </div>
 
-            {/* GPS Status/Warning Box if error or outside coverage */}
-            {geo.error && (
-              <div style={{
-                background: '#fef2f2',
-                border: '1.5px solid #fecaca',
-                borderRadius: '10px',
-                padding: '10px 14px',
-                marginBottom: '14px',
-                fontSize: '0.8rem',
-                color: '#991b1b',
-                display: 'flex',
-                gap: '8px',
-                alignItems: 'flex-start'
-              }}>
-                <span style={{ fontSize: '1rem' }}>⚠️</span>
-                <div>
-                  <strong>Izin Lokasi Browser Belum Aktif:</strong>
-                  <div style={{ marginTop: '2px', color: '#7f1d1d' }}>{geo.error}</div>
-                  <div style={{ marginTop: '4px', fontSize: '0.74rem', color: '#6b7280' }}>
-                    Tip: Klik ikon gembok / slider izin di sebelah kiri address bar browser Anda, lalu ubah <strong>Lokasi (Location)</strong> ke <strong>Izinkan (Allow)</strong>.
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Real Device Location Option */}
             <div style={{
               background: '#f0fdf4',
@@ -791,9 +766,7 @@ function WargaHome() {
                   🎯 Lokasi GPS Real Perangkat
                 </div>
                 <div style={{ fontSize: '0.74rem', color: '#15803d', marginTop: '2px' }}>
-                  {geo.rawDeviceCoords 
-                    ? `Terdeteksi: ${geo.rawDeviceCoords.latitude.toFixed(4)}, ${geo.rawDeviceCoords.longitude.toFixed(4)} (${geo.outsideAreaName || 'Perangkat'})`
-                    : 'Kunci koordinat GPS nyata langsung dari sensor perangkat Anda saat ini.'}
+                  Kunci koordinat GPS nyata langsung dari perangkat Anda saat ini.
                 </div>
               </div>
               <button

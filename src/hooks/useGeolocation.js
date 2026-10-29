@@ -1,12 +1,11 @@
 /**
- * useGeolocation — Custom hook untuk mendapatkan lokasi GPS warga Kecamatan Baureno, Bojonegoro.
- * Dilengkapi proteksi deviasi ISP (contoh: ISP provider mendeteksi Surabaya) dan fitur
- * pemilihan desa domisili Baureno secara presisi.
+ * useGeolocation — Custom hook untuk mendapatkan lokasi GPS real-time perangkat.
+ * Mengambil koordinat nyata dari sensor GPS/browser pengguna dan menyediakan fallback desa domisili.
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-// Bounding & Pusat Kecamatan Baureno, Kabupaten Bojonegoro
+// Bounding & Pusat Kecamatan Baureno, Kabupaten Bojonegoro (Fallback jika GPS belum diizinkan)
 export const DEFAULT_BAURENO_COORDS = {
   latitude: -7.1282,
   longitude: 112.1039,
@@ -96,9 +95,6 @@ export function useGeolocation() {
     activeInitial?.fullAddress || DEFAULT_BAURENO_FULL
   );
   const [isCustom, setIsCustom] = useState(Boolean(initialCustom));
-  const [isOutsideCoverage, setIsOutsideCoverage] = useState(false);
-  const [outsideAreaName, setOutsideAreaName] = useState('');
-  const [rawDeviceCoords, setRawDeviceCoords] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isRealDevice, setIsRealDevice] = useState(Boolean(cachedDevice && !initialCustom));
@@ -191,44 +187,17 @@ export function useGeolocation() {
     setFullAddress(`Koordinat: ${coordLabel}`);
   }, []);
 
-  // Handler sukses GPS Device
+  // Handler sukses GPS Device nyata (selalu gunakan koordinat real perangkat)
   const handleSuccess = useCallback(async (pos) => {
     const lat = pos.coords.latitude;
     const lon = pos.coords.longitude;
     const accuracy = pos.coords.accuracy || 10;
-    const distFromBaureno = getDistanceFromBaurenoKm(lat, lon);
 
-    const isOutside = distFromBaureno > 35;
-    setIsOutsideCoverage(isOutside);
-    setRawDeviceCoords({ latitude: lat, longitude: lon, accuracy, dist: Math.round(distFromBaureno) });
-
-    const isForced = (() => {
-      try {
-        return localStorage.getItem('sigab_force_real_device') === 'true';
-      } catch {
-        return false;
-      }
-    })();
-
-    if (isOutside && !isForced) {
-      // PERANGKAT DI LUAR BAURENO (contoh: ISP provider laptop terpusat di Jakarta/Surabaya)
-      // Simpan koordinat asli perangkat untuk opsi 'Gunakan GPS Device', namun jangan timpa otomatis
-      setOutsideAreaName(`Luar Bojonegoro (~${Math.round(distFromBaureno)} km via ISP)`);
-      setLoading(false);
-
-      // Pastikan posisi aktif tetap berada di Baureno jika belum ada posisi tersimpan
-      setPosition((prev) => {
-        if (!prev) return DEFAULT_BAURENO_COORDS;
-        return prev;
-      });
-      return;
-    }
-
-    // Jika pengguna BENAR-BENAR berada di wilayah Baureno / Bojonegoro (radius <= 35 km):
     const newPos = { latitude: lat, longitude: lon, accuracy };
     setPosition(newPos);
     setIsRealDevice(true);
     setIsCustom(false);
+    setError(null);
 
     try {
       localStorage.removeItem('sigab_custom_location');
@@ -238,10 +207,9 @@ export function useGeolocation() {
     setLoading(false);
   }, [reverseGeocode]);
 
-  // Handler gagal GPS (coba fallback IP Geolocation)
+  // Handler gagal GPS (coba fallback IP Geolocation jika GPS hardware tidak ada)
   const handleError = useCallback(async (err) => {
     console.warn('GPS hardware error, trying IP Geolocation fallback:', err?.message || err);
-    setError(err?.message || 'Gagal membaca sensor GPS');
 
     try {
       const res = await fetch('https://get.geojs.io/v1/ip/geo.json');
@@ -250,14 +218,6 @@ export function useGeolocation() {
         const ipLat = parseFloat(ipData.latitude);
         const ipLon = parseFloat(ipData.longitude);
         if (!isNaN(ipLat) && !isNaN(ipLon)) {
-          const dist = getDistanceFromBaurenoKm(ipLat, ipLon);
-          if (dist > 35) {
-            setIsOutsideCoverage(true);
-            setRawDeviceCoords({ latitude: ipLat, longitude: ipLon, accuracy: 1000, dist: Math.round(dist) });
-            setOutsideAreaName(`Luar Bojonegoro (~${Math.round(dist)} km via IP)`);
-            setLoading(false);
-            return;
-          }
           const ipPos = { latitude: ipLat, longitude: ipLon, accuracy: 1000 };
           setPosition(ipPos);
           setIsRealDevice(true);
@@ -314,9 +274,6 @@ export function useGeolocation() {
   // Fungsi untuk menetapkan desa domisili warga secara presisi
   const setVillageLocation = useCallback((village) => {
     if (!village) return;
-    try {
-      localStorage.removeItem('sigab_force_real_device');
-    } catch {}
     const newPos = {
       latitude: village.latitude || village.lat,
       longitude: village.longitude || village.lon,
@@ -349,7 +306,6 @@ export function useGeolocation() {
   const useRealDeviceLocation = useCallback(() => {
     try {
       localStorage.removeItem('sigab_custom_location');
-      localStorage.setItem('sigab_force_real_device', 'true');
     } catch {}
     setIsCustom(false);
     refresh();
@@ -360,7 +316,6 @@ export function useGeolocation() {
     try {
       localStorage.removeItem('sigab_custom_location');
       localStorage.removeItem('sigab_device_location');
-      localStorage.removeItem('sigab_force_real_device');
     } catch {}
     setPosition(DEFAULT_BAURENO_COORDS);
     setAddress(DEFAULT_BAURENO_LABEL);
@@ -370,14 +325,24 @@ export function useGeolocation() {
   }, []);
 
   useEffect(() => {
-    // Jalankan deteksi GPS device secara stabil saat inisialisasi
+    // Jalankan deteksi GPS device langsung & kontinu real-time (pure real GPS)
     if (navigator.geolocation) {
       setLoading(true);
+      // 1. Initial quick GPS reading
       navigator.geolocation.getCurrentPosition(handleSuccess, handleError, {
         enableHighAccuracy: true,
         timeout: 10000,
-        maximumAge: 30000
+        maximumAge: 0
       });
+      // 2. Continuous real-time location tracking
+      const watchId = navigator.geolocation.watchPosition(handleSuccess, handleError, {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 5000
+      });
+      return () => {
+        navigator.geolocation.clearWatch(watchId);
+      };
     } else {
       handleError(new Error('Browser tidak mendukung geolokasi'));
     }
@@ -393,9 +358,8 @@ export function useGeolocation() {
     loading, 
     refresh,
     isCustom,
-    isOutsideCoverage,
-    outsideAreaName,
-    rawDeviceCoords,
+    isOutsideCoverage: false,
+    outsideAreaName: '',
     setVillageLocation,
     resetToBaurenoDefault,
     useRealDeviceLocation,
@@ -405,4 +369,3 @@ export function useGeolocation() {
 }
 
 export default useGeolocation;
-

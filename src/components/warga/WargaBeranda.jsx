@@ -301,50 +301,6 @@ export default function WargaBeranda({
         <div className="peta-posko-kicker">Peta &amp; Posko</div>
         <h1 className="peta-posko-title">Risiko banjir per desa</h1>
 
-        {/* Location Notice / GPS Alert */}
-        {(geo?.error || geo?.isOutsideCoverage) && (
-          <div style={{
-            background: geo?.error ? '#fef2f2' : '#eff6ff',
-            border: `1.5px solid ${geo?.error ? '#fecaca' : '#bfdbfe'}`,
-            borderRadius: '10px',
-            padding: '10px 16px',
-            marginBottom: '14px',
-            fontSize: '0.82rem',
-            color: geo?.error ? '#991b1b' : '#1e40af',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '12px',
-            flexWrap: 'wrap'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>{geo?.error ? '⚠️' : '📍'}</span>
-              <span>
-                <strong>{geo?.error ? 'Izin Lokasi Browser:' : 'Status Lokasi GPS:'}</strong>{' '}
-                {geo?.error || `Perangkat terdeteksi di ${geo?.outsideAreaName || 'luar Baureno'}. Titik peta disesuaikan ke wilayah Baureno.`}
-              </span>
-            </div>
-            {onOpenLocationModal && (
-              <button
-                type="button"
-                onClick={onOpenLocationModal}
-                style={{
-                  background: geo?.error ? '#dc2626' : '#2563eb',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '6px',
-                  padding: '5px 12px',
-                  fontSize: '0.76rem',
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
-              >
-                Atur Lokasi / Pilih Desa ➔
-              </button>
-            )}
-          </div>
-        )}
-
         {/* Info / Emergency Banner */}
         <div className="peta-info-banner">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{ flexShrink: 0 }}>
