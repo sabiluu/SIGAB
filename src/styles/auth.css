@@ -255,6 +255,17 @@
   padding-right: 44px;
 }
 
+/* Sembunyikan ikon password reveal bawaan browser (Microsoft Edge / Chromium) agar tidak tumpang tindih */
+.auth-password-wrapper input::-ms-reveal,
+.auth-password-wrapper input::-ms-clear,
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  pointer-events: none;
+}
+
 .auth-password-toggle {
   position: absolute;
   right: 10px;
