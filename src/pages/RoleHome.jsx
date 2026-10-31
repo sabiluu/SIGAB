@@ -31,7 +31,7 @@ function Brand({ admin = false, locName = '' }) {
         </svg>
       </span>
       <span className="role-brand-text">
-        <strong>SiagaBencana</strong>
+        <strong>SIGAB</strong>
         <small>{admin ? 'Pusdalops BPBD' : (locName ? `Portal Warga • ${locName}` : 'Portal Warga')}</small>
       </span>
     </div>

@@ -114,7 +114,7 @@ export default function AdminLayout({ children, activeMenu }) {
                 <path d="M3 17c2-1.5 4.5-1.5 6.5 0s4.5 1.5 6.5 0 4.5-1.5 5 0" />
               </svg>
             </span>
-            <span className="brand-text"><strong>SiagaBencana</strong><small>Pusdalops BPBD</small></span>
+            <span className="brand-text"><strong>SIGAB</strong><small>Pusdalops BPBD</small></span>
           </div>
         </div>
         
