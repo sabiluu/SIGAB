@@ -1103,28 +1103,7 @@ function AdminHome() {
 
   return (
     <div className="admin-portal-wrapper" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
-      {/* 0. EMERGENCY TOP INDICATOR BAR FOR ADMIN */}
-      {isEmergency && (
-        <div className="admin-emergency-top-banner">
-          <div className="admin-emergency-top-info">
-            <span className="admin-emergency-icon">📢</span>
-            <div className="admin-emergency-text-wrap">
-              <span className="admin-emergency-title">STATUS DARURAT AKTIF — SIAGA LEVEL 4</span>
-              <span className="admin-emergency-subtitle">Kec. Baureno • Pusdalops BPBD • {timeStr}</span>
-            </div>
-          </div>
 
-          <div className="admin-emergency-top-actions">
-            <a href="#sos" className="btn-admin-sos-link">
-              <span>⚠️</span>
-              <span>TIKET SOS ({activeTickets.length})</span>
-            </a>
-            <button type="button" onClick={toggleEmergency} className="btn-admin-deactivate-status">
-              Nonaktifkan Status
-            </button>
-          </div>
-        </div>
-      )}
 
       <main className={`portal admin-portal ${sidebarOpen ? '' : 'sidebar-closed'}`} style={{ flex: 1 }}>
       {/* Mobile Backdrop */}
