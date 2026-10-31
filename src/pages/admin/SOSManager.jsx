@@ -136,7 +136,7 @@ export default function SOSManager() {
         if (diff !== 0) return diff
         return new Date(b.submitted_at || 0) - new Date(a.submitted_at || 0)
       }
-      if (sortBy === 'time_desc') {
+      if (sortBy === 'time_desc' || sortBy === 'neutral') {
         return new Date(b.submitted_at || 0) - new Date(a.submitted_at || 0)
       }
       if (sortBy === 'time_asc') {
@@ -219,6 +219,27 @@ export default function SOSManager() {
                 >
                   <span>📉 Terendah</span>
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setSortBy(prev => (prev === 'time_desc' || prev === 'neutral') ? 'time_asc' : 'time_desc')}
+                  style={{
+                    padding: '6px 11px',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    border: 'none',
+                    borderLeft: '1px solid #cbd5e1',
+                    cursor: 'pointer',
+                    background: (sortBy === 'time_desc' || sortBy === 'time_asc' || sortBy === 'neutral') ? '#e0f2fe' : '#ffffff',
+                    color: (sortBy === 'time_desc' || sortBy === 'time_asc' || sortBy === 'neutral') ? '#0284c7' : '#64748b',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Urutkan Netral Sesuai Waktu Masuk Tiket (Klik untuk toggle Terbaru / Terlama)"
+                >
+                  <span>⏱️ Netral {sortBy === 'time_asc' ? '(Terlama Masuk ▲)' : '(Sesuai Masuk ▼)'}</span>
+                </button>
               </div>
 
               <div className="search-box-mini">
@@ -236,7 +257,13 @@ export default function SOSManager() {
           <table className="sos-table">
             <thead>
               <tr>
-                <th>ID TIKET</th>
+                <th
+                  onClick={() => setSortBy(prev => (prev === 'time_desc' || prev === 'neutral') ? 'time_asc' : 'time_desc')}
+                  style={{ cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}
+                  title="Klik untuk mengurutkan netral sesuai waktu masuk tiket"
+                >
+                  ID TIKET & WAKTU {(sortBy === 'time_desc' || sortBy === 'neutral') ? '▼ (Terbaru)' : sortBy === 'time_asc' ? '▲ (Terlama)' : '⇅'}
+                </th>
                 <th
                   onClick={() => setSortBy(prev => prev === 'priority_desc' ? 'priority_asc' : 'priority_desc')}
                   style={{ cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}

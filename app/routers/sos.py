@@ -306,9 +306,9 @@ def get_all_sos_tickets(
         query = query.order_by(SOSTicket.priority_score.desc(), SOSTicket.submitted_at.desc())
     elif sort_by == "priority_asc":
         query = query.order_by(SOSTicket.priority_score.asc(), SOSTicket.submitted_at.desc())
-    elif sort_by == "time_desc":
+    elif sort_by in ("time_desc", "neutral", "neutral_desc"):
         query = query.order_by(SOSTicket.submitted_at.desc())
-    elif sort_by == "time_asc":
+    elif sort_by in ("time_asc", "neutral_asc"):
         query = query.order_by(SOSTicket.submitted_at.asc())
     elif sort_by == "family_desc":
         query = query.order_by(SOSTicket.family_count.desc(), SOSTicket.priority_score.desc())
