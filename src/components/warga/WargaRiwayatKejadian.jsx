@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect, useMemo } from 'react'
 import { getFloodIncidents } from '../../services/floodService'
 
 export default function WargaRiwayatKejadian() {
   const [filter, setFilter] = useState('semua')
   const [year, setYear] = useState('semua')
   const [search, setSearch] = useState('')
-  const [events, setEvents] = useState([])
-  const [stats, setStats] = useState(null)
+  const [allEvents, setAllEvents] = useState([])
+  const [serverStats, setServerStats] = useState(null)
   const [loading, setLoading] = useState(true)
 
   const fetchData = async () => {
@@ -15,16 +15,16 @@ export default function WargaRiwayatKejadian() {
       const res = await getFloodIncidents({ 
         category: filter !== 'semua' ? filter : undefined,
         year: year !== 'semua' ? year : undefined,
-        search: search.trim() || undefined
+        page_size: 200
       })
       if (res) {
-        setEvents(res.items || [])
-        setStats(res.stats || null)
+        setAllEvents(res.items || [])
+        setServerStats(res.stats || null)
       }
     } catch (err) {
       console.warn('Gagal memuat arsip kejadian banjir:', err)
-      setEvents([])
-      setStats(null)
+      setAllEvents([])
+      setServerStats(null)
     } finally {
       setLoading(false)
     }
@@ -32,7 +32,42 @@ export default function WargaRiwayatKejadian() {
 
   useEffect(() => {
     fetchData()
-  }, [filter, year, search])
+  }, [filter, year])
+
+  // Pencarian instan: setiap huruf yang diketik langsung memfilter daftar (tanpa menunggu server)
+  const events = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return allEvents
+    const terms = q.split(/\s+/).filter(Boolean)
+    return allEvents.filter((evt) => {
+      const haystack = [
+        evt.title,
+        evt.description,
+        evt.desc,
+        evt.village_name,
+        evt.affected_villages,
+        evt.category,
+        evt.status,
+        String(evt.event_date || evt.date || ''),
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+      return terms.every((t) => haystack.includes(t))
+    })
+  }, [allEvents, search])
+
+  // Kartu statistik ikut menyesuaikan hasil pencarian
+  const stats = useMemo(() => {
+    if (!search.trim()) return serverStats
+    const tmaValues = events.map((e) => Number(e.water_level_m)).filter((n) => !isNaN(n) && n > 0)
+    return {
+      total_incidents: events.length,
+      awas_count: events.filter((e) => (e.category || '').toLowerCase() === 'awas').length,
+      total_evacuated: events.reduce((sum, e) => sum + (Number(e.evacuated_count) || 0), 0),
+      max_tma_mdpl: tmaValues.length ? Math.max(...tmaValues) : null,
+    }
+  }, [events, search, serverStats])
 
   const getDotColor = (category) => {
     switch ((category || '').toLowerCase()) {
@@ -65,7 +100,7 @@ export default function WargaRiwayatKejadian() {
           month: 'short',
           year: 'numeric',
         }) +
-        ' • ' +
+        ' â€¢ ' +
         timeStr +
         ' WIB'
       )
@@ -98,7 +133,7 @@ export default function WargaRiwayatKejadian() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={{
-                padding: '7px 12px 7px 32px',
+                padding: '7px 28px 7px 32px',
                 borderRadius: '999px',
                 border: '1px solid #cbd5e1',
                 fontSize: '0.8rem',
@@ -109,8 +144,18 @@ export default function WargaRiwayatKejadian() {
               }}
             />
             <span style={{ position: 'absolute', left: '11px', top: '7px', fontSize: '13px', color: '#94a3b8' }}>
-              🔍
+              ðŸ”
             </span>
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                aria-label="Hapus pencarian"
+                style={{ position: 'absolute', right: '8px', top: '5px', border: 'none', background: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '13px' }}
+              >
+                âœ•
+              </button>
+            )}
           </div>
 
           {/* Filter Tahun */}
@@ -118,7 +163,7 @@ export default function WargaRiwayatKejadian() {
             <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b', padding: '0 6px' }}>
               Tahun:
             </span>
-            {['semua', '2025', '2024', '2023'].map((y) => (
+            {['semua', '2026', '2025', '2024', '2023'].map((y) => (
               <button
                 key={y}
                 type="button"
@@ -222,11 +267,13 @@ export default function WargaRiwayatKejadian() {
               <line x1="12" y1="8" x2="12" y2="12" />
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
-            <h3>Belum Ada Riwayat Kejadian</h3>
+            <h3>{search.trim() ? 'Pencarian Tidak Ditemukan' : 'Belum Ada Riwayat Kejadian'}</h3>
             <p>
-              {filter === 'semua'
-                ? 'Belum ada data rekaman kejadian hidrometeorologi tersimpan di sistem.'
-                : `Tidak ada rekaman kejadian dengan filter status "${filter.toUpperCase()}".`}
+              {search.trim()
+                ? `Tidak ada kejadian yang cocok dengan "${search.trim()}". Coba kata kunci lain.`
+                : filter === 'semua'
+                  ? 'Belum ada data rekaman kejadian hidrometeorologi tersimpan di sistem.'
+                  : `Tidak ada rekaman kejadian dengan filter status "${filter.toUpperCase()}".`}
             </p>
           </div>
         ) : (
@@ -268,7 +315,7 @@ export default function WargaRiwayatKejadian() {
                             padding: '2px 8px',
                             borderRadius: '6px'
                           }}>
-                            📍 {evt.village_name}
+                            ðŸ“ {evt.village_name}
                           </span>
                         )}
                       </div>
@@ -318,12 +365,12 @@ export default function WargaRiwayatKejadian() {
                     )}
                     {affectedPeople && (
                       <span className="riwayat-mini-chip">
-                        👥 Terdampak: {affectedPeople}
+                        ðŸ‘¥ Terdampak: {affectedPeople}
                       </span>
                     )}
                     {shelters && (
                       <span className="riwayat-mini-chip">
-                        ⛺ {shelters}
+                        â›º {shelters}
                       </span>
                     )}
                   </div>

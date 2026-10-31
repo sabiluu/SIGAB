@@ -27,6 +27,8 @@ export async function getFloodIncidents(params = {}) {
   if (params.category && params.category !== 'semua') query.append('category', params.category);
   if (params.village_id) query.append('village_id', params.village_id);
   if (params.year) query.append('year', params.year);
+  if (params.search) query.append('search', params.search);
+  if (params.page_size) query.append('page_size', params.page_size);
   const qs = query.toString() ? `?${query.toString()}` : '';
   return apiFetch(`/flood/incidents${qs}`);
 }
