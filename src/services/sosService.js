@@ -4,8 +4,6 @@
 
 import { apiFetch } from './api';
 
-// TODO Minggu 5-6: Implementasi setelah backend SOS API selesai
-
 export async function createSOSTicket(data) {
   return apiFetch('/sos', {
     method: 'POST',
@@ -13,8 +11,12 @@ export async function createSOSTicket(data) {
   });
 }
 
-export async function getSOSTickets() {
-  return apiFetch('/sos');
+export async function getSOSTickets(params = {}) {
+  const query = new URLSearchParams();
+  if (params.sort_by) query.append('sort_by', params.sort_by);
+  if (params.status) query.append('status', params.status);
+  const qs = query.toString() ? `?${query.toString()}` : '';
+  return apiFetch(`/sos${qs}`);
 }
 
 export async function getMyTickets() {
@@ -26,7 +28,6 @@ export async function getSOSTicketById(id) {
 }
 
 export async function updateSOSStatus(id, updateData) {
-  // updateData minimal: { status: '...' }
   return apiFetch(`/sos/${id}`, {
     method: 'PUT',
     body: JSON.stringify(updateData),
@@ -41,4 +42,3 @@ export async function uploadSOSPhoto(file) {
     body: formData,
   });
 }
-

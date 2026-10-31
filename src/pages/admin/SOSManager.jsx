@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
 import { getSOSTickets, updateSOSStatus } from '../../services/sosService'
 import wsService from '../../services/wsService'
@@ -10,8 +10,43 @@ export default function SOSManager() {
   const [loading, setLoading] = useState(true)
   const [filterStatus, setFilterStatus] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [sortBy, setSortBy] = useState('priority_desc')
   const [assignedUnitInput, setAssignedUnitInput] = useState('')
   const [viewingPhoto, setViewingPhoto] = useState(null)
+
+  const getPriorityBadge = (score) => {
+    const s = Number(score) || 0
+    if (s >= 75) {
+      return {
+        label: 'Sangat Kritis',
+        bg: '#fee2e2',
+        color: '#dc2626',
+        border: '#fca5a5'
+      }
+    }
+    if (s >= 50) {
+      return {
+        label: 'Tinggi',
+        bg: '#ffedd5',
+        color: '#ea580c',
+        border: '#fed7aa'
+      }
+    }
+    if (s >= 25) {
+      return {
+        label: 'Sedang',
+        bg: '#fef3c7',
+        color: '#d97706',
+        border: '#fde68a'
+      }
+    }
+    return {
+      label: 'Normal',
+      bg: '#ecfdf5',
+      color: '#059669',
+      border: '#a7f3d0'
+    }
+  }
 
   const fetchTickets = async () => {
     try {
@@ -72,22 +107,47 @@ export default function SOSManager() {
     return v.length > 0 ? v.join(', ') : 'Tidak ada'
   }
 
-  const filteredTickets = tickets.filter(t => {
-    if (filterStatus === 'submitted' && t.status !== 'submitted') return false
-    if (filterStatus === 'verified' && t.status !== 'verified') return false
-    if (filterStatus === 'dispatched' && t.status !== 'dispatched' && t.status !== 'arrived') return false
-    if (filterStatus === 'completed' && t.status !== 'completed') return false
-    if (filterStatus === 'active' && (t.status === 'completed' || t.status === 'rejected')) return false
+  const filteredTickets = useMemo(() => {
+    const result = tickets.filter(t => {
+      if (filterStatus === 'submitted' && t.status !== 'submitted') return false
+      if (filterStatus === 'verified' && t.status !== 'verified') return false
+      if (filterStatus === 'dispatched' && t.status !== 'dispatched' && t.status !== 'arrived') return false
+      if (filterStatus === 'completed' && t.status !== 'completed') return false
+      if (filterStatus === 'active' && (t.status === 'completed' || t.status === 'rejected')) return false
 
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase()
-      const matchNum = t.ticket_number?.toLowerCase().includes(q)
-      const matchAddr = t.gps_address?.toLowerCase().includes(q)
-      const matchVil = (t.village_name || '').toLowerCase().includes(q)
-      return matchNum || matchAddr || matchVil
-    }
-    return true
-  })
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase()
+        const matchNum = t.ticket_number?.toLowerCase().includes(q)
+        const matchAddr = t.gps_address?.toLowerCase().includes(q)
+        const matchVil = (t.village_name || '').toLowerCase().includes(q)
+        return matchNum || matchAddr || matchVil
+      }
+      return true
+    })
+
+    return [...result].sort((a, b) => {
+      if (sortBy === 'priority_desc') {
+        const diff = (b.priority_score || 0) - (a.priority_score || 0)
+        if (diff !== 0) return diff
+        return new Date(b.submitted_at || 0) - new Date(a.submitted_at || 0)
+      }
+      if (sortBy === 'priority_asc') {
+        const diff = (a.priority_score || 0) - (b.priority_score || 0)
+        if (diff !== 0) return diff
+        return new Date(b.submitted_at || 0) - new Date(a.submitted_at || 0)
+      }
+      if (sortBy === 'time_desc') {
+        return new Date(b.submitted_at || 0) - new Date(a.submitted_at || 0)
+      }
+      if (sortBy === 'time_asc') {
+        return new Date(a.submitted_at || 0) - new Date(b.submitted_at || 0)
+      }
+      if (sortBy === 'family_desc') {
+        return (b.family_count || 0) - (a.family_count || 0)
+      }
+      return 0
+    })
+  }, [tickets, filterStatus, searchQuery, sortBy])
 
   return (
     <AdminLayout activeMenu="sos">
@@ -114,14 +174,62 @@ export default function SOSManager() {
               <button className={filterStatus === 'dispatched' ? 'active' : ''} onClick={() => setFilterStatus('dispatched')}>Meluncur ({tickets.filter(t => t.status === 'dispatched' || t.status === 'arrived').length})</button>
               <button className={filterStatus === 'completed' ? 'active' : ''} onClick={() => setFilterStatus('completed')}>Selesai ({tickets.filter(t => t.status === 'completed').length})</button>
             </div>
-            <div className="search-box-mini">
-              <input 
-                type="text" 
-                placeholder="⌕ Cari tiket, desa, alamat..." 
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
-              />
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              {/* Prioritas Quick Sort Toggle Buttons */}
+              <div style={{ display: 'inline-flex', borderRadius: '8px', border: '1px solid #cbd5e1', overflow: 'hidden', background: '#ffffff', boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}>
+                <button
+                  type="button"
+                  onClick={() => setSortBy('priority_desc')}
+                  style={{
+                    padding: '6px 11px',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: sortBy === 'priority_desc' ? '#fee2e2' : '#ffffff',
+                    color: sortBy === 'priority_desc' ? '#dc2626' : '#64748b',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Urutkan Skor Prioritas Tertinggi ke Terendah"
+                >
+                  <span>🔥 Prioritas Tertinggi</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSortBy('priority_asc')}
+                  style={{
+                    padding: '6px 11px',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    border: 'none',
+                    borderLeft: '1px solid #cbd5e1',
+                    cursor: 'pointer',
+                    background: sortBy === 'priority_asc' ? '#eff6ff' : '#ffffff',
+                    color: sortBy === 'priority_asc' ? '#2563eb' : '#64748b',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Urutkan Skor Prioritas Terendah ke Tertinggi"
+                >
+                  <span>📉 Terendah</span>
+                </button>
+              </div>
+
+              <div className="search-box-mini">
+                <input 
+                  type="text" 
+                  placeholder="⌕ Cari tiket, desa, alamat..." 
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
+                />
+              </div>
             </div>
           </div>
 
@@ -129,6 +237,13 @@ export default function SOSManager() {
             <thead>
               <tr>
                 <th>ID TIKET</th>
+                <th
+                  onClick={() => setSortBy(prev => prev === 'priority_desc' ? 'priority_asc' : 'priority_desc')}
+                  style={{ cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}
+                  title="Klik untuk mengubah urutan skor prioritas (Tertinggi / Terendah)"
+                >
+                  SKOR PRIORITAS {sortBy === 'priority_desc' ? '▼ (Tertinggi)' : sortBy === 'priority_asc' ? '▲ (Terendah)' : '⇅'}
+                </th>
                 <th>LOKASI / DESA</th>
                 <th>JIWA</th>
                 <th>STATUS</th>
@@ -137,15 +252,33 @@ export default function SOSManager() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan="5" style={{textAlign: 'center', padding: '30px'}}>Memuat tiket...</td></tr>
+                <tr><td colSpan="6" style={{textAlign: 'center', padding: '30px'}}>Memuat tiket...</td></tr>
               ) : filteredTickets.length === 0 ? (
-                <tr><td colSpan="5" style={{textAlign: 'center', padding: '30px'}}>Tidak ada tiket yang sesuai kriteria.</td></tr>
-              ) : filteredTickets.map(ticket => (
+                <tr><td colSpan="6" style={{textAlign: 'center', padding: '30px'}}>Tidak ada tiket yang sesuai kriteria.</td></tr>
+              ) : filteredTickets.map(ticket => {
+                const prio = getPriorityBadge(ticket.priority_score);
+                return (
                 <tr key={ticket.id} className={selectedTicketId === ticket.id ? 'selected' : ''} onClick={() => setSelectedTicketId(ticket.id)} style={{ cursor: 'pointer' }}>
                   <td className="ticket-id">
                     <strong>{ticket.ticket_number}</strong>
                     <br/><small style={{ color: '#0284c7', fontWeight: 600 }}>◷ {formatWIBTime(ticket.submitted_at)}</small>
-                    <br/><small style={{ color: '#64748b' }}>Skor: {ticket.priority_score}</small>
+                  </td>
+                  <td>
+                    <div style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      background: prio.bg,
+                      color: prio.color,
+                      border: `1px solid ${prio.border}`,
+                      padding: '4px 9px',
+                      borderRadius: '6px',
+                      fontWeight: 800,
+                      fontSize: '0.84rem'
+                    }}>
+                      <span>{ticket.priority_score || 0}</span>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 700 }}>• {prio.label}</span>
+                    </div>
                   </td>
                   <td>
                     <strong>{ticket.gps_address || (ticket.village_name ? `Desa ${ticket.village_name}` : `Desa ID ${ticket.village_id}`)}</strong>
@@ -197,7 +330,8 @@ export default function SOSManager() {
                     </div>
                   </td>
                 </tr>
-              ))}
+              );
+            })}
             </tbody>
           </table>
         </div>
@@ -217,6 +351,39 @@ export default function SOSManager() {
             </div>
 
             <div className="detail-content" style={{ marginTop: '16px' }}>
+              {/* Box Rincian Skor Prioritas */}
+              {(() => {
+                const prio = getPriorityBadge(activeTicket.priority_score);
+                return (
+                  <div style={{
+                    marginBottom: '16px',
+                    background: prio.bg,
+                    border: `1.5px solid ${prio.border}`,
+                    borderRadius: '10px',
+                    padding: '12px 14px'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <small style={{ color: prio.color, textTransform: 'uppercase', fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.04em' }}>
+                        SKOR PRIORITAS PENYELAMATAN
+                      </small>
+                      <span style={{ background: '#ffffff', color: prio.color, padding: '2px 8px', borderRadius: '999px', fontSize: '0.72rem', fontWeight: 800 }}>
+                        {prio.label}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '1.6rem', fontWeight: 900, color: prio.color, lineHeight: 1.2 }}>
+                      {activeTicket.priority_score || 0} <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>poin</span>
+                    </div>
+                    <div style={{ fontSize: '0.74rem', color: '#475569', marginTop: '6px', lineHeight: 1.4 }}>
+                      Rincian: {activeTicket.family_count || 1} jiwa ({(activeTicket.family_count || 1) * 10} pt)
+                      {activeTicket.has_elderly ? ' + Lansia (25 pt)' : ''}
+                      {activeTicket.has_toddler ? ' + Balita (25 pt)' : ''}
+                      {activeTicket.has_pregnant ? ' + Bumil (30 pt)' : ''}
+                      {activeTicket.has_disability ? ' + Difabel (20 pt)' : ''}
+                    </div>
+                  </div>
+                );
+              })()}
+
               <div style={{ marginBottom: '14px' }}>
                 <small style={{ color: '#64748b', textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 'bold' }}>LOKASI PELAPOR</small>
                 <h3 style={{ margin: '4px 0', fontSize: '1.1rem' }}>{activeTicket.gps_address || 'Koordinat Lapangan'}</h3>

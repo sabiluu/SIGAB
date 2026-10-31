@@ -292,11 +292,31 @@ async def create_sos_ticket(
 
 @router.get("", response_model=List[SOSTicketResponse])
 def get_all_sos_tickets(
+    sort_by: Optional[str] = Query(None, description="Urutan: priority_desc, priority_asc, time_desc, time_asc, family_desc"),
+    status: Optional[str] = Query(None),
     db: Session = Depends(get_db),
     current_admin = Depends(get_current_admin_user)
 ):
-    """(Admin) Melihat daftar tiket SOS."""
-    tickets = db.query(SOSTicket).order_by(SOSTicket.submitted_at.desc()).all()
+    """(Admin) Melihat daftar tiket SOS dengan opsi pengurutan skor prioritas."""
+    query = db.query(SOSTicket)
+    if status:
+        query = query.filter(SOSTicket.status == status)
+
+    if sort_by == "priority_desc":
+        query = query.order_by(SOSTicket.priority_score.desc(), SOSTicket.submitted_at.desc())
+    elif sort_by == "priority_asc":
+        query = query.order_by(SOSTicket.priority_score.asc(), SOSTicket.submitted_at.desc())
+    elif sort_by == "time_desc":
+        query = query.order_by(SOSTicket.submitted_at.desc())
+    elif sort_by == "time_asc":
+        query = query.order_by(SOSTicket.submitted_at.asc())
+    elif sort_by == "family_desc":
+        query = query.order_by(SOSTicket.family_count.desc(), SOSTicket.priority_score.desc())
+    else:
+        # Default: tiket prioritas tertinggi tampil di paling atas, lalu terbaru
+        query = query.order_by(SOSTicket.priority_score.desc(), SOSTicket.submitted_at.desc())
+
+    tickets = query.all()
     return tickets
 
 @router.get("/my", response_model=List[SOSTicketResponse])

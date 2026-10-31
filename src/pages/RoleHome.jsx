@@ -1053,7 +1053,7 @@ function AdminHome() {
   const dateOptions = { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' }
   const dateStr = currentTime.toLocaleDateString('id-ID', dateOptions)
 
-  const activeTickets = tickets.filter(t => t.status !== 'completed' && t.status !== 'rejected')
+  const activeTickets = tickets.filter(t => t.status !== 'completed' && t.status !== 'rejected').sort((a, b) => (b.priority_score || 0) - (a.priority_score || 0))
   const shelters = realtimeData?.shelters || []
   const totalShelterCap = shelters.reduce((s, sh) => s + (sh.capacity_total || 0), 0)
   const occupiedShelterCap = shelters.reduce((s, sh) => s + (sh.capacity_occupied || 0), 0)
@@ -1272,9 +1272,21 @@ function AdminHome() {
                   const time = ticket.submitted_at ? formatWIBTime(ticket.submitted_at) : 'Baru saja'
                   return (
                     <div className="sos-ticket" key={ticket.id}>
-                      <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                         <strong>{ticket.ticket_number}</strong>
-                        <time>{time}</time>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{
+                            background: (ticket.priority_score >= 50 ? '#fee2e2' : '#fef3c7'),
+                            color: (ticket.priority_score >= 50 ? '#dc2626' : '#b45309'),
+                            padding: '2px 7px',
+                            borderRadius: '5px',
+                            fontSize: '0.72rem',
+                            fontWeight: 800
+                          }}>
+                            ⚡ Skor {ticket.priority_score || 0}
+                          </span>
+                          <time>{time}</time>
+                        </div>
                       </div>
                       <b>📍 {location}</b>
                       <small>👥 {ticket.family_count} jiwa{getVulnerableSummary(ticket)}</small>
