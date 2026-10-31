@@ -86,6 +86,14 @@ def handle_register(body: RegisterBody, db: Session):
             detail="Kata sandi minimal 6 karakter.",
         )
 
+    # NIK bersifat opsional, tetapi jika diisi harus 16 digit angka
+    nik_clean = (body.nik or "").strip()
+    if nik_clean and not (nik_clean.isdigit() and len(nik_clean) == 16):
+        raise HTTPException(
+            status_code=400,
+            detail="NIK harus 16 digit angka (kosongkan jika belum ingin mengisi).",
+        )
+
     # Mencegah pendaftaran admin secara publik
     if body.role in ("petugas", "admin") and not email.endswith("@sigab.com"):
         raise HTTPException(
@@ -102,7 +110,7 @@ def handle_register(body: RegisterBody, db: Session):
         password_hash=hash_password(body.password),
         role=norm_role,
         village_id=body.village_id,
-        nik=body.nik.strip() if body.nik else None,
+        nik=nik_clean or None,
         is_active=True,
     )
     db.add(new_user)

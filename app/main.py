@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .core.scheduler import start_scheduler, stop_scheduler
 from .core.config import settings
+from .core.demo_accounts import seed_demo_accounts
 from .routers import (
     auth_router,
     villages_router,
@@ -28,6 +29,7 @@ from .routers import (
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup event
+    seed_demo_accounts()
     start_scheduler()
     yield
     # Shutdown event
