@@ -1,0 +1,33 @@
+{
+  "weather": {
+    "precipitation_mm": 18.5,
+    "accumulated_6h": 42.0,
+    "accumulated_12h": 68.5,
+    "temperature_c": 28.2,
+    "wind_speed_kmh": 14.5,
+    "api_source": "mock-local-weather"
+  },
+  "river_discharge": {
+    "discharge_m3s": 1250.0,
+    "forecast_1d": 1420.0,
+    "forecast_3d": 1610.0,
+    "forecast_7d": 1380.0,
+    "api_source": "mock-local-flood"
+  },
+  "route_fallback": {
+    "distance_meters": 3250.0,
+    "duration_seconds": 380.0,
+    "geometry": {
+      "type": "LineString",
+      "coordinates": [
+        [112.1039, -7.1282],
+        [112.1060, -7.1275],
+        [112.1100, -7.1250],
+        [112.1150, -7.1220],
+        [112.1221, -7.1198]
+      ]
+    },
+    "summary": "Rute evakuasi simulasi/offline via jalan poros desa",
+    "is_mock": true
+  }
+}
