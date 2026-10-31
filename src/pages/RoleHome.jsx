@@ -978,7 +978,6 @@ function AdminHome() {
   const [isEmergency, setIsEmergency] = useState(false)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [tickets, setTickets] = useState([])
-  const [queueSort, setQueueSort] = useState('priority')
   const { data: realtimeData } = useDashboardRealtime()
 
   useEffect(() => {
@@ -1054,16 +1053,7 @@ function AdminHome() {
   const dateOptions = { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' }
   const dateStr = currentTime.toLocaleDateString('id-ID', dateOptions)
 
-  const activeTickets = tickets
-    .filter(t => t.status !== 'completed' && t.status !== 'rejected')
-    .sort((a, b) => {
-      if (queueSort === 'time') {
-        return new Date(b.submitted_at || 0) - new Date(a.submitted_at || 0)
-      }
-      const diff = (b.priority_score || 0) - (a.priority_score || 0)
-      if (diff !== 0) return diff
-      return new Date(b.submitted_at || 0) - new Date(a.submitted_at || 0)
-    })
+  const activeTickets = tickets.filter(t => t.status !== 'completed' && t.status !== 'rejected').sort((a, b) => (b.priority_score || 0) - (a.priority_score || 0))
   const shelters = realtimeData?.shelters || []
   const totalShelterCap = shelters.reduce((s, sh) => s + (sh.capacity_total || 0), 0)
   const occupiedShelterCap = shelters.reduce((s, sh) => s + (sh.capacity_occupied || 0), 0)
@@ -1248,43 +1238,9 @@ function AdminHome() {
                   <h2>🔴 Antrian SOS Live</h2>
                   <b>{activeTickets.length} antrean</b>
                 </div>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                  <div style={{ display: 'inline-flex', borderRadius: '6px', border: '1px solid #cbd5e1', overflow: 'hidden', background: '#ffffff', fontSize: '0.72rem' }}>
-                    <button
-                      type="button"
-                      onClick={() => setQueueSort('priority')}
-                      style={{
-                        padding: '4px 8px',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontWeight: 700,
-                        background: queueSort === 'priority' ? '#fee2e2' : '#ffffff',
-                        color: queueSort === 'priority' ? '#dc2626' : '#64748b'
-                      }}
-                      title="Urutkan antrean berdasarkan prioritas tertinggi"
-                    >
-                      🔥 Prioritas
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setQueueSort('time')}
-                      style={{
-                        padding: '4px 8px',
-                        border: 'none',
-                        borderLeft: '1px solid #cbd5e1',
-                        cursor: 'pointer',
-                        fontWeight: 700,
-                        background: queueSort === 'time' ? '#e0f2fe' : '#ffffff',
-                        color: queueSort === 'time' ? '#0284c7' : '#64748b'
-                      }}
-                      title="Urutkan antrean netral sesuai waktu masuk"
-                    >
-                      ⏱️ Netral
-                    </button>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleCreateSimulatedTicket}
+                <button
+                  type="button"
+                  onClick={handleCreateSimulatedTicket}
                   style={{
                     background: '#dc2626',
                     color: '#ffffff',
@@ -1303,7 +1259,6 @@ function AdminHome() {
                 >
                   ⚡ Buat Tiket Simulasi
                 </button>
-                </div>
               </div>
               {activeTickets.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '30px 10px', color: '#64748b' }}>

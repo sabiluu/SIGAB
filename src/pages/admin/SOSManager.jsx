@@ -175,73 +175,7 @@ export default function SOSManager() {
               <button className={filterStatus === 'completed' ? 'active' : ''} onClick={() => setFilterStatus('completed')}>Selesai ({tickets.filter(t => t.status === 'completed').length})</button>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-              {/* Prioritas Quick Sort Toggle Buttons */}
-              <div style={{ display: 'inline-flex', borderRadius: '8px', border: '1px solid #cbd5e1', overflow: 'hidden', background: '#ffffff', boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}>
-                <button
-                  type="button"
-                  onClick={() => setSortBy('priority_desc')}
-                  style={{
-                    padding: '6px 11px',
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
-                    border: 'none',
-                    cursor: 'pointer',
-                    background: sortBy === 'priority_desc' ? '#fee2e2' : '#ffffff',
-                    color: sortBy === 'priority_desc' ? '#dc2626' : '#64748b',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    transition: 'all 0.15s ease'
-                  }}
-                  title="Urutkan Skor Prioritas Tertinggi ke Terendah"
-                >
-                  <span>🔥 Prioritas Tertinggi</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSortBy('priority_asc')}
-                  style={{
-                    padding: '6px 11px',
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
-                    border: 'none',
-                    borderLeft: '1px solid #cbd5e1',
-                    cursor: 'pointer',
-                    background: sortBy === 'priority_asc' ? '#eff6ff' : '#ffffff',
-                    color: sortBy === 'priority_asc' ? '#2563eb' : '#64748b',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    transition: 'all 0.15s ease'
-                  }}
-                  title="Urutkan Skor Prioritas Terendah ke Tertinggi"
-                >
-                  <span>📉 Terendah</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSortBy(prev => (prev === 'time_desc' || prev === 'neutral') ? 'time_asc' : 'time_desc')}
-                  style={{
-                    padding: '6px 11px',
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
-                    border: 'none',
-                    borderLeft: '1px solid #cbd5e1',
-                    cursor: 'pointer',
-                    background: (sortBy === 'time_desc' || sortBy === 'time_asc' || sortBy === 'neutral') ? '#e0f2fe' : '#ffffff',
-                    color: (sortBy === 'time_desc' || sortBy === 'time_asc' || sortBy === 'neutral') ? '#0284c7' : '#64748b',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    transition: 'all 0.15s ease'
-                  }}
-                  title="Urutkan Netral Sesuai Waktu Masuk Tiket (Klik untuk toggle Terbaru / Terlama)"
-                >
-                  <span>⏱️ Netral {sortBy === 'time_asc' ? '(Terlama Masuk ▲)' : '(Sesuai Masuk ▼)'}</span>
-                </button>
-              </div>
-
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div className="search-box-mini">
                 <input 
                   type="text" 
@@ -260,9 +194,9 @@ export default function SOSManager() {
                 <th
                   onClick={() => setSortBy(prev => (prev === 'time_desc' || prev === 'neutral') ? 'time_asc' : 'time_desc')}
                   style={{ cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}
-                  title="Klik untuk mengurutkan netral sesuai waktu masuk tiket"
+                  title="Klik untuk mengurutkan waktu masuk tiket (Terbaru / Terlama)"
                 >
-                  ID TIKET & WAKTU {(sortBy === 'time_desc' || sortBy === 'neutral') ? '▼ (Terbaru)' : sortBy === 'time_asc' ? '▲ (Terlama)' : '⇅'}
+                  ID TIKET {(sortBy === 'time_desc' || sortBy === 'neutral') ? '▼' : sortBy === 'time_asc' ? '▲' : ''}
                 </th>
                 <th
                   onClick={() => setSortBy(prev => prev === 'priority_desc' ? 'priority_asc' : 'priority_desc')}
