@@ -68,23 +68,12 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
   const [error, setError] = useState('')
   const [rememberMe, setRememberMe] = useState(true)
   const [villages, setVillages] = useState(DEFAULT_VILLAGES)
-  const [loginEmail, setLoginEmail] = useState(initialRole === 'petugas' ? 'admin@bpbd.go.id' : 'warga@baureno.id')
-  const [loginPassword, setLoginPassword] = useState(initialRole === 'petugas' ? 'admin123' : 'warga123')
+  const [loginEmail, setLoginEmail] = useState('')
+  const [loginPassword, setLoginPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [showForgotHelp, setShowForgotHelp] = useState(false)
   
   const isRegister = mode === 'register'
-
-  function fillDemoCredentials() {
-    setError('')
-    if (role === 'petugas') {
-      setLoginEmail('admin@bpbd.go.id')
-      setLoginPassword('admin123')
-    } else {
-      setLoginEmail('warga@baureno.id')
-      setLoginPassword('warga123')
-    }
-  }
 
   useEffect(() => {
     getVillages()
@@ -115,13 +104,8 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
   function switchRole(nextRole) {
     setRole(nextRole)
     setError('')
-    if (nextRole === 'petugas') {
-      setLoginEmail('admin@bpbd.go.id')
-      setLoginPassword('admin123')
-    } else {
-      setLoginEmail('warga@baureno.id')
-      setLoginPassword('warga123')
-    }
+    setLoginEmail('')
+    setLoginPassword('')
     window.history.replaceState(null, '', `#${mode === 'login' ? 'masuk' : 'daftar'}-${nextRole}`)
   }
 
@@ -393,18 +377,6 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
           ) : (
             /* ================= LOGIN FORMS ================= */
             <>
-              <div className="auth-demo-hint">
-                <div className="auth-demo-info">
-                  <span className="auth-demo-badge">Akun Uji Coba {role === 'petugas' ? 'Petugas' : 'Warga'}</span>
-                  <span className="auth-demo-text">
-                    {role === 'petugas' ? 'admin@bpbd.go.id • admin123' : 'warga@baureno.id • warga123'}
-                  </span>
-                </div>
-                <button type="button" className="auth-demo-btn" onClick={fillDemoCredentials}>
-                  Isi Cepat
-                </button>
-              </div>
-
               <div className="auth-field">
                 <label htmlFor="login-email">
                   {role === 'petugas' ? 'Email dinas' : 'Email'}
@@ -415,7 +387,7 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
                   type="email" 
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
-                  placeholder={role === 'petugas' ? 'admin@bpbd.go.id' : 'warga@baureno.id'} 
+                  placeholder={role === 'petugas' ? 'nama@bpbd.go.id' : 'nama@email.com'} 
                   required 
                   autoComplete="username" 
                 />
@@ -476,8 +448,7 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
                   marginBottom: '4px'
                 }}>
                   <strong>Bantuan Reset Kata Sandi:</strong> Hubungi Layanan Pusdalops BPBD Baureno di{' '}
-                  <a href="tel:0353881234" style={{ color: '#0284c7', fontWeight: 700 }}>(0353) 881-234</a>{' '}
-                  atau gunakan tombol <b>Isi Cepat</b> di atas untuk masuk ke akun demo.
+                  <a href="tel:0353881234" style={{ color: '#0284c7', fontWeight: 700 }}>(0353) 881-234</a>.
                 </div>
               )}
             </>
