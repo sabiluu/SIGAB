@@ -670,7 +670,6 @@ function WargaHome() {
                 <strong>{userProfile?.full_name || 'Warga Baureno (Demo)'}</strong>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                   <span>Warga terverifikasi</span>
-                  <span style={{ color: '#0284c7', fontWeight: 700, fontSize: '0.72rem' }}>• Edit ✏️</span>
                 </span>
               </div>
             </div>
