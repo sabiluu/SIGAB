@@ -81,8 +81,8 @@
 }
 
 .auth-brand-icon.admin {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+  background: linear-gradient(135deg, #00a4b0 0%, #008792 100%);
+  box-shadow: 0 4px 10px rgba(0, 154, 166, 0.25);
 }
 
 .auth-brand-text {
