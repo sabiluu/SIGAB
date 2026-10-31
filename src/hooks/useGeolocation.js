@@ -107,7 +107,7 @@ export function useGeolocation() {
     const now = Date.now();
     const last = lastGeocodeRef.current;
     const distDiff = Math.abs(lat - last.lat) + Math.abs(lon - last.lon);
-    
+
     if (distDiff < 0.0005 && now - last.time < 15000) {
       return;
     }
@@ -176,10 +176,10 @@ export function useGeolocation() {
             fullAddress: full,
             timestamp: Date.now()
           }));
-        } catch (e) {}
+        } catch (e) { }
         return;
       }
-    } catch (e) {}
+    } catch (e) { }
 
     // 3. Fallback koordinat
     const coordLabel = `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
@@ -201,7 +201,7 @@ export function useGeolocation() {
 
     try {
       localStorage.removeItem('sigab_custom_location');
-    } catch {}
+    } catch { }
 
     await reverseGeocode(lat, lon);
     setLoading(false);
@@ -247,7 +247,7 @@ export function useGeolocation() {
     setLoading(true);
     try {
       localStorage.removeItem('sigab_custom_location');
-    } catch {}
+    } catch { }
     setIsCustom(false);
 
     if (!navigator.geolocation) {
@@ -306,7 +306,7 @@ export function useGeolocation() {
   const useRealDeviceLocation = useCallback(() => {
     try {
       localStorage.removeItem('sigab_custom_location');
-    } catch {}
+    } catch { }
     setIsCustom(false);
     refresh();
   }, [refresh]);
@@ -316,7 +316,7 @@ export function useGeolocation() {
     try {
       localStorage.removeItem('sigab_custom_location');
       localStorage.removeItem('sigab_device_location');
-    } catch {}
+    } catch { }
     setPosition(DEFAULT_BAURENO_COORDS);
     setAddress(DEFAULT_BAURENO_LABEL);
     setFullAddress(DEFAULT_BAURENO_FULL);
@@ -348,14 +348,14 @@ export function useGeolocation() {
     }
   }, [handleSuccess, handleError]);
 
-  return { 
-    position, 
+  return {
+    position,
     latitude: position?.latitude,
     longitude: position?.longitude,
-    address, 
+    address,
     fullAddress,
-    error, 
-    loading, 
+    error,
+    loading,
     refresh,
     isCustom,
     isOutsideCoverage: false,
@@ -369,3 +369,4 @@ export function useGeolocation() {
 }
 
 export default useGeolocation;
+

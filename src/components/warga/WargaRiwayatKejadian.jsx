@@ -100,7 +100,7 @@ export default function WargaRiwayatKejadian() {
           month: 'short',
           year: 'numeric',
         }) +
-        ' â€¢ ' +
+        ' • ' +
         timeStr +
         ' WIB'
       )
@@ -124,87 +124,83 @@ export default function WargaRiwayatKejadian() {
         </div>
 
         {/* Filter Controls (Search, Year, Status) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+        <div className="riwayat-filter-controls-row">
           {/* Quick Search */}
-          <div style={{ position: 'relative' }}>
+          <div className="riwayat-search-box-wrap">
             <input
               type="text"
               placeholder="Cari desa / kata kunci..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              style={{
-                padding: '7px 28px 7px 32px',
-                borderRadius: '999px',
-                border: '1px solid #cbd5e1',
-                fontSize: '0.8rem',
-                outline: 'none',
-                width: '190px',
-                background: '#ffffff',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
-              }}
+              className="riwayat-search-input"
             />
-            <span style={{ position: 'absolute', left: '11px', top: '7px', fontSize: '13px', color: '#94a3b8' }}>
-              ðŸ”
+            <span className="riwayat-search-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
             </span>
             {search && (
               <button
                 type="button"
                 onClick={() => setSearch('')}
                 aria-label="Hapus pencarian"
-                style={{ position: 'absolute', right: '8px', top: '5px', border: 'none', background: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '13px' }}
+                className="riwayat-search-clear"
               >
-                âœ•
+                ✕
               </button>
             )}
           </div>
 
-          {/* Filter Tahun */}
-          <div className="riwayat-filter-segmented">
-            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b', padding: '0 6px' }}>
-              Tahun:
-            </span>
-            {['semua', '2026', '2025', '2024', '2023'].map((y) => (
-              <button
-                key={y}
-                type="button"
-                className={`riwayat-filter-pill-btn ${year === y ? 'active' : ''}`}
-                onClick={() => setYear(y)}
-              >
-                {y === 'semua' ? 'Semua' : y}
-              </button>
-            ))}
-          </div>
+          <div className="riwayat-filter-segmented-scroll">
+            {/* Filter Tahun */}
+            <div className="riwayat-filter-segmented">
+              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b', padding: '0 6px' }}>
+                Tahun:
+              </span>
+              {['semua', '2026', '2025', '2024', '2023'].map((y) => (
+                <button
+                  key={y}
+                  type="button"
+                  className={`riwayat-filter-pill-btn ${year === y ? 'active' : ''}`}
+                  onClick={() => setYear(y)}
+                >
+                  {y === 'semua' ? 'Semua' : y}
+                </button>
+              ))}
+            </div>
 
-          {/* Filter Kategori */}
-          <div className="riwayat-filter-segmented">
-            <button
-              type="button"
-              className={`riwayat-filter-pill-btn ${filter === 'semua' ? 'active' : ''}`}
-              onClick={() => setFilter('semua')}
-            >
-              Semua Status
-            </button>
-            <button
-              type="button"
-              className={`riwayat-filter-pill-btn ${filter === 'awas' ? 'active' : ''}`}
-              onClick={() => setFilter('awas')}
-            >
-              Awas
-            </button>
-            <button
-              type="button"
-              className={`riwayat-filter-pill-btn ${filter === 'siaga' ? 'active' : ''}`}
-              onClick={() => setFilter('siaga')}
-            >
-              Siaga
-            </button>
-            <button
-              type="button"
-              className={`riwayat-filter-pill-btn ${filter === 'waspada' ? 'active' : ''}`}
-              onClick={() => setFilter('waspada')}
-            >
-              Waspada
-            </button>
+            {/* Filter Kategori */}
+            <div className="riwayat-filter-segmented">
+              <button
+                type="button"
+                className={`riwayat-filter-pill-btn ${filter === 'semua' ? 'active' : ''}`}
+                onClick={() => setFilter('semua')}
+              >
+                Semua Status
+              </button>
+              <button
+                type="button"
+                className={`riwayat-filter-pill-btn ${filter === 'awas' ? 'active' : ''}`}
+                onClick={() => setFilter('awas')}
+              >
+                Awas
+              </button>
+              <button
+                type="button"
+                className={`riwayat-filter-pill-btn ${filter === 'siaga' ? 'active' : ''}`}
+                onClick={() => setFilter('siaga')}
+              >
+                Siaga
+              </button>
+              <button
+                type="button"
+                className={`riwayat-filter-pill-btn ${filter === 'waspada' ? 'active' : ''}`}
+                onClick={() => setFilter('waspada')}
+              >
+                Waspada
+              </button>
+            </div>
           </div>
         </div>
       </div>

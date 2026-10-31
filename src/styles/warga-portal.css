@@ -3133,6 +3133,111 @@
   }
 }
 
+/* RiskMap Action Buttons */
+.riskmap-actions-bar {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.riskmap-btn {
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  backdrop-filter: blur(4px);
+  transition: all 0.15s ease;
+}
+
+.riskmap-btn.btn-user-loc {
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  border: 1.5px solid #93c5fd;
+}
+
+.riskmap-btn.btn-recenter {
+  background-color: rgba(255, 255, 255, 0.95);
+  color: #1e3a8a;
+  border: 1px solid #cbd5e1;
+}
+
+.riskmap-btn:hover {
+  transform: translateY(-1px);
+}
+
+/* Warga SOS Heading */
+.warga-sos-head-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Warga Riwayat Filter Controls */
+.riwayat-filter-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  width: auto;
+}
+
+.riwayat-search-box-wrap {
+  position: relative;
+}
+
+.riwayat-search-input {
+  padding: 7px 28px 7px 32px;
+  border-radius: 999px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.8rem;
+  outline: none;
+  width: 190px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.riwayat-search-icon {
+  position: absolute;
+  left: 11px;
+  top: 9px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+}
+
+.riwayat-search-clear {
+  position: absolute;
+  right: 8px;
+  top: 6px;
+  border: none;
+  background: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.riwayat-filter-segmented-scroll {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+  padding-bottom: 2px;
+}
+
 @media (max-width: 640px) {
   .warga-profile-info {
     display: none;
@@ -3143,6 +3248,94 @@
   .warga-sim-active-badge {
     padding: 3px 8px;
     font-size: 0.68rem;
+  }
+
+  /* Beranda Header & Sapaan */
+  .warga-beranda-head {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+    margin-bottom: 18px !important;
+  }
+  .warga-greeting-wrap .greeting-sub {
+    font-size: 1.15rem !important;
+  }
+  .warga-greeting-wrap h1 {
+    font-size: 1.45rem !important;
+    line-height: 1.25 !important;
+  }
+  .warga-village-picker-btn {
+    align-self: flex-start !important;
+  }
+
+  /* Hero Overview Card */
+  .warga-hero-card {
+    padding: 20px 16px !important;
+    gap: 18px !important;
+    margin-bottom: 18px !important;
+  }
+  .warga-donut-gauge-box {
+    width: 105px !important;
+    height: 105px !important;
+  }
+  .warga-donut-gauge-box svg {
+    width: 105px !important;
+    height: 105px !important;
+  }
+  .warga-donut-inner-text strong {
+    font-size: 1.6rem !important;
+  }
+  .warga-donut-inner-text small {
+    font-size: 0.58rem !important;
+  }
+  .warga-hero-status-col h2 {
+    font-size: 1.15rem !important;
+  }
+  .warga-hero-status-col p {
+    font-size: 0.78rem !important;
+  }
+
+  /* Peta & Posko */
+  .peta-legend-strip {
+    flex-wrap: wrap !important;
+    gap: 8px 14px !important;
+    justify-content: flex-start !important;
+    padding: 10px 4px 4px !important;
+  }
+  .riskmap-actions-bar {
+    top: 8px !important;
+    right: 8px !important;
+    gap: 5px !important;
+  }
+  .riskmap-btn {
+    padding: 5px 8px !important;
+    font-size: 11px !important;
+    gap: 4px !important;
+  }
+
+  /* Riwayat */
+  .riwayat-filter-controls-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    width: 100% !important;
+  }
+  .riwayat-search-box-wrap {
+    width: 100% !important;
+  }
+  .riwayat-search-input {
+    width: 100% !important;
+  }
+
+  /* SOS */
+  .warga-sos-head-title {
+    gap: 6px 10px !important;
+    font-size: 1.35rem !important;
+  }
+
+  /* Topbar breadcrumb */
+  .warga-topbar-breadcrumb {
+    max-width: 170px !important;
   }
 }
 
@@ -3893,3 +4086,94 @@
   }
 }
 
+
+
+/* Warga Emergency Top Banner */
+.warga-emergency-top-banner {
+  position: sticky;
+  top: 0;
+  z-index: 1200;
+  background: #dc2626;
+  color: #ffffff;
+  padding: 10px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.warga-emergency-top-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.warga-emergency-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.warga-emergency-text-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.warga-emergency-title {
+  font-size: 0.94rem;
+  letter-spacing: 0.02em;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.warga-emergency-subtitle {
+  opacity: 0.95;
+  font-weight: 500;
+  font-size: 0.84rem;
+}
+
+.warga-emergency-sos-btn {
+  background: #ffffff;
+  color: #dc2626;
+  border: none;
+  padding: 6px 18px;
+  border-radius: 9999px;
+  font-weight: 800;
+  font-size: 0.82rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .warga-emergency-top-banner {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    padding: 10px 14px !important;
+  }
+  .warga-emergency-title {
+    font-size: 0.85rem !important;
+  }
+  .warga-emergency-subtitle {
+    font-size: 0.75rem !important;
+  }
+  .warga-emergency-sos-btn {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 8px 16px !important;
+  }
+}

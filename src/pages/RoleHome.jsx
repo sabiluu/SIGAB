@@ -439,63 +439,23 @@ function WargaHome() {
       <div className="warga-main-container">
         {/* 0. EMERGENCY TOP INDICATOR BAR */}
         {isEmergencyActive && (
-          <div style={{
-            position: 'sticky',
-            top: 0,
-            zIndex: 1200,
-            background: '#dc2626',
-            color: '#ffffff',
-            padding: '10px 24px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            fontWeight: 700,
-            boxShadow: '0 4px 14px rgba(220, 38, 38, 0.4)',
-            borderBottom: '1px solid rgba(255,255,255,0.2)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-              <span style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '26px',
-                height: '26px',
-                borderRadius: '50%',
-                background: 'rgba(255,255,255,0.22)',
-                fontSize: '14px'
-              }}>
-                📢
-              </span>
-              <span style={{ fontSize: '0.94rem', letterSpacing: '0.02em', fontWeight: 800, textTransform: 'uppercase' }}>
-                BANJIR PARAH — EVAKUASI SEKARANG
-              </span>
-              <span style={{ opacity: 0.95, fontWeight: 500, fontSize: '0.84rem' }}>
-                {geo.address ? geo.address.split(',')[0].replace(/^Desa\s+/i, '') : 'Baureno'} • Level 4 • {liveTimeStr}
-              </span>
+          <div className="warga-emergency-top-banner">
+            <div className="warga-emergency-top-info">
+              <span className="warga-emergency-icon">📢</span>
+              <div className="warga-emergency-text-wrap">
+                <span className="warga-emergency-title">BANJIR PARAH — EVAKUASI SEKARANG</span>
+                <span className="warga-emergency-subtitle">
+                  {geo.address ? geo.address.split(',')[0].replace(/^Desa\s+/i, '') : 'Baureno'} • Level 4 • {liveTimeStr}
+                </span>
+              </div>
             </div>
 
             <button
               type="button"
               onClick={() => handleSelectTab('sos')}
-              style={{
-                background: '#ffffff',
-                color: '#dc2626',
-                border: 'none',
-                padding: '6px 18px',
-                borderRadius: '9999px',
-                fontWeight: 800,
-                fontSize: '0.82rem',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                transition: 'transform 0.15s ease'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.04)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              className="warga-emergency-sos-btn"
             >
-              <span style={{ fontSize: '0.95rem' }}>⚠️</span>
+              <span>⚠️</span>
               <span>MINTA BANTUAN SOS</span>
             </button>
           </div>
@@ -1013,7 +973,7 @@ function WargaHome() {
 }
 
 function AdminHome() {
-  const [sidebarOpen, setSidebarOpen] = useState(() => getStoredSidebarState(true))
+  const [sidebarOpen, setSidebarOpen] = useState(() => getStoredSidebarState(typeof window !== 'undefined' ? window.innerWidth > 1024 : true))
   const [currentTime, setCurrentTime] = useState(new Date())
   const [isEmergency, setIsEmergency] = useState(false)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
@@ -1024,6 +984,16 @@ function AdminHome() {
     if (typeof window !== 'undefined' && window.innerWidth > 1024) {
       setStoredSidebarState(sidebarOpen)
     }
+  }, [sidebarOpen])
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth <= 1024 && sidebarOpen) {
+        setSidebarOpen(false)
+      }
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
   }, [sidebarOpen])
 
   const fetchTickets = () => {
@@ -1135,77 +1105,21 @@ function AdminHome() {
     <div className="admin-portal-wrapper" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
       {/* 0. EMERGENCY TOP INDICATOR BAR FOR ADMIN */}
       {isEmergency && (
-        <div style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 1200,
-          background: '#dc2626',
-          color: '#ffffff',
-          padding: '10px 24px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          fontWeight: 700,
-          boxShadow: '0 4px 14px rgba(220, 38, 38, 0.4)',
-          borderBottom: '1px solid rgba(255,255,255,0.2)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            <span style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '26px',
-              height: '26px',
-              borderRadius: '50%',
-              background: 'rgba(255,255,255,0.22)',
-              fontSize: '14px'
-            }}>
-              📢
-            </span>
-            <span style={{ fontSize: '0.94rem', letterSpacing: '0.02em', fontWeight: 800, textTransform: 'uppercase' }}>
-              STATUS DARURAT BANJIR PARAH AKTIF — SIAGA LEVEL 4 (BENGAWAN SOLO)
-            </span>
-            <span style={{ opacity: 0.95, fontWeight: 500, fontSize: '0.84rem' }}>
-              Kec. Baureno • Live Pusdalops BPBD • {timeStr}
-            </span>
+        <div className="admin-emergency-top-banner">
+          <div className="admin-emergency-top-info">
+            <span className="admin-emergency-icon">📢</span>
+            <div className="admin-emergency-text-wrap">
+              <span className="admin-emergency-title">STATUS DARURAT AKTIF — SIAGA LEVEL 4</span>
+              <span className="admin-emergency-subtitle">Kec. Baureno • Pusdalops BPBD • {timeStr}</span>
+            </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <a
-              href="#sos"
-              style={{
-                background: '#ffffff',
-                color: '#dc2626',
-                textDecoration: 'none',
-                padding: '6px 18px',
-                borderRadius: '9999px',
-                fontWeight: 800,
-                fontSize: '0.82rem',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
-              }}
-            >
+          <div className="admin-emergency-top-actions">
+            <a href="#sos" className="btn-admin-sos-link">
               <span>⚠️</span>
-              <span>LIHAT TIKET SOS ({activeTickets.length})</span>
+              <span>TIKET SOS ({activeTickets.length})</span>
             </a>
-            <button
-              type="button"
-              onClick={toggleEmergency}
-              style={{
-                background: 'rgba(0,0,0,0.25)',
-                color: '#ffffff',
-                border: '1px solid rgba(255,255,255,0.4)',
-                padding: '5px 14px',
-                borderRadius: '9999px',
-                fontWeight: 600,
-                fontSize: '0.78rem',
-                cursor: 'pointer'
-              }}
-              title="Nonaktifkan status darurat"
-            >
+            <button type="button" onClick={toggleEmergency} className="btn-admin-deactivate-status">
               Nonaktifkan Status
             </button>
           </div>
@@ -1213,6 +1127,14 @@ function AdminHome() {
       )}
 
       <main className={`portal admin-portal ${sidebarOpen ? '' : 'sidebar-closed'}`} style={{ flex: 1 }}>
+      {/* Mobile Backdrop */}
+      {sidebarOpen && (
+        <div
+          className="admin-sidebar-backdrop"
+          onClick={() => setSidebarOpen(false)}
+          title="Tutup Menu"
+        />
+      )}
       <aside className="admin-sidebar">
         <div className="sidebar-header">
           <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)} title="Toggle Sidebar">
@@ -1221,17 +1143,17 @@ function AdminHome() {
           <Brand admin />
         </div>
         <nav>
-          <a className="active" href="#petugas">
+          <a className="active" href="#petugas" onClick={() => { if (typeof window !== 'undefined' && window.innerWidth <= 1024) setSidebarOpen(false) }}>
             <i>▦</i> <span>Dashboard</span>
           </a>
-          <a href="#radar">
+          <a href="#radar" onClick={() => { if (typeof window !== 'undefined' && window.innerWidth <= 1024) setSidebarOpen(false) }}>
             <i>◉</i> <span>Radar Peta</span>
           </a>
-          <a href="#sos">
+          <a href="#sos" onClick={() => { if (typeof window !== 'undefined' && window.innerWidth <= 1024) setSidebarOpen(false) }}>
             <i>▣</i> <span>Tiket SOS</span>
             {activeTickets.length > 0 && <b>{activeTickets.length}</b>}
           </a>
-          <a href="#posko">
+          <a href="#posko" onClick={() => { if (typeof window !== 'undefined' && window.innerWidth <= 1024) setSidebarOpen(false) }}>
             <i>♙</i> <span>Manajemen Posko</span>
           </a>
         </nav>
@@ -1262,6 +1184,15 @@ function AdminHome() {
       </aside>
       <section className="admin-content">
         <header className="admin-header">
+          <button
+            type="button"
+            className="admin-mobile-toggle"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            title="Menu Navigasi"
+            aria-label="Menu Navigasi"
+          >
+            ☰
+          </button>
           <div className="admin-time">
             <strong>{timeStr}</strong>
             <small>{dateStr}</small>
@@ -1273,10 +1204,10 @@ function AdminHome() {
             title="Klik untuk mengaktifkan simulasi banjir parah atau mengembalikan ke kondisi normal"
           >
             <span>
-              STATUS DARURAT (SIMULASI)
+              STATUS DARURAT
               <br />
               <strong style={{ color: isEmergency ? '#e11d48' : '#64748b' }}>
-                {isEmergency ? 'AKTIF (BANJIR PARAH)' : 'NONAKTIF (KONDISI REAL)'}
+                {isEmergency ? 'AKTIF' : 'NONAKTIF'}
               </strong>
             </span>
             <i className="toggle-indicator" />
@@ -1285,10 +1216,7 @@ function AdminHome() {
               .danger-toggle i.toggle-indicator::after { right: ${isEmergency ? '2px' : '22px'}; transition: all 0.3s; }
             `}</style>
           </div>
-          <div className="admin-avatar">BPBD</div>
-          <button onClick={() => setShowLogoutModal(true)} className="logout-btn" title="Keluar">
-            <i>⎋</i> Keluar
-          </button>
+
         </header>
         <div className="admin-dashboard">
           <div className="kpi-grid">

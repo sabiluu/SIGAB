@@ -184,3 +184,323 @@
 .sos-ticket small { color: #475569; font-size: 0.75rem; display: block; margin-bottom: 12px; }
 .sos-ticket button { width: 100%; background: #0f172a; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
 .sos-ticket button:hover { background: #1e293b; }
+
+
+/* ==========================================================================
+   Admin Mobile & Responsive Layout Overhaul
+   ========================================================================== */
+
+.admin-mobile-toggle {
+  display: none;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #1e293b;
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  font-size: 1.25rem;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.admin-mobile-toggle:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.admin-sidebar-backdrop {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  .admin-mobile-toggle {
+    display: inline-flex !important;
+  }
+
+  .admin-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+  }
+
+  .admin-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 270px !important;
+    max-width: 85vw !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    z-index: 1300 !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .admin-portal:not(.sidebar-closed) .admin-sidebar {
+    transform: translateX(0) !important;
+    box-shadow: 16px 0 44px rgba(15, 23, 42, 0.6) !important;
+  }
+
+  .admin-portal.sidebar-closed .admin-sidebar {
+    transform: translateX(-100%) !important;
+    width: 270px !important;
+    flex: 0 0 270px !important;
+  }
+
+  /* Make sure labels and texts are visible when mobile drawer is opened */
+  .admin-portal:not(.sidebar-closed) .brand-text,
+  .admin-portal:not(.sidebar-closed) .role-brand,
+  .admin-portal:not(.sidebar-closed) .admin-sidebar nav a span,
+  .admin-portal:not(.sidebar-closed) .admin-sidebar nav a b,
+  .admin-portal:not(.sidebar-closed) .op-text,
+  .admin-portal:not(.sidebar-closed) .warga-sidebar-logout-btn span {
+    display: flex !important;
+  }
+
+  .admin-portal:not(.sidebar-closed) .sidebar-header {
+    justify-content: flex-start !important;
+    padding: 18px 16px !important;
+  }
+
+  .admin-portal:not(.sidebar-closed) .admin-sidebar nav a {
+    justify-content: flex-start !important;
+    padding: 0 !important;
+  }
+
+  .admin-portal:not(.sidebar-closed) .warga-sidebar-logout-btn {
+    justify-content: flex-start !important;
+    width: 100% !important;
+    padding: 10px 14px !important;
+  }
+
+  .admin-sidebar-backdrop {
+    display: block !important;
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(15, 23, 42, 0.55) !important;
+    backdrop-filter: blur(2px) !important;
+    z-index: 1250 !important;
+    animation: fadeIn 0.2s ease !important;
+  }
+
+  .admin-main-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .sos-queue {
+    max-height: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-header {
+    padding: 10px 14px !important;
+    height: 60px !important;
+    gap: 8px !important;
+    justify-content: space-between !important;
+  }
+
+  .admin-time {
+    display: none !important;
+  }
+
+  .danger-toggle {
+    padding: 5px 10px !important;
+    gap: 6px !important;
+  }
+
+  .danger-toggle span {
+    font-size: 0.58rem !important;
+    line-height: 1.15 !important;
+  }
+
+  .danger-toggle strong {
+    font-size: 0.65rem !important;
+  }
+
+  .danger-toggle i {
+    width: 34px !important;
+    height: 18px !important;
+  }
+
+  .danger-toggle i::after {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  .admin-avatar {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 0.72rem !important;
+  }
+
+  .logout-btn, .portal-tools button.logout-btn {
+    height: 34px !important;
+    padding: 0 10px !important;
+    font-size: 0.75rem !important;
+    gap: 4px !important;
+    margin-left: 0 !important;
+  }
+
+  .admin-dashboard {
+    padding: 16px 12px 40px !important;
+  }
+
+  .kpi-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .kpi-card {
+    padding: 14px 12px !important;
+  }
+
+  .kpi-card strong {
+    font-size: 1.35rem !important;
+  }
+
+  .risk-map {
+    padding: 14px !important;
+  }
+
+  .sos-queue {
+    padding: 14px !important;
+    margin-top: 0 !important;
+  }
+
+  .admin-section-head {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+}
+
+
+/* Admin Emergency Top Banner */
+.admin-emergency-top-banner {
+  position: sticky;
+  top: 0;
+  z-index: 1200;
+  background: #dc2626;
+  color: #ffffff;
+  padding: 10px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.admin-emergency-top-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-emergency-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.admin-emergency-text-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-emergency-title {
+  font-size: 0.94rem;
+  letter-spacing: 0.02em;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.admin-emergency-subtitle {
+  opacity: 0.95;
+  font-weight: 500;
+  font-size: 0.84rem;
+}
+
+.admin-emergency-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-admin-sos-link {
+  background: #ffffff;
+  color: #dc2626;
+  text-decoration: none;
+  padding: 6px 18px;
+  border-radius: 9999px;
+  font-weight: 800;
+  font-size: 0.82rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+}
+
+.btn-admin-deactivate-status {
+  background: rgba(0, 0, 0, 0.25);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  padding: 5px 14px;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 0.78rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .admin-emergency-top-banner {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    padding: 10px 14px !important;
+  }
+  .admin-emergency-title {
+    font-size: 0.85rem !important;
+  }
+  .admin-emergency-subtitle {
+    font-size: 0.75rem !important;
+  }
+  .admin-emergency-top-actions {
+    width: 100% !important;
+    display: flex !important;
+    gap: 8px !important;
+  }
+  .btn-admin-sos-link, .btn-admin-deactivate-status {
+    flex: 1 !important;
+    justify-content: center !important;
+    padding: 7px 10px !important;
+    font-size: 0.75rem !important;
+    text-align: center !important;
+  }
+  .admin-header .logout-btn span {
+    display: none !important;
+  }
+  .admin-header .logout-btn {
+    padding: 0 10px !important;
+    min-width: 36px !important;
+    justify-content: center !important;
+  }
+}

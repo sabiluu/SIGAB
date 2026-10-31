@@ -347,54 +347,24 @@ export default function RiskMap({
       `}</style>
 
       {/* Quick action buttons: User location & Recenter Baureno */}
-      <div style={{ position: 'absolute', top: '10px', right: '10px', zIndex: 1000, display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+      <div className="riskmap-actions-bar">
         {userLocation && userLocation[0] && userLocation[1] && (
           <button
             type="button"
             onClick={() => setUserCenterTrigger(prev => prev + 1)}
-            style={{
-              backgroundColor: '#eff6ff',
-              color: '#1d4ed8',
-              border: '1.5px solid #93c5fd',
-              borderRadius: '8px',
-              padding: '6px 12px',
-              fontSize: '12px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              backdropFilter: 'blur(4px)',
-              transition: 'all 0.15s ease'
-            }}
+            className="riskmap-btn btn-user-loc"
             title="Arahkan peta ke posisi lokasi Anda saat ini"
           >
-            <span>📍</span> Lokasi Saya
+            <span>📍</span> <span className="riskmap-btn-text">Lokasi Saya</span>
           </button>
         )}
         <button
           type="button"
           onClick={() => setRecenterTrigger(prev => prev + 1)}
-          style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-            color: '#1e3a8a',
-            border: '1px solid #cbd5e1',
-            borderRadius: '8px',
-            padding: '6px 12px',
-            fontSize: '12px',
-            fontWeight: 700,
-            cursor: 'pointer',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            backdropFilter: 'blur(4px)',
-            transition: 'all 0.15s ease'
-          }}
+          className="riskmap-btn btn-recenter"
           title="Pusatkan kembali peta ke seluruh wilayah Kecamatan Baureno"
         >
-          <span>🎯</span> Tampilkan Seluruh Baureno
+          <span>🎯</span> <span className="riskmap-btn-text">Seluruh Baureno</span>
         </button>
       </div>
 

@@ -7,7 +7,7 @@ import { getStoredSidebarState, setStoredSidebarState } from '../../utils/helper
 import '../../styles/role-home.css'
 
 export default function AdminLayout({ children, activeMenu }) {
-  const [sidebarOpen, setSidebarOpen] = useState(() => getStoredSidebarState(true))
+  const [sidebarOpen, setSidebarOpen] = useState(() => getStoredSidebarState(typeof window !== 'undefined' ? window.innerWidth > 1024 : true))
   const [currentTime, setCurrentTime] = useState(new Date())
   const [isEmergency, setIsEmergency] = useState(false)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
@@ -15,7 +15,19 @@ export default function AdminLayout({ children, activeMenu }) {
   const [sosCount, setSosCount] = useState(0)
 
   useEffect(() => {
-    setStoredSidebarState(sidebarOpen)
+    if (typeof window !== 'undefined' && window.innerWidth > 1024) {
+      setStoredSidebarState(sidebarOpen)
+    }
+  }, [sidebarOpen])
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth <= 1024 && sidebarOpen) {
+        setSidebarOpen(false)
+      }
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
   }, [sidebarOpen])
 
   useEffect(() => {
@@ -74,8 +86,23 @@ export default function AdminLayout({ children, activeMenu }) {
     { id: 'posko', label: 'Manajemen Posko', icon: '♙', href: '#posko' }
   ]
 
+  const handleNavClick = () => {
+    if (typeof window !== 'undefined' && window.innerWidth <= 1024) {
+      setSidebarOpen(false)
+    }
+  }
+
   return (
     <div className={`portal admin-portal ${sidebarOpen ? '' : 'sidebar-closed'}`}>
+      {/* Mobile Backdrop */}
+      {sidebarOpen && (
+        <div
+          className="admin-sidebar-backdrop"
+          onClick={() => setSidebarOpen(false)}
+          title="Tutup Menu"
+        />
+      )}
+
       <aside className="admin-sidebar">
         <div className="sidebar-header">
           <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>☰</button>
@@ -93,7 +120,7 @@ export default function AdminLayout({ children, activeMenu }) {
         
         <nav>
           {menuItems.map(item => (
-            <a key={item.id} href={item.href} className={activeMenu === item.id ? 'active' : ''}>
+            <a key={item.id} href={item.href} className={activeMenu === item.id ? 'active' : ''} onClick={handleNavClick}>
               <i>{item.icon}</i>
               <span>{item.label}</span>
               {item.badge && <b>{item.badge}</b>}
@@ -129,6 +156,15 @@ export default function AdminLayout({ children, activeMenu }) {
 
       <section className="admin-content">
         <header className="admin-header">
+          <button
+            type="button"
+            className="admin-mobile-toggle"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            title="Menu Navigasi"
+            aria-label="Menu Navigasi"
+          >
+            ☰
+          </button>
           <div className="admin-time">
             <strong>{timeStr}</strong>
             <small>{dateStr}</small>
@@ -149,8 +185,6 @@ export default function AdminLayout({ children, activeMenu }) {
               .danger-toggle i.toggle-indicator-layout::after { right: ${isEmergency ? '2px' : '22px'}; transition: all 0.3s; }
             `}</style>
           </div>
-          <div className="admin-avatar">●</div>
-          <button onClick={() => setShowLogoutModal(true)} className="logout-btn"><i>⎋</i> Keluar</button>
         </header>
         
         <main className="admin-dashboard">

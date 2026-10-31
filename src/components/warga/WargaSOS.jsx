@@ -631,7 +631,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
 
       {/* Header Title */}
       <div className="peta-posko-kicker">Layanan Tanggap Darurat</div>
-      <h1 className="peta-posko-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <h1 className="peta-posko-title warga-sos-head-title">
         <span>Permintaan Evakuasi (SOS)</span>
         <span className="sos-priority-tag">Prioritas Tinggi</span>
       </h1>
