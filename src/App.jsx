@@ -348,10 +348,21 @@ function App() {
         </nav>
 
         <div className="header-actions">
-          <a href="#masuk" className="header-login-link">Masuk</a>
-          <a href="#daftar-warga" className="header-register-btn">
-            Daftar sebagai Warga {SVG_ICONS.arrowRight}
-          </a>
+          {typeof window !== 'undefined' && localStorage.getItem('access_token') ? (
+            <a
+              href={localStorage.getItem('sigab_user_role') === 'petugas' ? '#petugas' : '#warga'}
+              className="header-register-btn"
+            >
+              Buka Dashboard Saya {SVG_ICONS.arrowRight}
+            </a>
+          ) : (
+            <>
+              <a href="#masuk" className="header-login-link">Masuk</a>
+              <a href="#daftar-warga" className="header-register-btn">
+                Daftar sebagai Warga {SVG_ICONS.arrowRight}
+              </a>
+            </>
+          )}
         </div>
       </header>
 
@@ -461,9 +472,11 @@ function App() {
 
                   <div className="hero-card-footer">
                     <span className="safe-evac-status">
-                      {SVG_ICONS.shieldCheck} Tidak ada perintah evakuasi
+                      {SVG_ICONS.shieldCheck} {isKecamatanSafe ? 'Tidak ada perintah evakuasi' : 'Pantau kesiapsiagaan desa'}
                     </span>
-                    <a href="#radar">Buka dashboard {SVG_ICONS.arrowRight}</a>
+                    <a href={typeof window !== 'undefined' && localStorage.getItem('access_token') && localStorage.getItem('sigab_user_role') === 'petugas' ? '#petugas' : '#warga'}>
+                      Buka dashboard {SVG_ICONS.arrowRight}
+                    </a>
                   </div>
                 </aside>
               </div>
@@ -550,7 +563,7 @@ function App() {
               </div>
               <h3>Peta risiko yang jelas</h3>
               <p>Peta wilayah interaktif berbasis desa, memantau titik rawan banjir secara akurat.</p>
-              <a href="#radar" className="feature-card-link">
+              <a href="#status-wilayah" className="feature-card-link">
                 Buka peta digital {SVG_ICONS.arrowRight}
               </a>
             </article>
@@ -844,12 +857,15 @@ function App() {
 
               <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
                 <a 
-                  href="#radar" 
+                  href="#warga" 
                   className="btn-primary-teal" 
                   style={{ flex: 1, justifyContent: 'center' }}
-                  onClick={() => setSelectedVillageForRoute(null)}
+                  onClick={() => {
+                    try { sessionStorage.setItem('sigab_warga_tab', 'peta') } catch (e) {}
+                    setSelectedVillageForRoute(null)
+                  }}
                 >
-                  {SVG_ICONS.map} Buka di Peta Radar
+                  {SVG_ICONS.map} Buka Peta &amp; Rute Evakuasi
                 </a>
                 <button 
                   type="button" 

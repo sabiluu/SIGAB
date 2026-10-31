@@ -949,7 +949,7 @@ function WargaHome() {
           />
         )}
         {activeTab === 'riwayat' && <WargaRiwayatKejadian />}
-        {activeTab === 'panduan' && <WargaPanduan />}
+        {activeTab === 'panduan' && <WargaPanduan isEmergencyActive={isEmergencyActive} />}
         {activeTab === 'kontak' && <WargaKontakDarurat isEmergencyActive={isEmergencyActive} />}
         {activeTab === 'sos' && (
           <WargaSOS 
@@ -978,6 +978,7 @@ function AdminHome() {
   const [isEmergency, setIsEmergency] = useState(false)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [tickets, setTickets] = useState([])
+  const [adminToast, setAdminToast] = useState(null)
   const { data: realtimeData } = useDashboardRealtime()
 
   useEffect(() => {
@@ -1078,9 +1079,11 @@ function AdminHome() {
       await createSOSTicket(payload)
       fetchTickets()
       playSosAlertTone()
-      alert('Tiket SOS simulasi banjir parah berhasil dibuat dan masuk ke antrean live!')
+      setAdminToast({ type: 'success', text: '✓ Tiket SOS simulasi banjir parah berhasil dibuat dan masuk ke antrean live!' })
+      setTimeout(() => setAdminToast(null), 4000)
     } catch (err) {
-      alert('Gagal membuat tiket simulasi: ' + (err.message || 'Error'))
+      setAdminToast({ type: 'error', text: '⚠️ Gagal membuat tiket simulasi: ' + (err.message || 'Error') })
+      setTimeout(() => setAdminToast(null), 4000)
     }
   }
 
@@ -1198,6 +1201,31 @@ function AdminHome() {
 
         </header>
         <div className="admin-dashboard">
+          {adminToast && (
+            <div style={{
+              marginBottom: '16px',
+              padding: '12px 16px',
+              borderRadius: '10px',
+              background: adminToast.type === 'error' ? '#fef2f2' : '#ecfdf5',
+              border: `1.5px solid ${adminToast.type === 'error' ? '#fecaca' : '#a7f3d0'}`,
+              color: adminToast.type === 'error' ? '#b91c1c' : '#065f46',
+              fontWeight: 700,
+              fontSize: '0.86rem',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+            }}>
+              <span>{adminToast.text}</span>
+              <button
+                type="button"
+                onClick={() => setAdminToast(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 800, color: 'inherit' }}
+              >
+                ✕
+              </button>
+            </div>
+          )}
           <div className="kpi-grid">
             <Kpi icon="♜" label="RERATA DEBIT SUNGAI" value={dischargeVal} unit="m³/s" change={isEmergency ? 'Simulasi Banjir Parah' : 'Live GloFAS'} danger={isEmergency} />
             <Kpi icon="☁" label="RERATA CURAH HUJAN" value={rainVal} unit="mm" change={isEmergency ? 'Simulasi Hujan Ekstrem' : 'Live Open-Meteo'} danger={isEmergency} />

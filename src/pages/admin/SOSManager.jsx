@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
 import { getSOSTickets, updateSOSStatus } from '../../services/sosService'
+import { resolveMediaUrl } from '../../services/api'
 import wsService from '../../services/wsService'
 import { formatWIBDateTime, formatWIBTime } from '../../utils/helpers'
 
@@ -392,13 +393,13 @@ export default function SOSManager() {
                   </small>
                   <div style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', border: '1px solid #cbd5e1', background: '#0f172a' }}>
                     <img 
-                      src={activeTicket.photo_url.startsWith('http') || activeTicket.photo_url.startsWith('data:') ? activeTicket.photo_url : `http://localhost:8000${activeTicket.photo_url}`} 
+                      src={resolveMediaUrl(activeTicket.photo_url)} 
                       alt="Foto Situasi Banjir" 
                       style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', display: 'block', cursor: 'pointer' }}
-                      onClick={() => setViewingPhoto(activeTicket.photo_url.startsWith('http') || activeTicket.photo_url.startsWith('data:') ? activeTicket.photo_url : `http://localhost:8000${activeTicket.photo_url}`)}
+                      onClick={() => setViewingPhoto(resolveMediaUrl(activeTicket.photo_url))}
                     />
                     <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '6px 10px', background: 'rgba(0,0,0,0.7)', color: 'white', fontSize: '0.72rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ cursor: 'pointer' }} onClick={() => setViewingPhoto(activeTicket.photo_url.startsWith('http') || activeTicket.photo_url.startsWith('data:') ? activeTicket.photo_url : `http://localhost:8000${activeTicket.photo_url}`)}>🔍 Klik untuk memperbesar</span>
+                      <span style={{ cursor: 'pointer' }} onClick={() => setViewingPhoto(resolveMediaUrl(activeTicket.photo_url))}>🔍 Klik untuk memperbesar</span>
                       <span style={{ background: '#2563eb', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>Foto Terverifikasi</span>
                     </div>
                   </div>

@@ -32,9 +32,12 @@ export async function login(email, password, role) {
       // Gunakan user object yang disertakan dalam response /auth/login
     }
 
+    const resolvedUser = profile || { role: role === 'petugas' ? 'petugas' : 'warga' };
+    const resolvedRole = (resolvedUser.role === 'admin' || resolvedUser.role === 'petugas' || role === 'petugas') ? 'petugas' : 'warga';
+    localStorage.setItem('sigab_user_role', resolvedRole);
     return {
       ...response,
-      user: profile || { role: role === 'petugas' ? 'petugas' : 'warga' },
+      user: resolvedUser,
     };
   } catch (err) {
     // Jika koneksi server offline / gagal terhubung, izinkan masuk mode demo agar pengguna tidak terhambat
@@ -43,6 +46,7 @@ export async function login(email, password, role) {
       const demoToken = 'demo-session-' + Date.now();
       localStorage.setItem('access_token', demoToken);
       const isPetugas = role === 'petugas' || email?.includes('bpbd') || email?.includes('admin');
+      localStorage.setItem('sigab_user_role', isPetugas ? 'petugas' : 'warga');
       return {
         access_token: demoToken,
         token_type: 'bearer',
@@ -91,6 +95,7 @@ export async function register(data) {
 
 export function logout() {
   localStorage.removeItem('access_token');
+  localStorage.removeItem('sigab_user_role');
   try { sessionStorage.removeItem('sigab_warga_tab'); } catch (e) { /* abaikan */ }
   window.location.hash = '';
 }

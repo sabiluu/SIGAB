@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-const WS_BASE_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8000';
+const WS_BASE_URL = (import.meta.env.VITE_WS_URL || import.meta.env.VITE_API_URL || 'ws://localhost:8000').replace(/\/+$/, '').replace(/^http/, 'ws');
 
 export function useWebSocket(endpoint) {
   const [lastMessage, setLastMessage] = useState(null);

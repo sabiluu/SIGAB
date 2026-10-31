@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { createSOSTicket, getMyTickets, uploadSOSPhoto } from '../../services/sosService';
+import { resolveMediaUrl } from '../../services/api';
 import wsService from '../../services/wsService';
 import { useAuth } from '../../context/AuthContext';
 import { formatWIBDateTime } from '../../utils/helpers';
@@ -1226,10 +1227,10 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                       📷 Foto Situasi yang Dikirim:
                     </span>
                     <img 
-                      src={ticket.photo_url.startsWith('http') || ticket.photo_url.startsWith('data:') ? ticket.photo_url : `http://localhost:8000${ticket.photo_url}`} 
+                      src={resolveMediaUrl(ticket.photo_url)} 
                       alt="Foto Lokasi" 
                       style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--warga-border)', cursor: 'pointer' }}
-                      onClick={() => setLightboxPhoto(ticket.photo_url.startsWith('http') || ticket.photo_url.startsWith('data:') ? ticket.photo_url : `http://localhost:8000${ticket.photo_url}`)}
+                      onClick={() => setLightboxPhoto(resolveMediaUrl(ticket.photo_url))}
                     />
                   </div>
                 )}
@@ -1438,16 +1439,16 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                   {t.photo_url && (
                     <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid var(--warga-border)', display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <img 
-                        src={t.photo_url.startsWith('http') || t.photo_url.startsWith('data:') ? t.photo_url : `http://localhost:8000${t.photo_url}`} 
+                        src={resolveMediaUrl(t.photo_url)} 
                         alt="Foto Tiket" 
                         style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--warga-border)', cursor: 'pointer' }}
-                        onClick={() => setLightboxPhoto(t.photo_url.startsWith('http') || t.photo_url.startsWith('data:') ? t.photo_url : `http://localhost:8000${t.photo_url}`)}
+                        onClick={() => setLightboxPhoto(resolveMediaUrl(t.photo_url))}
                       />
                       <div>
                         <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--warga-navy)', display: 'block' }}>📷 Foto Situasi Banjir</span>
                         <button
                           type="button"
-                          onClick={() => setLightboxPhoto(t.photo_url.startsWith('http') || t.photo_url.startsWith('data:') ? t.photo_url : `http://localhost:8000${t.photo_url}`)}
+                          onClick={() => setLightboxPhoto(resolveMediaUrl(t.photo_url))}
                           style={{ background: 'none', border: 'none', color: 'var(--warga-teal)', fontSize: '0.74rem', cursor: 'pointer', padding: 0, textDecoration: 'underline', fontWeight: 700 }}
                         >
                           Lihat Ukuran Penuh ↗

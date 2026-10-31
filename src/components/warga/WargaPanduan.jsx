@@ -1,4 +1,4 @@
-export default function WargaPanduan() {
+export default function WargaPanduan({ isEmergencyActive = false }) {
   const guideCards = [
     {
       num: '01',
@@ -88,16 +88,39 @@ export default function WargaPanduan() {
 
   return (
     <section className="warga-section">
-      {/* Top Green Alert Banner */}
-      <div className="panduan-alert-banner">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-          <polyline points="9 12 11 14 15 10" />
-        </svg>
-        <span>
-          <strong>Status AMAN aktif</strong> — Tetap siaga dan pelajari langkah kesiapsiagaan di bawah ini sebagai
-          tindakan pencegahan dini.
-        </span>
+      {/* Top Alert Banner */}
+      <div
+        className="panduan-alert-banner"
+        style={isEmergencyActive ? {
+          background: '#fef2f2',
+          border: '1px solid #fecaca',
+          color: '#b91c1c'
+        } : {}}
+      >
+        {isEmergencyActive ? (
+          <>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2.4" style={{ flexShrink: 0 }}>
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+            <span>
+              <strong>Status AWAS (DARURAT BANJIR) aktif</strong> — Segera terapkan langkah{' '}
+              <strong>Saat Banjir (03–05)</strong> di bawah ini dan ikuti arahan petugas evakuasi menuju posko terdekat!
+            </span>
+          </>
+        ) : (
+          <>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              <polyline points="9 12 11 14 15 10" />
+            </svg>
+            <span>
+              <strong>Status AMAN aktif</strong> — Tetap siaga dan pelajari langkah kesiapsiagaan di bawah ini sebagai
+              tindakan pencegahan dini.
+            </span>
+          </>
+        )}
       </div>
 
       <div className="warga-section-header">

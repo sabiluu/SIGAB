@@ -292,6 +292,16 @@ export default function WargaBeranda({
     return routeData.coordinates.map(c => [c[1], c[0]])
   }, [routeData])
 
+  const activeVillageDisplay = useMemo(() => {
+    const v = BAURENO_VILLAGES.find(item => item.id === Number(selectedVillageId || userProfile?.village_id))
+    return v ? `Desa ${v.name.replace(' (Pusat)', '')}` : 'Desa Baureno'
+  }, [selectedVillageId, userProfile?.village_id])
+
+  const lastUpdatedStr = useMemo(() => {
+    const now = new Date()
+    return `${String(now.getHours()).padStart(2, '0')}.${String(now.getMinutes()).padStart(2, '0')} WIB`
+  }, [data, isSevereFlood])
+
   // =========================================================================
   // VIEW MODE: PETA & POSKO (Screenshot 2)
   // =========================================================================
@@ -627,7 +637,7 @@ export default function WargaBeranda({
               ? 'Tidak ada tanda banjir dalam waktu dekat. Cukup pantau informasi seperti biasa.' 
               : 'Terjadi peningkatan debit sungai. Pantau peringatan dan siapkan dokumen penting.'}
           </p>
-          <span className="warga-hero-meta">Desa Baureno • Diperbarui 21.00</span>
+          <span className="warga-hero-meta">{activeVillageDisplay} • Diperbarui {lastUpdatedStr}</span>
         </div>
       </div>
 
@@ -639,16 +649,34 @@ export default function WargaBeranda({
           
           <div className="warga-steps-list">
             <div className="warga-step-row">
-              <span className="warga-step-num">1</span>
-              <span className="warga-step-text">Pantau info cuaca &amp; debit sungai</span>
+              <span className="warga-step-num" style={isAwas ? { background: '#fee2e2', color: '#dc2626' } : {}}>1</span>
+              <span className="warga-step-text">
+                {isAwas
+                  ? 'Segera amankan keluarga & matikan listrik rumah'
+                  : (isSiaga || isWaspada)
+                    ? 'Siapkan tas siaga bencana & dokumen penting'
+                    : 'Pantau info cuaca & debit sungai'}
+              </span>
             </div>
             <div className="warga-step-row">
-              <span className="warga-step-num">2</span>
-              <span className="warga-step-text">Pastikan nomor darurat tersimpan</span>
+              <span className="warga-step-num" style={isAwas ? { background: '#fee2e2', color: '#dc2626' } : {}}>2</span>
+              <span className="warga-step-text">
+                {isAwas
+                  ? `Bergerak menuju ${nearest.name} (${nearest.distanceStr} km)`
+                  : (isSiaga || isWaspada)
+                    ? 'Pantau kenaikan debit Sungai Bengawan Solo'
+                    : 'Pastikan nomor darurat tersimpan'}
+              </span>
             </div>
             <div className="warga-step-row">
-              <span className="warga-step-num">3</span>
-              <span className="warga-step-text">Kenali lokasi posko terdekat</span>
+              <span className="warga-step-num" style={isAwas ? { background: '#fee2e2', color: '#dc2626' } : {}}>3</span>
+              <span className="warga-step-text">
+                {isAwas
+                  ? 'Kirim sinyal SOS bila terjebak genangan tinggi'
+                  : (isSiaga || isWaspada)
+                    ? 'Bersiap evakuasi mandiri untuk kelompok rentan'
+                    : 'Kenali lokasi posko terdekat'}
+              </span>
             </div>
           </div>
 
@@ -743,10 +771,42 @@ export default function WargaBeranda({
 
         {/* Card 4: Peringatan terbaru */}
         <div className="warga-card">
-          <h3 className="warga-card-title">Peringatan terbaru</h3>
-          <p className="warga-alert-empty-text">
-            Belum ada peringatan. Kami akan memberi tahu jika status desamu berubah.
-          </p>
+          <div className="warga-card-header-row" style={{ marginBottom: '8px' }}>
+            <h3 className="warga-card-title" style={{ margin: 0 }}>Peringatan terbaru</h3>
+            <span style={{
+              fontSize: '0.7rem',
+              fontWeight: 700,
+              padding: '2px 8px',
+              borderRadius: '999px',
+              background: isAwas ? '#fee2e2' : isSiaga ? '#ffedd5' : isWaspada ? '#fef3c7' : '#ecfdf5',
+              color: isAwas ? '#dc2626' : isSiaga ? '#ea580c' : isWaspada ? '#d97706' : '#059669'
+            }}>
+              {isAwas ? 'AWAS LEVEL 4' : isSiaga ? 'SIAGA LEVEL 3' : isWaspada ? 'WASPADA LEVEL 2' : 'NORMAL'}
+            </span>
+          </div>
+          {isAwas ? (
+            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '10px', padding: '10px 12px', marginTop: '6px' }}>
+              <strong style={{ color: '#b91c1c', fontSize: '0.84rem', display: 'block', marginBottom: '4px' }}>
+                🚨 Peringatan Evakuasi {activeVillageDisplay}
+              </strong>
+              <p style={{ margin: 0, fontSize: '0.78rem', color: '#7f1d1d', lineHeight: 1.45 }}>
+                Luapan Bengawan Solo mencapai level kritis ({probVal}%). Warga diimbau segera menuju <strong>{nearest.name}</strong> atau menekan tombol SOS jika butuh jemputan perahu.
+              </p>
+            </div>
+          ) : (isSiaga || isWaspada) ? (
+            <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '10px', padding: '10px 12px', marginTop: '6px' }}>
+              <strong style={{ color: '#92400e', fontSize: '0.84rem', display: 'block', marginBottom: '4px' }}>
+                ⚠️ Imbauan Kewaspadaan {activeVillageDisplay}
+              </strong>
+              <p style={{ margin: 0, fontSize: '0.78rem', color: '#78350f', lineHeight: 1.45 }}>
+                Probabilitas genangan terpantau {probVal}%. Amankan dokumen penting dan pantau informasi dari Pusdalops BPBD Baureno.
+              </p>
+            </div>
+          ) : (
+            <p className="warga-alert-empty-text">
+              Belum ada peringatan darurat untuk {activeVillageDisplay}. Kami akan memberi tahu seketika jika status desamu berubah.
+            </p>
+          )}
         </div>
       </div>
 

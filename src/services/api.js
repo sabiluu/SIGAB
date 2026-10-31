@@ -1,5 +1,14 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/+$/, '');
 const DEFAULT_TIMEOUT = 10000;
+
+export function resolveMediaUrl(url) {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:') || url.startsWith('blob:')) {
+    return url;
+  }
+  const cleanPath = url.startsWith('/') ? url : `/${url}`;
+  return `${API_BASE_URL}${cleanPath}`;
+}
 
 export class ApiError extends Error {
   constructor(message, status = 0) {
@@ -8,6 +17,7 @@ export class ApiError extends Error {
     this.status = status;
   }
 }
+
 export async function apiFetch(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
 
@@ -30,8 +40,15 @@ export async function apiFetch(endpoint, options = {}) {
     if (!response.ok) {
       if (response.status === 401) {
         localStorage.removeItem('access_token');
-        if (typeof window !== 'undefined' && window.location.hash && !window.location.hash.startsWith('#masuk') && !window.location.hash.startsWith('#daftar') && window.location.hash !== '') {
-          window.location.hash = '#masuk';
+        if (typeof window !== 'undefined') {
+          const currentHash = (window.location.hash || '').toLowerCase();
+          const isAdminRoute = ['#petugas', '#admin', '#portal-petugas', '#portal-admin', '#dashboard-petugas', '#dashboard-admin', '#radar', '#radar-admin', '#sos', '#sos-admin', '#posko', '#posko-admin'].includes(currentHash);
+          const isWargaRoute = ['#warga', '#portal', '#portal-warga', '#dashboard-warga'].includes(currentHash);
+          if (isAdminRoute) {
+            window.location.hash = '#masuk-petugas';
+          } else if (isWargaRoute) {
+            window.location.hash = '#masuk-warga';
+          }
         }
       }
       const message = typeof payload === 'object' ? payload.detail : payload;

@@ -311,7 +311,7 @@ export default function WargaRiwayatKejadian() {
                             padding: '2px 8px',
                             borderRadius: '6px'
                           }}>
-                            ðŸ“ {evt.village_name}
+                            📍 {evt.village_name}
                           </span>
                         )}
                       </div>
@@ -361,12 +361,12 @@ export default function WargaRiwayatKejadian() {
                     )}
                     {affectedPeople && (
                       <span className="riwayat-mini-chip">
-                        ðŸ‘¥ Terdampak: {affectedPeople}
+                        👥 Terdampak: {affectedPeople}
                       </span>
                     )}
                     {shelters && (
                       <span className="riwayat-mini-chip">
-                        â›º {shelters}
+                        ⛺ {shelters}
                       </span>
                     )}
                   </div>

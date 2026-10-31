@@ -10,7 +10,8 @@
  *   - Update village_id secara dinamis tanpa reconnect
  */
 
-const WS_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000')
+const WS_BASE_URL = (import.meta.env.VITE_WS_URL || import.meta.env.VITE_API_URL || 'http://localhost:8000')
+  .replace(/\/+$/, '')
   .replace(/^http/, 'ws');
 
 const RECONNECT_BASE_DELAY = 2000;  // 2 detik

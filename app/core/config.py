@@ -124,10 +124,12 @@ class Settings:
                 if item and item not in origins:
                     origins.append(item)
 
-        # 2. Jika di produksi dan belum ada origin yang ditentukan, gunakan domain resmi BPBD
+        # 2. Jika di produksi dan belum ada origin yang ditentukan, gunakan domain resmi BPBD + FRONTEND_URL
         if self.is_production:
             if not origins:
                 origins = list(DEFAULT_PROD_ORIGINS)
+            if self.FRONTEND_URL and self.FRONTEND_URL.rstrip("/") not in origins and self.FRONTEND_URL != "*":
+                origins.append(self.FRONTEND_URL.rstrip("/"))
         else:
             # Di development: gabungkan dengan dev origins lokal, domain resmi BPBD, dan FRONTEND_URL
             for o in DEFAULT_DEV_ORIGINS + DEFAULT_PROD_ORIGINS:

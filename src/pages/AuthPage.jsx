@@ -71,6 +71,7 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
   const [loginEmail, setLoginEmail] = useState(initialRole === 'petugas' ? 'admin@bpbd.go.id' : 'warga@baureno.id')
   const [loginPassword, setLoginPassword] = useState(initialRole === 'petugas' ? 'admin123' : 'warga123')
   const [showPassword, setShowPassword] = useState(false)
+  const [showForgotHelp, setShowForgotHelp] = useState(false)
   
   const isRegister = mode === 'register'
 
@@ -454,10 +455,31 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
                   />
                   <span>Ingat saya</span>
                 </label>
-                <a href="#lupa-sandi" className="auth-forgot-link">
+                <button
+                  type="button"
+                  className="auth-forgot-link"
+                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit' }}
+                  onClick={() => setShowForgotHelp(!showForgotHelp)}
+                >
                   Lupa kata sandi?
-                </a>
+                </button>
               </div>
+              {showForgotHelp && (
+                <div style={{
+                  background: '#f0f9ff',
+                  border: '1px solid #bae6fd',
+                  borderRadius: '10px',
+                  padding: '10px 12px',
+                  fontSize: '0.78rem',
+                  color: '#0369a1',
+                  lineHeight: 1.45,
+                  marginBottom: '4px'
+                }}>
+                  <strong>Bantuan Reset Kata Sandi:</strong> Hubungi Layanan Pusdalops BPBD Baureno di{' '}
+                  <a href="tel:0353881234" style={{ color: '#0284c7', fontWeight: 700 }}>(0353) 881-234</a>{' '}
+                  atau gunakan tombol <b>Isi Cepat</b> di atas untuk masuk ke akun demo.
+                </div>
+              )}
             </>
           )}
 
