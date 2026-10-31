@@ -39,7 +39,13 @@ function Brand({ admin = false, locName = '' }) {
 }
 
 function WargaHome() {
-  const [activeTab, setActiveTab] = useState('beranda')
+  const [activeTab, setActiveTab] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('sigab_warga_tab')
+      if (['beranda', 'peta', 'riwayat', 'panduan', 'kontak', 'sos'].includes(saved)) return saved
+    } catch (e) {}
+    return 'beranda'
+  })
   const [userProfile, setUserProfile] = useState({ full_name: 'Ahmadi' })
   const [selectedVillageId, setSelectedVillageId] = useState(null)
   const [isEmergencyActive, setIsEmergencyActive] = useState(false)
@@ -220,6 +226,9 @@ function WargaHome() {
 
   const handleSelectTab = (tab) => {
     setActiveTab(tab)
+    try {
+      sessionStorage.setItem('sigab_warga_tab', tab)
+    } catch (e) {}
     if (typeof window !== 'undefined' && window.innerWidth <= 1024) {
       setSidebarOpen(false)
     }

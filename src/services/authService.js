@@ -91,6 +91,7 @@ export async function register(data) {
 
 export function logout() {
   localStorage.removeItem('access_token');
+  try { sessionStorage.removeItem('sigab_warga_tab'); } catch (e) { /* abaikan */ }
   window.location.hash = '';
 }
 
