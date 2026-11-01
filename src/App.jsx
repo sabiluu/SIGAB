@@ -402,8 +402,8 @@ function App() {
               <div className="hero-social-proof">
                 <div className="avatar-stack">
                   <div className="avatar-circle avatar-af">AF</div>
-                  <div className="avatar-circle avatar-si">SI</div>
-                  <div className="avatar-circle avatar-rh">RH</div>
+                  <div className="avatar-circle avatar-si">SR</div>
+                  <div className="avatar-circle avatar-rh">DN</div>
                   <div className="avatar-circle avatar-plus">+</div>
                 </div>
                 <div className="social-proof-col">
