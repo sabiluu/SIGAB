@@ -11,7 +11,6 @@ import '../../styles/mobile.css'
 
 export default function MobileWargaView() {
   const [activeTab, setActiveTab] = useState('beranda') // 'beranda' | 'peta' | 'sos' | 'panduan' | 'kontak'
-  const [drawerOpen, setDrawerOpen] = useState(false)
   const [userProfile, setUserProfile] = useState({ full_name: 'Warga Baureno', email: '', phone: '081234567890', village_id: 3 })
   const [selectedVillageId, setSelectedVillageId] = useState(3)
   const [isSimulatedDanger, setIsSimulatedDanger] = useState(false)
@@ -329,71 +328,34 @@ export default function MobileWargaView() {
             📍
           </button>
 
-          {/* Hamburger Drawer Button */}
+          {/* Profile Modal Button */}
           <button
             type="button"
             className="m-icon-btn"
-            onClick={() => setDrawerOpen(true)}
-            aria-label="Menu"
+            onClick={() => setShowProfileModal(true)}
+            title="Profil Saya"
+            aria-label="Profil Saya"
           >
-            ☰
+            👤
+          </button>
+
+          {/* Logout Button */}
+          <button
+            type="button"
+            className="m-icon-btn"
+            onClick={() => setShowLogoutModal(true)}
+            title="Keluar Akun"
+            aria-label="Keluar Akun"
+            style={{ color: '#dc2626' }}
+          >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
           </button>
         </div>
       </header>
-
-      {/* SLIDE-OUT MOBILE DRAWER */}
-      {drawerOpen && (
-        <div className="m-drawer-backdrop" onClick={() => setDrawerOpen(false)}>
-          <div className="m-drawer-panel" onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '14px', marginBottom: '14px', borderBottom: '1px solid #edf2f7' }}>
-              <div>
-                <div style={{ fontSize: '0.95rem', fontWeight: 800 }}>{userProfile.full_name || 'Warga Baureno'}</div>
-                <div style={{ fontSize: '0.72rem', color: '#64748b' }}>Desa {activeVillage.cleanName} • Kec. Baureno</div>
-              </div>
-              <button type="button" className="m-icon-btn" onClick={() => setDrawerOpen(false)}>✕</button>
-            </div>
-
-            <button type="button" className={`m-drawer-link ${activeTab === 'beranda' ? 'active' : ''}`} onClick={() => { setActiveTab('beranda'); setDrawerOpen(false) }}>
-              <span>🏠</span> Beranda Status Desa
-            </button>
-            <button type="button" className={`m-drawer-link ${activeTab === 'peta' ? 'active' : ''}`} onClick={() => { setActiveTab('peta'); setDrawerOpen(false) }}>
-              <span>🗺️</span> Peta & Posko Evakuasi
-            </button>
-            <button type="button" className={`m-drawer-link ${activeTab === 'riwayat' ? 'active' : ''}`} onClick={() => { setActiveTab('riwayat'); setDrawerOpen(false) }}>
-              <span>🕒</span> Riwayat Tiket & Banjir
-            </button>
-            <button type="button" className={`m-drawer-link ${activeTab === 'panduan' ? 'active' : ''}`} onClick={() => { setActiveTab('panduan'); setDrawerOpen(false) }}>
-              <span>📘</span> Panduan & Ceklis Siaga
-            </button>
-            <button type="button" className={`m-drawer-link ${activeTab === 'darurat' || activeTab === 'kontak' ? 'active' : ''}`} onClick={() => { setActiveTab('darurat'); setDrawerOpen(false) }}>
-              <span>📞</span> Layanan Darurat BPBD
-            </button>
-
-            <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid #edf2f7', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <button
-                type="button"
-                className="m-btn m-btn-outline"
-                onClick={() => {
-                  setDrawerOpen(false)
-                  setShowProfileModal(true)
-                }}
-              >
-                👤 Profil Saya
-              </button>
-              <button
-                type="button"
-                className="m-btn m-btn-danger"
-                onClick={() => {
-                  setDrawerOpen(false)
-                  setShowLogoutModal(true)
-                }}
-              >
-                Keluar Akun
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* MAIN CONTENT AREA */}
       <main style={{ padding: '14px 14px 20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
