@@ -348,6 +348,12 @@ input[type="password"]::-ms-clear {
   font-weight: 700;
   color: #009aa6;
   text-decoration: none;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 0;
+  background: none;
+  border: none;
+  transition: color 0.2s;
 }
 
 .auth-forgot-link:hover {

@@ -429,8 +429,8 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
                 </label>
                 <button
                   type="button"
-                  className="auth-forgot-link"
-                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit' }}
+                  className="auth-link-teal auth-forgot-link"
+                  
                   onClick={() => setShowForgotHelp(!showForgotHelp)}
                 >
                   Lupa kata sandi?
