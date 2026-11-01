@@ -3,8 +3,15 @@ import sys
 import json
 from datetime import datetime
 
+try:
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8')
+except Exception:
+    pass
+
 # Add the project root to the python path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(BASE_DIR)
 
 from app.core.database import SessionLocal, engine, Base
 from app.core.security import hash_password
@@ -19,7 +26,7 @@ Base.metadata.create_all(bind=engine)
 
 def seed():
     db = SessionLocal()
-    print("Mulai proses Database Seeding...")
+    print("[INIT] Mulai proses Database Seeding...")
 
     # 1. Seed Admin User
     admin = db.query(User).filter(User.email == "admin@bpbd.go.id").first()
@@ -33,9 +40,9 @@ def seed():
             is_active=True,
         )
         db.add(admin)
-        print("✅ Default Admin User ditambahkan (admin@bpbd.go.id / admin123)")
+        print("[OK] Default Admin User ditambahkan (admin@bpbd.go.id / admin123)")
     else:
-        print("ℹ️ Admin User sudah ada.")
+        print("[INFO] Admin User sudah ada.")
 
     # 2. Seed System Config
     configs = [
@@ -54,33 +61,40 @@ def seed():
                 config_type=cfg["type"],
                 description=cfg["desc"]
             ))
-            print(f"✅ System Config '{cfg['key']}' ditambahkan.")
+            print(f"[OK] System Config '{cfg['key']}' ditambahkan.")
         else:
-            print(f"ℹ️ System Config '{cfg['key']}' sudah ada.")
+            print(f"[INFO] System Config '{cfg['key']}' sudah ada.")
 
     # 3. Seed Villages dari file JSON
-    json_path = os.path.join(os.path.dirname(__file__), "app", "data_cuaca_baureno_semua_desa.json")
-    if os.path.exists(json_path):
+    candidate_paths = [
+        os.path.join(BASE_DIR, "app", "data_cuaca_baureno_semua_desa.json"),
+        os.path.join(BASE_DIR, "data_cuaca_baureno_semua_desa.json"),
+        os.path.join(BASE_DIR, "src", "data", "baureno_villages_real.json"),
+    ]
+    json_path = next((p for p in candidate_paths if os.path.exists(p)), None)
+
+    if json_path:
         with open(json_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
             for item in data:
-                clean_name = item['desa'].replace("Desa ", "").strip()
+                raw_name = item.get('desa') or item.get('name') or ''
+                clean_name = raw_name.replace("Desa ", "").strip()
+                if not clean_name:
+                    continue
                 existing = db.query(Village).filter(
                     (Village.name == clean_name) | (Village.name == f"Desa {clean_name}")
                 ).first()
-                desa_name = clean_name
                 if not existing:
                     coord = item.get("raw_data", {}).get("coord", {})
-                    lat = coord.get("lat", -7.128)
-                    lon = coord.get("lon", 112.103)
+                    lat = coord.get("lat") or item.get("latitude", -7.128)
+                    lon = coord.get("lon") or item.get("longitude", 112.103)
                     
-                    # Tambahkan variasi dummy untuk elevasi dan histori (bisa diubah nanti)
                     import random
-                    elev = random.uniform(9.0, 35.0)
-                    hist = random.uniform(20.0, 80.0)
+                    elev = float(item.get("elevation", random.uniform(9.0, 35.0)))
+                    hist = float(item.get("history_score", random.uniform(20.0, 80.0)))
 
                     db.add(Village(
-                        name=desa_name,
+                        name=clean_name,
                         latitude=lat,
                         longitude=lon,
                         elevation_index=elev,
@@ -88,17 +102,21 @@ def seed():
                         current_risk_level="rendah",
                         current_probability=0.0
                     ))
-                    print(f"✅ Desa '{desa_name}' ditambahkan.")
+                    print(f"[OK] Desa '{clean_name}' ditambahkan.")
                 else:
-                    print(f"ℹ️ Desa '{desa_name}' sudah ada.")
+                    print(f"[INFO] Desa '{clean_name}' sudah ada.")
     else:
-        print(f"⚠️ File data cuaca tidak ditemukan di {json_path}. Melewati seeding Desa.")
+        print("[WARN] File data desa tidak ditemukan di candidate paths.")
 
     db.commit()
 
     # 4. Seed Shelters (Posko Pengungsian)
-    # Get a village to attach shelters to
-    baureno = db.query(Village).filter(Village.name == "Desa Baureno").first()
+    baureno = db.query(Village).filter(
+        (Village.name == "Desa Baureno") | (Village.name == "Baureno")
+    ).first()
+    if not baureno:
+        baureno = db.query(Village).first()
+
     if baureno:
         shelters = [
             {"name": "Balai Kecamatan Baureno", "lat": -7.129, "lon": 112.105, "cap": 500},
@@ -119,20 +137,24 @@ def seed():
                     contact_person="Petugas BPBD",
                     contact_phone="08111222333"
                 ))
-                print(f"✅ Posko '{sh['name']}' ditambahkan.")
+                print(f"[OK] Posko '{sh['name']}' ditambahkan.")
             else:
-                print(f"ℹ️ Posko '{sh['name']}' sudah ada.")
+                print(f"[INFO] Posko '{sh['name']}' sudah ada.")
 
     db.commit()
 
     # 5. Seed Flood Incidents (Arsip & Log Kejadian Banjir Riil BPBD dari CSV)
-    try:
-        from sync_flood_database import sync_from_csv
-        sync_from_csv("rekap_banjir_baureno.csv")
-    except Exception as e:
-        print(f"⚠️ Gagal sinkronisasi otomatis dari rekap_banjir_baureno.csv: {e}")
+    csv_path = os.path.join(BASE_DIR, "rekap_banjir_baureno.csv")
+    if os.path.exists(csv_path):
+        try:
+            from sync_flood_database import sync_from_csv
+            sync_from_csv(csv_path)
+            print("[OK] Sinkronisasi arsip banjir dari CSV berhasil.")
+        except Exception as e:
+            print(f"[WARN] Gagal sinkronisasi dari CSV: {e}")
+            
     db.close()
-    print("🎉 Database Seeding selesai!")
+    print("[SUCCESS] Database Seeding selesai!")
 
 if __name__ == "__main__":
     seed()
