@@ -198,9 +198,10 @@ function App() {
   )
 
   // Routing Handler
-  const authMatch = hash.match(/^#(masuk|daftar)(?:-(warga|petugas))?$/)
+  const authMatch = hash.match(/^#(masuk|daftar|login)(?:-(warga|petugas|admin))?$/)
   if (authMatch) {
-    return renderAuthPage(authMatch[1] === 'daftar' ? 'register' : 'login', authMatch[2] || 'warga')
+    const rawRole = authMatch[2] === 'admin' ? 'petugas' : (authMatch[2] || 'warga')
+    return renderAuthPage(authMatch[1] === 'daftar' ? 'register' : 'login', rawRole)
   }
 
   if (hash === '#demo') {

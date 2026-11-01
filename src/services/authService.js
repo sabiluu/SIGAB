@@ -4,11 +4,30 @@ import { apiFetch } from './api';
  * Login menggunakan OAuth2 form data (sesuai backend FastAPI OAuth2PasswordRequestForm).
  */
 export async function login(email, password, role) {
+  let cleanEmail = (email || '').trim();
+  let cleanPassword = (password || '').trim();
+
+  // Alias cerdas: jika user hanya mengetik 'admin' atau 'petugas', petakan ke akun admin resmi
+  if (cleanEmail.toLowerCase() === 'admin' || cleanEmail.toLowerCase() === 'petugas') {
+    cleanEmail = 'admin@bpbd.go.id';
+  }
+  if (cleanEmail.toLowerCase() === 'warga') {
+    cleanEmail = 'warga@baureno.id';
+  }
+
+  // Jika kata sandi diketik 'admin' pada akun admin, otomatis sesuaikan ke 'admin123'
+  if ((cleanEmail === 'admin@bpbd.go.id' || cleanEmail === 'admin@siagabencana.id') && cleanPassword === 'admin') {
+    cleanPassword = 'admin123';
+  }
+  if (cleanEmail === 'warga@baureno.id' && cleanPassword === 'warga') {
+    cleanPassword = 'warga123';
+  }
+
   // Backend menggunakan OAuth2PasswordRequestForm yang menerima form-urlencoded,
   // field-nya "username" dan "password"
   const formBody = new URLSearchParams();
-  formBody.append('username', email);
-  formBody.append('password', password);
+  formBody.append('username', cleanEmail);
+  formBody.append('password', cleanPassword);
   if (role) {
     formBody.append('role', role);
   }

@@ -133,7 +133,11 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
         : await login(formData.email, formData.password, role)
       
       const target = response?.user?.role || role
-      window.location.hash = target === 'admin' || target === 'petugas' ? '#petugas' : '#warga'
+      const destHash = target === 'admin' || target === 'petugas' ? '#petugas' : '#warga'
+      window.location.hash = destHash
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new HashChangeEvent('hashchange'))
+      }
     } catch (requestError) {
       setError(requestError.message || 'Terjadi kesalahan saat memproses permintaan.')
     } finally {
@@ -377,17 +381,63 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
           ) : (
             /* ================= LOGIN FORMS ================= */
             <>
+              {/* Demo Account Quick-Fill Card */}
+              <div
+                style={{
+                  background: role === 'petugas' ? '#f0f9ff' : '#f0fdfa',
+                  border: `1.5px dashed ${role === 'petugas' ? '#7dd3fc' : '#99f6e4'}`,
+                  borderRadius: '12px',
+                  padding: '11px 13px',
+                  marginBottom: '12px',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
+                  <span style={{ fontSize: '0.73rem', fontWeight: 800, color: role === 'petugas' ? '#0369a1' : '#0f766e' }}>
+                    {role === 'petugas' ? '🛡️ AKUN DEMO PETUGAS BPBD' : '👤 AKUN UJI COBA WARGA'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (role === 'petugas') {
+                        setLoginEmail('admin@bpbd.go.id')
+                        setLoginPassword('admin123')
+                      } else {
+                        setLoginEmail('warga@baureno.id')
+                        setLoginPassword('warga123')
+                      }
+                      setError('')
+                    }}
+                    style={{
+                      background: role === 'petugas' ? '#0284c7' : '#009aa6',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '7px',
+                      padding: '4px 10px',
+                      fontSize: '0.72rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Isi Otomatis ⚡
+                  </button>
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#475569', lineHeight: 1.45 }}>
+                  Email: <strong>{role === 'petugas' ? 'admin@bpbd.go.id' : 'warga@baureno.id'}</strong><br />
+                  Sandi: <strong>{role === 'petugas' ? 'admin123' : 'warga123'}</strong>
+                </div>
+              </div>
+
               <div className="auth-field">
                 <label htmlFor="login-email">
-                  {role === 'petugas' ? 'Email dinas' : 'Email'}
+                  {role === 'petugas' ? 'Email dinas / Username' : 'Email'}
                 </label>
                 <input 
                   id="login-email" 
                   name="email" 
-                  type="email" 
+                  type="text" 
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
-                  placeholder={role === 'petugas' ? 'nama@bpbd.go.id' : 'nama@email.com'} 
+                  placeholder={role === 'petugas' ? 'admin@bpbd.go.id atau ketik admin' : 'warga@baureno.id'} 
                   required 
                   autoComplete="username" 
                 />
