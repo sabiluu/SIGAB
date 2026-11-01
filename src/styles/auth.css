@@ -344,7 +344,7 @@ input[type="password"]::-ms-clear {
 }
 
 .auth-forgot-link {
-  font-size: 0.82rem;
+  font-size: 0.75rem !important;
   font-weight: 700;
   color: #009aa6;
   text-decoration: none;
