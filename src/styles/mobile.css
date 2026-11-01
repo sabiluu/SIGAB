@@ -173,64 +173,85 @@
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 95;
+  z-index: 120;
   background: #ffffff;
-  border-top: 1px solid #e2e8f0;
-  padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  align-items: center;
-  box-shadow: 0 -4px 16px rgba(12, 26, 36, 0.06);
+  border-top: 1px solid #edf2f7;
+  padding: 6px 4px calc(2px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 -2px 14px rgba(12, 26, 36, 0.04);
 }
 
-.m-bottom-nav.cols-4 {
-  grid-template-columns: repeat(4, 1fr);
+.m-nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  width: 100%;
 }
 
 .m-nav-item {
+  flex: 1;
   background: transparent;
   border: none;
-  padding: 6px 2px;
+  padding: 2px 1px 3px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 3px;
-  color: #64748b;
-  font-size: 0.66rem;
-  font-weight: 700;
   cursor: pointer;
-  border-radius: 10px;
   font-family: inherit;
   position: relative;
+  min-width: 0;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.m-nav-item.active {
-  color: #009aa6;
-}
-
-.m-nav-item.sos-center {
-  color: #dc2626;
-}
-
-.m-nav-sos-circle {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  color: #ffffff;
+.m-nav-icon-pill {
+  width: 52px;
+  height: 29px;
+  border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: -14px;
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.38);
-  border: 2.5px solid #ffffff;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  background: transparent;
+  color: #5c7283;
+}
+
+.m-nav-item.active .m-nav-icon-pill {
+  background: #e2f6f8;
+  color: #00828f;
+}
+
+.m-nav-label {
+  font-size: 0.69rem;
+  font-weight: 500;
+  color: #5c7283;
+  line-height: 1.15;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+  transition: color 0.15s ease;
+}
+
+.m-nav-item.active .m-nav-label {
+  color: #00828f;
+  font-weight: 700;
+}
+
+.m-home-indicator {
+  width: 134px;
+  height: 5px;
+  background: #0f172a;
+  border-radius: 999px;
+  margin: 6px auto 3px;
+  opacity: 0.9;
 }
 
 .m-nav-badge {
   position: absolute;
-  top: 2px;
-  right: 16%;
+  top: 1px;
+  right: 18%;
   background: #dc2626;
   color: #ffffff;
   font-size: 0.58rem;

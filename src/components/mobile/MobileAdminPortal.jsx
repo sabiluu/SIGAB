@@ -872,43 +872,78 @@ export default function MobileAdminView({ initialTab = 'dashboard' }) {
       />
 
       {/* FIXED 4-TAB ADMIN BOTTOM NAVIGATION BAR */}
-      <nav className="m-bottom-nav cols-4" aria-label="Navigasi Mobile Petugas">
-        <button
-          type="button"
-          className={`m-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-          onClick={() => switchTab('dashboard')}
-        >
-          <span style={{ fontSize: '1.1rem' }}>📊</span>
-          <span>Ringkasan</span>
-        </button>
+      <nav className="m-bottom-nav" aria-label="Navigasi Mobile Petugas">
+        <div className="m-nav-row">
+          {/* Tab 1: Dashboard */}
+          <button
+            type="button"
+            className={`m-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
+            onClick={() => switchTab('dashboard')}
+          >
+            <div className="m-nav-icon-pill">
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="7.5" height="7.5" rx="2.5" />
+                <rect x="13.5" y="3" width="7.5" height="7.5" rx="2.5" />
+                <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2.5" />
+                <rect x="3" y="13.5" width="7.5" height="7.5" rx="2.5" />
+              </svg>
+            </div>
+            <span className="m-nav-label">Dashboard</span>
+          </button>
 
-        <button
-          type="button"
-          className={`m-nav-item ${activeTab === 'sos' ? 'active' : ''}`}
-          onClick={() => switchTab('sos')}
-        >
-          {activeTickets.length > 0 && <span className="m-nav-badge">{activeTickets.length}</span>}
-          <span style={{ fontSize: '1.1rem' }}>🚨</span>
-          <span>Tiket SOS</span>
-        </button>
+          {/* Tab 2: Radar Peta */}
+          <button
+            type="button"
+            className={`m-nav-item ${activeTab === 'radar' ? 'active' : ''}`}
+            onClick={() => switchTab('radar')}
+          >
+            <div className="m-nav-icon-pill">
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="9" />
+                <circle cx="12" cy="12" r="5" strokeDasharray="3 3" />
+                <circle cx="12" cy="12" r="1.8" fill="currentColor" />
+                <line x1="12" y1="12" x2="18.5" y2="5.5" />
+              </svg>
+            </div>
+            <span className="m-nav-label">Radar Peta</span>
+          </button>
 
-        <button
-          type="button"
-          className={`m-nav-item ${activeTab === 'radar' ? 'active' : ''}`}
-          onClick={() => switchTab('radar')}
-        >
-          <span style={{ fontSize: '1.1rem' }}>🗺️</span>
-          <span>Radar Peta</span>
-        </button>
+          {/* Tab 3: Tiket SOS */}
+          <button
+            type="button"
+            className={`m-nav-item ${activeTab === 'sos' ? 'active' : ''}`}
+            onClick={() => switchTab('sos')}
+          >
+            <div className="m-nav-icon-pill" style={{ position: 'relative' }}>
+              {activeTickets.length > 0 && <span className="m-nav-badge">{activeTickets.length}</span>}
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z" />
+                <line x1="12" y1="9" x2="12" y2="15" strokeDasharray="2.5 2.5" />
+              </svg>
+            </div>
+            <span className="m-nav-label">Tiket SOS</span>
+          </button>
 
-        <button
-          type="button"
-          className={`m-nav-item ${activeTab === 'posko' ? 'active' : ''}`}
-          onClick={() => switchTab('posko')}
-        >
-          <span style={{ fontSize: '1.1rem' }}>🏕️</span>
-          <span>Posko</span>
-        </button>
+          {/* Tab 4: Posko */}
+          <button
+            type="button"
+            className={`m-nav-item ${activeTab === 'posko' ? 'active' : ''}`}
+            onClick={() => switchTab('posko')}
+          >
+            <div className="m-nav-icon-pill">
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 22V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16" />
+                <path d="M18 9h3a1 1 0 0 1 1 1v12" />
+                <path d="M2 22V10a1 1 0 0 1 1-1h3" />
+                <path d="M10 22v-4a2 2 0 0 1 4 0v4" />
+              </svg>
+            </div>
+            <span className="m-nav-label">Posko</span>
+          </button>
+        </div>
+
+        {/* iOS Home Indicator Bar */}
+        <div className="m-home-indicator" />
       </nav>
     </div>
   )

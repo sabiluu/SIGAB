@@ -357,23 +357,16 @@ export default function MobileWargaView() {
               <span>🏠</span> Beranda Status Desa
             </button>
             <button type="button" className={`m-drawer-link ${activeTab === 'peta' ? 'active' : ''}`} onClick={() => { setActiveTab('peta'); setDrawerOpen(false) }}>
-              <span>🗺️</span> Peta & Rute Evakuasi
+              <span>🗺️</span> Peta & Posko Evakuasi
             </button>
-            <button
-              type="button"
-              className={`m-drawer-link ${activeTab === 'sos' ? 'active' : ''}`}
-              onClick={() => {
-                setDrawerOpen(false)
-                handleSOSClick()
-              }}
-            >
-              <span>🚨</span> Kirim Sinyal SOS
+            <button type="button" className={`m-drawer-link ${activeTab === 'riwayat' ? 'active' : ''}`} onClick={() => { setActiveTab('riwayat'); setDrawerOpen(false) }}>
+              <span>🕒</span> Riwayat Tiket & Banjir
             </button>
             <button type="button" className={`m-drawer-link ${activeTab === 'panduan' ? 'active' : ''}`} onClick={() => { setActiveTab('panduan'); setDrawerOpen(false) }}>
               <span>📘</span> Panduan & Ceklis Siaga
             </button>
-            <button type="button" className={`m-drawer-link ${activeTab === 'kontak' ? 'active' : ''}`} onClick={() => { setActiveTab('kontak'); setDrawerOpen(false) }}>
-              <span>📞</span> Kontak Darurat BPBD
+            <button type="button" className={`m-drawer-link ${activeTab === 'darurat' || activeTab === 'kontak' ? 'active' : ''}`} onClick={() => { setActiveTab('darurat'); setDrawerOpen(false) }}>
+              <span>📞</span> Layanan Darurat BPBD
             </button>
 
             <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid #edf2f7', display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -958,48 +951,139 @@ export default function MobileWargaView() {
         )}
 
         {/* ==============================================================
-            TAB 5: KONTAK DARURAT 1-SENTUHAN
+            TAB 3.5: RIWAYAT TIKET SOS & KEJADIAN BANJIR
            ============================================================== */}
-        {activeTab === 'kontak' && (
-          <section className="m-card">
-            <h2 style={{ margin: '0 0 6px', fontSize: '1.12rem', fontWeight: 800 }}>
-              Kontak Darurat 24 Jam (Kec. Baureno)
-            </h2>
-            <p style={{ margin: '0 0 14px', fontSize: '0.78rem', color: '#64748b' }}>
-              Ketuk tombol telepon di bawah untuk langsung menghubungi petugas siaga.
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {[
-                { name: 'Pusdalops BPBD Bojonegoro', role: 'Komando Utama Evakuasi & Perahu Karet', phone: '0353881234', display: '(0353) 881-234' },
-                { name: 'Posko Siaga Kecamatan Baureno', role: 'Koordinasi Posko & Logistik Warga', phone: '08113222333', display: '0811-3222-333' },
-                { name: 'Puskesmas Baureno (Ambulans)', role: 'Layanan Medis & Ibu Hamil/Lansia', phone: '0353891118', display: '(0353) 891-118' },
-                { name: 'Polsek & Koramil Baureno', role: 'Patroli Keamanan & Penyelamatan', phone: '110', display: 'Call Center 110' },
-              ].map((c) => (
-                <div key={c.name} style={{ padding: '14px', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
-                  <div>
-                    <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#0c1a24' }}>{c.name}</div>
-                    <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '2px' }}>{c.role}</div>
-                    <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#009aa6', marginTop: '4px' }}>📞 {c.display}</div>
-                  </div>
-                  <a
-                    href={`tel:${c.phone}`}
-                    style={{
-                      background: '#009aa6',
-                      color: '#ffffff',
-                      padding: '10px 14px',
-                      borderRadius: '10px',
-                      fontSize: '0.76rem',
-                      fontWeight: 800,
-                      textDecoration: 'none',
-                      flexShrink: 0,
-                    }}
-                  >
-                    Hubungi
-                  </a>
+        {activeTab === 'riwayat' && (
+          <>
+            {/* Status Tiket SOS Terkini */}
+            <section className="m-card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '0.96rem', fontWeight: 800 }}>Riwayat Tiket SOS</h3>
+                  <div style={{ fontSize: '0.72rem', color: '#64748b' }}>Pelacakan status penjemputan perahu karet</div>
                 </div>
-              ))}
-            </div>
-          </section>
+                <span className="m-badge aman">{myTickets.length} Tiket</span>
+              </div>
+              {myTickets.length === 0 ? (
+                <div style={{ fontSize: '0.78rem', color: '#64748b', textAlign: 'center', padding: '18px 0', background: '#f8fafc', borderRadius: '12px' }}>
+                  Belum ada riwayat permintaan SOS Anda.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {myTickets.map((t) => (
+                    <div key={t.id} style={{ padding: '12px', borderRadius: '11px', border: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                        <strong style={{ fontSize: '0.82rem' }}>{t.ticket_number || `SOS-${t.id}`}</strong>
+                        <span className={`m-badge ${t.status === 'completed' ? 'aman' : 'awas'}`}>
+                          {t.status.toUpperCase()}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '0.74rem', color: '#334155' }}>
+                        📍 {t.gps_address} • 👥 {t.family_count} jiwa (Skor Prioritas: {t.priority_score})
+                      </div>
+                      {t.assigned_unit && (
+                        <div style={{ fontSize: '0.72rem', color: '#0284c7', fontWeight: 700, marginTop: '4px' }}>
+                          🚤 Tim Penjemput: {t.assigned_unit}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {/* Arsip Riwayat Banjir Baureno */}
+            <section className="m-card">
+              <div style={{ marginBottom: '12px' }}>
+                <h3 style={{ margin: 0, fontSize: '0.96rem', fontWeight: 800 }}>Riwayat Banjir di Baureno</h3>
+                <div style={{ fontSize: '0.72rem', color: '#64748b' }}>Catatan kejadian banjir luapan Bengawan Solo</div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {[
+                  { date: '18 Februari 2024', peak: 'TMA 15.20 m', impact: 'Desa Kadungrejo, Baureno, Tanggungan tergenang 40-70 cm', status: 'Selesai' },
+                  { date: '04 Maret 2023', peak: 'TMA 14.85 m', impact: 'Jalan poros desa Baureno-Pucangarum tergenang 30 cm', status: 'Selesai' },
+                  { date: '21 Januari 2023', peak: 'TMA 15.05 m', impact: 'Area persawahan dan 85 KK di bantaran sungai dievakuasi', status: 'Selesai' },
+                ].map((ev, i) => (
+                  <div key={i} style={{ padding: '12px', borderRadius: '11px', border: '1px solid #e2e8f0', background: '#ffffff' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <strong style={{ fontSize: '0.82rem', color: '#0c1a24' }}>📅 {ev.date}</strong>
+                      <span className="m-badge waspada">{ev.peak}</span>
+                    </div>
+                    <div style={{ fontSize: '0.74rem', color: '#475569', lineHeight: 1.45 }}>{ev.impact}</div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </>
+        )}
+
+        {/* ==============================================================
+            TAB 5: LAYANAN DARURAT & KONTAK 24 JAM
+           ============================================================== */}
+        {(activeTab === 'darurat' || activeTab === 'kontak') && (
+          <>
+            {/* Quick SOS Trigger Banner */}
+            <section className="m-card" style={{ borderTop: `4px solid ${isEmergency ? '#dc2626' : '#f59e0b'}` }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span className={`m-badge ${isEmergency ? 'awas' : 'waspada'}`}>
+                  {isEmergency ? '🚨 STATUS DARURAT AKTIF' : 'ℹ️ LAYANAN EVAKUASI'}
+                </span>
+                <span style={{ fontSize: '0.72rem', color: '#64748b' }}>24 Jam Siaga</span>
+              </div>
+              <h3 style={{ margin: '0 0 6px', fontSize: '1rem', fontWeight: 800 }}>Butuh Evakuasi Darurat BPBD?</h3>
+              <p style={{ margin: '0 0 12px', fontSize: '0.76rem', color: '#475569', lineHeight: 1.45 }}>
+                Kirimkan koordinat GPS dan rincian keluarga rentan Anda langsung ke monitor Pusdalops BPBD Baureno.
+              </p>
+              <button
+                type="button"
+                className="m-btn m-btn-danger"
+                onClick={handleSOSClick}
+              >
+                <span>🚨 Buka Formulir Panggilan SOS</span>
+              </button>
+            </section>
+
+            {/* Kontak Telepon Darurat */}
+            <section className="m-card">
+              <h2 style={{ margin: '0 0 6px', fontSize: '1.12rem', fontWeight: 800 }}>
+                Kontak Darurat 24 Jam (Kec. Baureno)
+              </h2>
+              <p style={{ margin: '0 0 14px', fontSize: '0.78rem', color: '#64748b' }}>
+                Ketuk tombol telepon di bawah untuk langsung menghubungi petugas siaga.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {[
+                  { name: 'Pusdalops BPBD Bojonegoro', role: 'Komando Utama Evakuasi & Perahu Karet', phone: '0353881234', display: '(0353) 881-234' },
+                  { name: 'Posko Siaga Kecamatan Baureno', role: 'Koordinasi Posko & Logistik Warga', phone: '08113222333', display: '0811-3222-333' },
+                  { name: 'Puskesmas Baureno (Ambulans)', role: 'Layanan Medis & Ibu Hamil/Lansia', phone: '0353891118', display: '(0353) 891-118' },
+                  { name: 'Polsek & Koramil Baureno', role: 'Patroli Keamanan & Penyelamatan', phone: '110', display: 'Call Center 110' },
+                ].map((c) => (
+                  <div key={c.name} style={{ padding: '14px', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+                    <div>
+                      <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#0c1a24' }}>{c.name}</div>
+                      <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '2px' }}>{c.role}</div>
+                      <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#00828f', marginTop: '4px' }}>📞 {c.display}</div>
+                    </div>
+                    <a
+                      href={`tel:${c.phone}`}
+                      style={{
+                        background: '#009aa6',
+                        color: '#ffffff',
+                        padding: '10px 14px',
+                        borderRadius: '10px',
+                        fontSize: '0.76rem',
+                        fontWeight: 800,
+                        textDecoration: 'none',
+                        flexShrink: 0,
+                      }}
+                    >
+                      Hubungi
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </>
         )}
       </main>
 
@@ -1140,52 +1224,89 @@ export default function MobileWargaView() {
         </div>
       )}
 
-      {/* FIXED 5-TAB BOTTOM NAVIGATION BAR */}
+      {/* FIXED 5-TAB MOBILE BOTTOM NAVIGATION BAR */}
       <nav className="m-bottom-nav" aria-label="Navigasi Mobile Warga">
-        <button
-          type="button"
-          className={`m-nav-item ${activeTab === 'beranda' ? 'active' : ''}`}
-          onClick={() => setActiveTab('beranda')}
-        >
-          <span style={{ fontSize: '1.1rem' }}>🏠</span>
-          <span>Beranda</span>
-        </button>
+        <div className="m-nav-row">
+          {/* Tab 1: Beranda */}
+          <button
+            type="button"
+            className={`m-nav-item ${activeTab === 'beranda' ? 'active' : ''}`}
+            onClick={() => setActiveTab('beranda')}
+          >
+            <div className="m-nav-icon-pill">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 10.5L12 3l9 7.5" />
+                <path d="M5 9.5V20a1 1 0 001 1h12a1 1 0 001-1V9.5" />
+                <path d="M10 21v-7a1 1 0 011-1h2a1 1 0 011 1v7" />
+              </svg>
+            </div>
+            <span className="m-nav-label">Beranda</span>
+          </button>
 
-        <button
-          type="button"
-          className={`m-nav-item ${activeTab === 'peta' ? 'active' : ''}`}
-          onClick={() => setActiveTab('peta')}
-        >
-          <span style={{ fontSize: '1.1rem' }}>🗺️</span>
-          <span>Peta & Rute</span>
-        </button>
+          {/* Tab 2: Peta & Posko */}
+          <button
+            type="button"
+            className={`m-nav-item ${activeTab === 'peta' ? 'active' : ''}`}
+            onClick={() => setActiveTab('peta')}
+          >
+            <div className="m-nav-icon-pill">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" />
+                <line x1="9" y1="3" x2="9" y2="18" />
+                <line x1="15" y1="6" x2="15" y2="21" />
+              </svg>
+            </div>
+            <span className="m-nav-label">Peta & Posko</span>
+          </button>
 
-        <button
-          type="button"
-          className={`m-nav-item sos-center ${activeTab === 'sos' ? 'active' : ''}`}
-          onClick={handleSOSClick}
-        >
-          <span className="m-nav-sos-circle">🚨</span>
-          <span>Kirim SOS</span>
-        </button>
+          {/* Tab 3: Riwayat */}
+          <button
+            type="button"
+            className={`m-nav-item ${activeTab === 'riwayat' ? 'active' : ''}`}
+            onClick={() => setActiveTab('riwayat')}
+          >
+            <div className="m-nav-icon-pill">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+                <path d="M3 3v5h5" />
+                <polyline points="12 7 12 12 15 15" />
+              </svg>
+            </div>
+            <span className="m-nav-label">Riwayat</span>
+          </button>
 
-        <button
-          type="button"
-          className={`m-nav-item ${activeTab === 'panduan' ? 'active' : ''}`}
-          onClick={() => setActiveTab('panduan')}
-        >
-          <span style={{ fontSize: '1.1rem' }}>📘</span>
-          <span>Panduan</span>
-        </button>
+          {/* Tab 4: Panduan */}
+          <button
+            type="button"
+            className={`m-nav-item ${activeTab === 'panduan' ? 'active' : ''}`}
+            onClick={() => setActiveTab('panduan')}
+          >
+            <div className="m-nav-icon-pill">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M2 4.5A2.5 2.5 0 0 1 4.5 2h5A2.5 2.5 0 0 1 12 4.5v15a2 2 0 0 0-2-2H4.5A2.5 2.5 0 0 1 2 15v-10.5z" />
+                <path d="M22 4.5A2.5 2.5 0 0 0 19.5 2h-5A2.5 2.5 0 0 0 12 4.5v15a2 2 0 0 1 2-2h5.5a2.5 2.5 0 0 0 2.5-2.5v-10.5z" />
+              </svg>
+            </div>
+            <span className="m-nav-label">Panduan</span>
+          </button>
 
-        <button
-          type="button"
-          className={`m-nav-item ${activeTab === 'kontak' ? 'active' : ''}`}
-          onClick={() => setActiveTab('kontak')}
-        >
-          <span style={{ fontSize: '1.1rem' }}>📞</span>
-          <span>Kontak</span>
-        </button>
+          {/* Tab 5: Darurat */}
+          <button
+            type="button"
+            className={`m-nav-item ${activeTab === 'darurat' || activeTab === 'kontak' || activeTab === 'sos' ? 'active' : ''}`}
+            onClick={() => setActiveTab('darurat')}
+          >
+            <div className="m-nav-icon-pill">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+              </svg>
+            </div>
+            <span className="m-nav-label">Darurat</span>
+          </button>
+        </div>
+
+        {/* iOS Home Indicator Bar */}
+        <div className="m-home-indicator" />
       </nav>
     </div>
   )
