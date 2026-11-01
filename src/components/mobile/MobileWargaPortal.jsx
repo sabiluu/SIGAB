@@ -391,7 +391,7 @@ export default function MobileWargaView() {
                     Desa {activeVillage.cleanName}
                   </h2>
                   <div style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>
-                    Kecamatan Baureno, Bojonegoro
+                    Kecamatan Baureno
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
@@ -868,7 +868,7 @@ export default function MobileWargaView() {
                   cls: 'aman',
                   items: [
                     'Siapkan Tas Siaga Bencana (dokumen KTP/KK dalam plastik kedap air).',
-                    'Simpan nomor darurat Pusdalops BPBD Bojonegoro (0353) 881-234.',
+                    'Simpan nomor darurat Pusdalops BPBD Baureno (0353) 881-234.',
                     'Pastikan saluran air di sekitar rumah bebas dari sumbatan.',
                   ],
                 },
@@ -1015,7 +1015,7 @@ export default function MobileWargaView() {
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {[
-                  { name: 'Pusdalops BPBD Bojonegoro', role: 'Komando Utama Evakuasi & Perahu Karet', phone: '0353881234', display: '(0353) 881-234' },
+                  { name: 'Pusdalops BPBD Baureno', role: 'Komando Utama Evakuasi & Perahu Karet', phone: '0353881234', display: '(0353) 881-234' },
                   { name: 'Posko Siaga Kecamatan Baureno', role: 'Koordinasi Posko & Logistik Warga', phone: '08113222333', display: '0811-3222-333' },
                   { name: 'Puskesmas Baureno (Ambulans)', role: 'Layanan Medis & Ibu Hamil/Lansia', phone: '0353891118', display: '(0353) 891-118' },
                   { name: 'Polsek & Koramil Baureno', role: 'Patroli Keamanan & Penyelamatan', phone: '110', display: 'Call Center 110' },

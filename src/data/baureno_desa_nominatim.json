@@ -5,7 +5,7 @@
       "type": "Feature",
       "properties": {
         "name": "Baureno",
-        "display_name": "Jalan Baureno - Kadungrejo, Kauman, Bojonegoro, Jawa Timur, Indonesia",
+        "display_name": "Jalan Baureno - Kadungrejo, Kauman, Baureno, Jawa Timur, Indonesia",
         "lat": -7.1121086,
         "lon": 112.1066603,
         "hasPolygon": false
@@ -236,7 +236,7 @@
       "type": "Feature",
       "properties": {
         "name": "Kadungrejo",
-        "display_name": "Jalan Baureno - Kadungrejo, Kauman, Bojonegoro, Jawa Timur, Indonesia",
+        "display_name": "Jalan Baureno - Kadungrejo, Kauman, Baureno, Jawa Timur, Indonesia",
         "lat": -7.1121086,
         "lon": 112.1066603,
         "hasPolygon": false
@@ -467,7 +467,7 @@
       "type": "Feature",
       "properties": {
         "name": "Pasinan",
-        "display_name": "Jalan Pasinan - Pasar Hewan, Pasinan, Bojonegoro, Jawa Timur, Indonesia",
+        "display_name": "Jalan Pasinan - Pasar Hewan, Pasinan, Baureno, Jawa Timur, Indonesia",
         "lat": -7.1267008,
         "lon": 112.0963749,
         "hasPolygon": false

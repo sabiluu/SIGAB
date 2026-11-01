@@ -9,7 +9,6 @@ import '../../styles/mobile.css'
 
 export default function MobileAdminView({ initialTab = 'dashboard' }) {
   const [activeTab, setActiveTab] = useState(initialTab) // 'dashboard' | 'sos' | 'radar' | 'posko'
-  const [drawerOpen, setDrawerOpen] = useState(false)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
 
   // Sync with URL hash if user navigates via #sos, #radar, #posko
@@ -19,7 +18,6 @@ export default function MobileAdminView({ initialTab = 'dashboard' }) {
 
   const switchTab = (tab) => {
     setActiveTab(tab)
-    setDrawerOpen(false)
     const hashMap = {
       dashboard: '#petugas',
       sos: '#sos',
@@ -226,54 +224,21 @@ export default function MobileAdminView({ initialTab = 'dashboard' }) {
           <button
             type="button"
             className="m-icon-btn"
-            onClick={() => setDrawerOpen(true)}
-            aria-label="Menu Admin"
+            onClick={() => setShowLogoutModal(true)}
+            title="Keluar Akun"
+            aria-label="Keluar Akun"
+            style={{ color: '#ef4444' }}
           >
-            ☰
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
           </button>
         </div>
       </header>
 
-      {/* SLIDE-OUT ADMIN DRAWER */}
-      {drawerOpen && (
-        <div className="m-drawer-backdrop" onClick={() => setDrawerOpen(false)}>
-          <div className="m-drawer-panel" onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '14px', marginBottom: '14px', borderBottom: '1px solid #edf2f7' }}>
-              <div>
-                <div style={{ fontSize: '0.95rem', fontWeight: 800 }}>Petugas Pusdalops BPBD</div>
-                <div style={{ fontSize: '0.72rem', color: '#64748b' }}>Kecamatan Baureno • Siaga 24/7</div>
-              </div>
-              <button type="button" className="m-icon-btn" onClick={() => setDrawerOpen(false)}>✕</button>
-            </div>
 
-            <button type="button" className={`m-drawer-link ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => switchTab('dashboard')}>
-              <span>📊</span> Ringkasan Komando
-            </button>
-            <button type="button" className={`m-drawer-link ${activeTab === 'sos' ? 'active' : ''}`} onClick={() => switchTab('sos')}>
-              <span>🚨</span> Manajemen Tiket SOS ({activeTickets.length})
-            </button>
-            <button type="button" className={`m-drawer-link ${activeTab === 'radar' ? 'active' : ''}`} onClick={() => switchTab('radar')}>
-              <span>🗺️</span> Radar Peta 25 Desa
-            </button>
-            <button type="button" className={`m-drawer-link ${activeTab === 'posko' ? 'active' : ''}`} onClick={() => switchTab('posko')}>
-              <span>🏕️</span> Manajemen Posko ({shelters.length})
-            </button>
-
-            <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid #edf2f7' }}>
-              <button
-                type="button"
-                className="m-btn m-btn-danger"
-                onClick={() => {
-                  setDrawerOpen(false)
-                  setShowLogoutModal(true)
-                }}
-              >
-                Keluar Portal Petugas
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* MAIN CONTENT BODY */}
       <main style={{ padding: '14px 14px 20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>

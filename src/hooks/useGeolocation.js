@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-// Bounding & Pusat Kecamatan Baureno, Kabupaten Bojonegoro (Fallback jika GPS belum diizinkan)
+// Bounding & Pusat Kecamatan Baureno (Fallback jika GPS belum diizinkan)
 export const DEFAULT_BAURENO_COORDS = {
   latitude: -7.1282,
   longitude: 112.1039,
@@ -15,7 +15,7 @@ export const DEFAULT_BAURENO_COORDS = {
 export const DEFAULT_BAURENO_LABEL = 'Desa Baureno, Baureno';
 export const DEFAULT_BAURENO_FULL = 'Kecamatan Baureno, Jawa Timur';
 
-// Daftar 25 Desa Resmi Kecamatan Baureno, Bojonegoro
+// Daftar 25 Desa Resmi Kecamatan Baureno
 export const BAURENO_VILLAGES = [
   { id: 3, name: 'Baureno (Pusat)', latitude: -7.1282, longitude: 112.1039 },
   { id: 8, name: 'Gunungsari', latitude: -7.1269, longitude: 112.1405 },

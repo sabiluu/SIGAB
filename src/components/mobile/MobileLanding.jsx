@@ -112,7 +112,7 @@ export default function MobileLanding({
           <BrandMark />
           <span>
             <strong>SIGAB</strong>
-            <small>Siaga Banjir Bojonegoro</small>
+            <small>Siaga Banjir Baureno</small>
           </span>
         </a>
         <a className="mobile-header-login" href={isSignedIn ? dashboardHash : '#masuk'}>
@@ -155,7 +155,7 @@ export default function MobileLanding({
           </div>
           <div className="mobile-hero-image">
             <img src="/hero-river.jpg" alt="Bengawan Solo di wilayah Baureno" />
-            <span className="mobile-location-tag">● Kecamatan Baureno, Bojonegoro</span>
+            <span className="mobile-location-tag">● Kecamatan Baureno</span>
           </div>
           <article className="mobile-risk-card">
             <div className="mobile-risk-card-heading">
@@ -284,10 +284,10 @@ export default function MobileLanding({
       <footer className="mobile-footer" id="kontak">
         <a className="mobile-brand" href="#">
           <BrandMark />
-          <span><strong>SIGAB</strong><small>Siaga Banjir Bojonegoro</small></span>
+          <span><strong>SIGAB</strong><small>Siaga Banjir Baureno</small></span>
         </a>
         <p>Platform kesiapsiagaan banjir untuk masyarakat Baureno.</p>
-        <small>© 2026 SIGAB Bojonegoro</small>
+        <small>© 2026 SIGAB Baureno</small>
       </footer>
     </div>
   )

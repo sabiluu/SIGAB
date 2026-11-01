@@ -6,7 +6,7 @@ import baurenoVillagesData from '../data/baureno_villages_real.json'
 import { apiFetch } from '../services/api'
 import { getVillages } from '../services/floodService'
 
-// Center coordinate & boundary bounds for map view - Kecamatan Baureno, Bojonegoro
+// Center coordinate & boundary bounds for map view - Kecamatan Baureno
 export const baurenoCenter = [-7.118, 112.102]
 export const baurenoBounds = [
   [-7.185, 112.025], // South-West (wider margin showing surrounding districts)
