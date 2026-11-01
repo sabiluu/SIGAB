@@ -18,6 +18,7 @@ export default function MobileWargaView() {
   const [showVillageSheet, setShowVillageSheet] = useState(false)
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
+  const [showRejectModal, setShowRejectModal] = useState(false)
 
   // Real-time API data & GPS hook
   const { data: realtimeData } = useDashboardRealtime()
@@ -131,6 +132,24 @@ export default function MobileWargaView() {
     return found
   }, [villages, selectedVillageId, isSimulatedDanger])
 
+  // Validasi Darurat: Pengiriman SOS HANYA aktif jika status desa AWAS (prob >= 76%) ATAU tombol Simulasi Bahaya ON
+  const isEmergency = useMemo(() => {
+    return Boolean(
+      isSimulatedDanger ||
+      activeVillage.risk_level === 'awas' ||
+      Number(activeVillage.probability) >= 76
+    )
+  }, [isSimulatedDanger, activeVillage])
+
+  // Handler klik tombol SOS: jika belum darurat & simulasi off, tampilkan modal tolak otomatis
+  const handleSOSClick = () => {
+    if (!isEmergency) {
+      setShowRejectModal(true)
+    } else {
+      setActiveTab('sos')
+    }
+  }
+
   const selectedShelter = useMemo(() => {
     if (selectedShelterId) {
       const s = shelters.find((sh) => Number(sh.id) === Number(selectedShelterId))
@@ -209,6 +228,11 @@ export default function MobileWargaView() {
 
   const handleSendSOS = async (e) => {
     e.preventDefault()
+    if (!isEmergency) {
+      setSosErrorMsg('Pengiriman SOS ditolak otomatis. Fitur panggilan darurat hanya aktif saat status wilayah DARURAT / AWAS atau saat mode Simulasi Bahaya dinyalakan.')
+      setShowRejectModal(true)
+      return
+    }
     setSosSubmitting(true)
     setSosErrorMsg('')
     setSosSuccessMsg('')
@@ -228,8 +252,13 @@ export default function MobileWargaView() {
         has_toddler: sosToddler,
         has_pregnant: sosPregnant,
         has_disability: sosDisability,
+        is_simulation: Boolean(isSimulatedDanger),
       })
-      setSosSuccessMsg('Sinyal SOS berhasil dikirim ke Pusdalops BPBD Baureno! Tim sedang memverifikasi lokasi Anda.')
+      setSosSuccessMsg(
+        isSimulatedDanger
+          ? '🚨 [MODE SIMULASI] Sinyal SOS simulasi berhasil dikirim ke Pusdalops BPBD Baureno!'
+          : 'Sinyal SOS darurat berhasil dikirim ke Pusdalops BPBD Baureno! Tim sedang memverifikasi lokasi Anda.'
+      )
       setSosPatokan('')
       loadTickets()
     } catch (err) {
@@ -330,7 +359,14 @@ export default function MobileWargaView() {
             <button type="button" className={`m-drawer-link ${activeTab === 'peta' ? 'active' : ''}`} onClick={() => { setActiveTab('peta'); setDrawerOpen(false) }}>
               <span>🗺️</span> Peta & Rute Evakuasi
             </button>
-            <button type="button" className={`m-drawer-link ${activeTab === 'sos' ? 'active' : ''}`} onClick={() => { setActiveTab('sos'); setDrawerOpen(false) }}>
+            <button
+              type="button"
+              className={`m-drawer-link ${activeTab === 'sos' ? 'active' : ''}`}
+              onClick={() => {
+                setDrawerOpen(false)
+                handleSOSClick()
+              }}
+            >
               <span>🚨</span> Kirim Sinyal SOS
             </button>
             <button type="button" className={`m-drawer-link ${activeTab === 'panduan' ? 'active' : ''}`} onClick={() => { setActiveTab('panduan'); setDrawerOpen(false) }}>
@@ -460,7 +496,7 @@ export default function MobileWargaView() {
                 <button
                   type="button"
                   className="m-btn m-btn-danger"
-                  onClick={() => setActiveTab('sos')}
+                  onClick={handleSOSClick}
                 >
                   <span>2. Kirim Sinyal SOS Darurat ke BPBD</span>
                   <span>🚨</span>
@@ -583,7 +619,7 @@ export default function MobileWargaView() {
                 <button
                   type="button"
                   className="m-btn m-btn-danger"
-                  onClick={() => setActiveTab('sos')}
+                  onClick={handleSOSClick}
                 >
                   🚨 Butuh Jemputan? Kirim SOS
                 </button>
@@ -644,14 +680,62 @@ export default function MobileWargaView() {
            ============================================================== */}
         {activeTab === 'sos' && (
           <>
-            <section className="m-card" style={{ borderTop: '4px solid #dc2626' }}>
-              <span className="m-badge awas" style={{ marginBottom: '8px' }}>LAYANAN DARURAT 24 JAM</span>
+            <section className="m-card" style={{ borderTop: `4px solid ${isEmergency ? '#dc2626' : '#f59e0b'}` }}>
+              <span className={`m-badge ${isEmergency ? 'awas' : 'waspada'}`} style={{ marginBottom: '8px' }}>
+                {isEmergency ? '🚨 STATUS DARURAT AKTIF' : '🔒 PENGIRIMAN SOS TERKUNCI'}
+              </span>
               <h2 style={{ margin: '0 0 6px', fontSize: '1.15rem', fontWeight: 800 }}>
                 Kirim Permintaan Evakuasi SOS
               </h2>
               <p style={{ margin: '0 0 14px', fontSize: '0.78rem', color: '#64748b', lineHeight: 1.45 }}>
-                Koordinat GPS dan jumlah anggota keluarga rentan akan langsung masuk ke layar utama Pusdalops BPBD Baureno.
+                {isEmergency
+                  ? 'Koordinat GPS dan jumlah anggota keluarga rentan akan langsung masuk ke layar utama Pusdalops BPBD Baureno.'
+                  : 'Pengiriman SOS hanya diizinkan saat status wilayah DARURAT / AWAS atau saat mode Simulasi Bahaya dinyalakan.'}
               </p>
+
+              {/* Locked Notice if Not in Emergency */}
+              {!isEmergency && (
+                <div
+                  style={{
+                    background: '#fff1f2',
+                    border: '1.5px dashed #f87171',
+                    borderRadius: '13px',
+                    padding: '14px',
+                    marginBottom: '14px',
+                    textAlign: 'center',
+                  }}
+                >
+                  <div style={{ fontSize: '1.75rem', marginBottom: '4px' }}>🔒</div>
+                  <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#991b1b', marginBottom: '4px' }}>
+                    Pengiriman SOS Ditolak Otomatis
+                  </div>
+                  <div style={{ fontSize: '0.76rem', color: '#7f1d1d', lineHeight: 1.5, marginBottom: '12px' }}>
+                    Status Desa {activeVillage.cleanName} saat ini masih{' '}
+                    <strong>{riskLabelMap[activeVillage.risk_level] || 'AMAN'} ({Math.round(activeVillage.probability)}%)</strong>.
+                    Pusdalops BPBD hanya menerima panggilan SOS saat kondisi <strong>DARURAT / AWAS</strong> (probabilitas ≥ 76%).
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsSimulatedDanger(true)}
+                    style={{
+                      background: '#dc2626',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '10px',
+                      padding: '10px 14px',
+                      fontSize: '0.8rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      boxShadow: '0 4px 12px rgba(220, 38, 38, 0.25)',
+                    }}
+                  >
+                    <span>🧪</span> Nyalakan Simulasi Bahaya untuk Uji Coba SOS
+                  </button>
+                </div>
+              )}
 
               {sosSuccessMsg && (
                 <div style={{ background: '#ecfdf5', border: '1px solid #6ee7b7', color: '#065f46', padding: '12px', borderRadius: '11px', fontSize: '0.78rem', fontWeight: 600, marginBottom: '12px' }}>
@@ -680,8 +764,9 @@ export default function MobileWargaView() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <button
                       type="button"
+                      disabled={!isEmergency}
                       onClick={() => setSosFamilyCount(Math.max(1, sosFamilyCount - 1))}
-                      style={{ width: '44px', height: '44px', borderRadius: '10px', border: '1px solid #cbd5e1', background: '#ffffff', fontSize: '1.2rem', fontWeight: 800, cursor: 'pointer' }}
+                      style={{ width: '44px', height: '44px', borderRadius: '10px', border: '1px solid #cbd5e1', background: '#ffffff', fontSize: '1.2rem', fontWeight: 800, cursor: isEmergency ? 'pointer' : 'not-allowed', opacity: isEmergency ? 1 : 0.6 }}
                     >
                       −
                     </button>
@@ -690,8 +775,9 @@ export default function MobileWargaView() {
                     </div>
                     <button
                       type="button"
+                      disabled={!isEmergency}
                       onClick={() => setSosFamilyCount(sosFamilyCount + 1)}
-                      style={{ width: '44px', height: '44px', borderRadius: '10px', border: '1px solid #cbd5e1', background: '#ffffff', fontSize: '1.2rem', fontWeight: 800, cursor: 'pointer' }}
+                      style={{ width: '44px', height: '44px', borderRadius: '10px', border: '1px solid #cbd5e1', background: '#ffffff', fontSize: '1.2rem', fontWeight: 800, cursor: isEmergency ? 'pointer' : 'not-allowed', opacity: isEmergency ? 1 : 0.6 }}
                     >
                       +
                     </button>
@@ -713,6 +799,7 @@ export default function MobileWargaView() {
                       <button
                         key={item.label}
                         type="button"
+                        disabled={!isEmergency}
                         onClick={() => item.set(!item.val)}
                         style={{
                           padding: '10px',
@@ -722,7 +809,8 @@ export default function MobileWargaView() {
                           color: item.val ? '#dc2626' : '#334155',
                           fontSize: '0.78rem',
                           fontWeight: 700,
-                          cursor: 'pointer',
+                          cursor: isEmergency ? 'pointer' : 'not-allowed',
+                          opacity: isEmergency ? 1 : 0.6,
                           textAlign: 'left',
                         }}
                       >
@@ -739,6 +827,7 @@ export default function MobileWargaView() {
                   </label>
                   <input
                     type="text"
+                    disabled={!isEmergency}
                     value={sosPatokan}
                     onChange={(e) => setSosPatokan(e.target.value)}
                     placeholder="Contoh: Rumah pagar biru dekat Masjid, air setinggi lutut"
@@ -749,12 +838,26 @@ export default function MobileWargaView() {
                       borderRadius: '10px',
                       border: '1px solid #dce5eb',
                       fontSize: '0.82rem',
+                      opacity: isEmergency ? 1 : 0.6,
                     }}
                   />
                 </div>
 
-                <button type="submit" disabled={sosSubmitting} className="m-btn m-btn-danger">
-                  {sosSubmitting ? 'Mengirim Sinyal SOS...' : '🚨 KIRIM SINYAL SOS SEKARANG'}
+                <button
+                  type="submit"
+                  disabled={!isEmergency || sosSubmitting}
+                  className="m-btn m-btn-danger"
+                  style={{
+                    background: !isEmergency ? '#94a3b8' : '#dc2626',
+                    cursor: !isEmergency ? 'not-allowed' : 'pointer',
+                    opacity: !isEmergency ? 0.7 : 1,
+                  }}
+                >
+                  {!isEmergency
+                    ? '🔒 Pengiriman Ditolak (Nyalakan Simulasi Bahaya)'
+                    : sosSubmitting
+                    ? 'Mengirim Sinyal SOS...'
+                    : '🚨 KIRIM SINYAL SOS SEKARANG'}
                 </button>
               </form>
             </section>
@@ -951,6 +1054,92 @@ export default function MobileWargaView() {
         onConfirm={logout}
       />
 
+      {/* MODAL PENOLAKAN SOS OTOMATIS */}
+      {showRejectModal && (
+        <div className="m-modal-overlay" onClick={() => setShowRejectModal(false)}>
+          <div
+            className="m-modal-sheet"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              borderRadius: '24px 24px 0 0',
+              padding: '24px 20px 28px',
+              textAlign: 'center',
+            }}
+          >
+            <div
+              style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '50%',
+                background: '#fee2e2',
+                color: '#dc2626',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '30px',
+                margin: '0 auto 14px',
+              }}
+            >
+              🔒
+            </div>
+
+            <span className={`m-badge ${activeVillage.risk_level}`} style={{ marginBottom: '10px' }}>
+              STATUS DESA: {riskLabelMap[activeVillage.risk_level] || 'AMAN'} ({Math.round(activeVillage.probability)}%)
+            </span>
+
+            <h3 style={{ margin: '8px 0 8px', fontSize: '1.18rem', fontWeight: 800, color: '#0f172a' }}>
+              Pengiriman SOS Ditolak Otomatis
+            </h3>
+
+            <p style={{ margin: '0 0 16px', fontSize: '0.82rem', color: '#475569', lineHeight: 1.55 }}>
+              Mohon maaf, pengiriman tiket evakuasi SOS ke Pusdalops BPBD <strong>hanya aktif</strong> jika status wilayah berada pada level <strong>DARURAT / AWAS</strong> (probabilitas ≥ 76%), atau saat tombol <strong>Simulasi Bahaya</strong> dinyalakan.
+            </p>
+
+            <div
+              style={{
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: '12px',
+                padding: '12px',
+                marginBottom: '18px',
+                textAlign: 'left',
+                fontSize: '0.76rem',
+                color: '#334155',
+                lineHeight: 1.5,
+              }}
+            >
+              🧪 <strong>Ingin mencoba fitur pengiriman SOS?</strong>
+              <br />
+              Nyalakan mode <strong>Simulasi Bahaya</strong> untuk mengaktifkan status darurat simulasi (AWAS 94%) sehingga tombol pengiriman SOS dapat digunakan.
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button
+                type="button"
+                className="m-btn m-btn-danger"
+                style={{ width: '100%', padding: '13px', fontSize: '0.85rem', fontWeight: 800 }}
+                onClick={() => {
+                  setIsSimulatedDanger(true)
+                  setShowRejectModal(false)
+                  setActiveTab('sos')
+                }}
+              >
+                🧪 Nyalakan Simulasi Bahaya & Buka SOS
+              </button>
+
+              <button
+                type="button"
+                className="m-btn m-btn-outline"
+                style={{ width: '100%', padding: '11px', fontSize: '0.82rem' }}
+                onClick={() => setShowRejectModal(false)}
+              >
+                Tutup & Kembali
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* FIXED 5-TAB BOTTOM NAVIGATION BAR */}
       <nav className="m-bottom-nav" aria-label="Navigasi Mobile Warga">
         <button
@@ -973,8 +1162,8 @@ export default function MobileWargaView() {
 
         <button
           type="button"
-          className="m-nav-item sos-center"
-          onClick={() => setActiveTab('sos')}
+          className={`m-nav-item sos-center ${activeTab === 'sos' ? 'active' : ''}`}
+          onClick={handleSOSClick}
         >
           <span className="m-nav-sos-circle">🚨</span>
           <span>Kirim SOS</span>
