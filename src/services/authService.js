@@ -7,16 +7,28 @@ export async function login(email, password, role) {
   let cleanEmail = (email || '').trim();
   let cleanPassword = (password || '').trim();
 
-  // Alias cerdas: jika user hanya mengetik 'admin' atau 'petugas', petakan ke akun admin resmi
-  if (cleanEmail.toLowerCase() === 'admin' || cleanEmail.toLowerCase() === 'petugas') {
+  const lowerEmail = cleanEmail.toLowerCase();
+  // Alias cerdas: perbaiki typo umum seperti 'admin@bpdb.go.id' (seharusnya bpbd) atau jika hanya mengetik 'admin'
+  if (
+    lowerEmail === 'admin' ||
+    lowerEmail === 'petugas' ||
+    lowerEmail === 'admin@bpdb.go.id' ||
+    lowerEmail === 'admin@bpdb.id' ||
+    lowerEmail === 'admin@bpbd.id' ||
+    lowerEmail === 'admin@bpbd.com' ||
+    lowerEmail === 'admin@bpdb.com'
+  ) {
     cleanEmail = 'admin@bpbd.go.id';
   }
-  if (cleanEmail.toLowerCase() === 'warga') {
+  if (lowerEmail === 'warga') {
     cleanEmail = 'warga@baureno.id';
   }
 
   // Jika kata sandi diketik 'admin' pada akun admin, otomatis sesuaikan ke 'admin123'
-  if ((cleanEmail === 'admin@bpbd.go.id' || cleanEmail === 'admin@siagabencana.id') && cleanPassword === 'admin') {
+  if (
+    (cleanEmail === 'admin@bpbd.go.id' || cleanEmail === 'admin@siagabencana.id' || cleanEmail === 'admin@bpdb.go.id') &&
+    (cleanPassword === 'admin' || cleanPassword === 'admin123')
+  ) {
     cleanPassword = 'admin123';
   }
   if (cleanEmail === 'warga@baureno.id' && cleanPassword === 'warga') {
