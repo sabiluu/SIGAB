@@ -14,7 +14,7 @@ const userPinIcon = L.divIcon({
   html: `
     <div style="position: relative; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
       <div style="position: absolute; width: 36px; height: 36px; border-radius: 50%; background: rgba(220, 38, 38, 0.4); animation: pulse 1.5s infinite;"></div>
-      <div style="background-color: #dc2626; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; border: 2.5px solid white; box-shadow: 0 3px 8px rgba(0,0,0,0.45); cursor: grab;">
+      <div style="background-color: #dc2626; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; border: 2.5px solid white; box-shadow: 0 3px 8px rgba(0,0,0,0.45); cursor: default;">
         📍
       </div>
     </div>
@@ -36,16 +36,7 @@ function MapPanController({ center }) {
   return null;
 }
 
-function MapClickHandler({ onLocationSelect }) {
-  useMapEvents({
-    click(e) {
-      if (onLocationSelect && e.latlng) {
-        onLocationSelect(e.latlng.lat, e.latlng.lng);
-      }
-    }
-  });
-  return null;
-}
+// Lokasi murni real GPS (mencegah pemalsuan lokasi)
 
 export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActive = false }) {
   const { user } = useAuth();
@@ -123,9 +114,15 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
     geo?.isRealDevice ? 'real_gps' : 'syncing'
   );
 
-  // Sinkronkan GPS otomatis saat terdeteksi dari hook geo
+  // Pastikan selalu menggunakan GPS perangkat nyata saat formulir SOS dibuka (mencegah pemalsuan lokasi)
   useEffect(() => {
-    if (locationSource === 'manual') return; // jangan override jika pengguna sengaja menggeser pin
+    if (geo?.isCustom && geo?.useRealDeviceLocation) {
+      geo.useRealDeviceLocation();
+    }
+  }, []);
+
+  // Sinkronkan GPS otomatis murni dari sensor GPS/jaringan real perangkat
+  useEffect(() => {
     if (geo?.position?.latitude && geo?.position?.longitude) {
       setGpsLocation({ lat: geo.position.latitude, lng: geo.position.longitude });
       if (geo.position.accuracy) {
@@ -137,18 +134,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
       setLocationSource(geo.isRealDevice ? 'real_gps' : 'ip');
       setLoadingGps(false);
     }
-  }, [geo?.position?.latitude, geo?.position?.longitude, geo?.position?.accuracy, geo?.fullAddress, geo?.address, geo?.isRealDevice, locationSource]);
-
-  // Handler jika user menggeser pin atau mengklik titik pada peta
-  const handleMapLocationSelect = async (lat, lng) => {
-    setGpsLocation({ lat, lng });
-    setLocationSource('manual');
-    const names = await reverseGeocodeLocation(lat, lng);
-    setAddress(names.full || names.short);
-    if (geo?.setCustomCoordinates) {
-      geo.setCustomCoordinates(lat, lng);
-    }
-  };
+  }, [geo?.position?.latitude, geo?.position?.longitude, geo?.position?.accuracy, geo?.fullAddress, geo?.address, geo?.isRealDevice]);
 
   // Handler Refresh GPS secara manual saat tombol diklik
   const detectGPS = async () => {
@@ -654,7 +640,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
             <div className="sos-step">
               <h3 className="sos-section-title">1. Konfirmasi Titik Lokasi Anda</h3>
               <p className="sos-section-desc">
-                Sistem mendeteksi koordinat GPS perangkat Anda secara real time. Anda dapat menggeser pin merah atau mengetuk peta untuk mengatur titik evakuasi secara akurat.
+                Sistem mengunci koordinat GPS perangkat Anda secara real time untuk mencegah pemalsuan lokasi evakuasi. Petugas SAR dan BPBD akan langsung diarahkan ke titik akurat perangkat ini.
               </p>
               
               {/* Mini Map */}
@@ -666,24 +652,16 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                       url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     />
                     <MapPanController center={gpsLocation} />
-                    <MapClickHandler onLocationSelect={handleMapLocationSelect} />
                     <Marker 
                       position={[gpsLocation.lat, gpsLocation.lng]} 
                       icon={userPinIcon}
-                      draggable={true}
-                      eventHandlers={{
-                        dragend: (e) => {
-                          const marker = e.target;
-                          const pos = marker.getLatLng();
-                          handleMapLocationSelect(pos.lat, pos.lng);
-                        }
-                      }}
+                      draggable={false}
                     >
                       <Popup>
                         <div style={{ textAlign: 'center', fontSize: '12px' }}>
-                          <strong style={{ color: '#dc2626' }}>📍 Titik Evakuasi</strong><br />
+                          <strong style={{ color: '#dc2626' }}>📍 Titik Evakuasi Real</strong><br />
                           <span>{address}</span><br />
-                          <small style={{ color: '#64748b' }}>Geser pin atau klik peta untuk memindahkan</small>
+                          <small style={{ color: '#16a34a', fontWeight: 600 }}>🔒 Terkunci otomatis via GPS perangkat</small>
                         </div>
                       </Popup>
                     </Marker>
@@ -701,19 +679,21 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                   top: '10px',
                   right: '10px',
                   zIndex: 999,
-                  background: 'rgba(15, 23, 42, 0.78)',
+                  background: 'rgba(15, 23, 42, 0.85)',
                   backdropFilter: 'blur(4px)',
                   color: 'white',
-                  padding: '5px 12px',
+                  padding: '6px 14px',
                   borderRadius: '20px',
                   fontSize: '11px',
                   fontWeight: 700,
                   pointerEvents: 'none',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px'
+                  gap: '6px',
+                  border: '1px solid rgba(255, 255, 255, 0.15)'
                 }}>
-                  <span>🎯 Klik peta / geser pin untuk atur titik</span>
+                  <span style={{ color: '#4ade80' }}>🔒</span>
+                  <span>Lokasi Terkunci Real GPS (Anti-Pemalsuan)</span>
                 </div>
               </div>
 
@@ -741,8 +721,8 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                     <span><strong>Lat:</strong> {gpsLocation.lat.toFixed(6)}</span>
                     <span><strong>Lng:</strong> {gpsLocation.lng.toFixed(6)}</span>
                     {gpsAccuracy && <span><strong>Akurasi:</strong> ±{Math.round(gpsAccuracy)}m</span>}
-                    <span className={`sos-source-badge ${locationSource === 'real_gps' ? 'gps' : locationSource === 'manual' ? 'manual' : 'ip'}`}>
-                      {locationSource === 'real_gps' ? '● Lokasi Perangkat Real (GPS)' : locationSource === 'manual' ? '● Titik Disesuaikan Manual' : '● Lokasi Jaringan (IP)'}
+                    <span className={`sos-source-badge ${locationSource === 'real_gps' ? 'gps' : 'ip'}`}>
+                      {locationSource === 'real_gps' ? '● Lokasi Perangkat Real (GPS)' : '● Lokasi Jaringan (IP)'}
                     </span>
                   </div>
                 )}

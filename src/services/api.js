@@ -72,9 +72,9 @@ export async function getSimulationStatus() {
 }
 
 export async function startSimulation() {
-  return apiFetch('/simulation/start', { method: 'POST', body: JSON.stringify({}) });
+  return apiFetch('/simulation/start', { method: 'POST', body: JSON.stringify({}), timeout: 30000 });
 }
 
 export async function stopSimulation() {
-  return apiFetch('/simulation/stop', { method: 'POST', body: JSON.stringify({}) });
+  return apiFetch('/simulation/stop', { method: 'POST', body: JSON.stringify({}), timeout: 30000 });
 }

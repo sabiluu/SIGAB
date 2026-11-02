@@ -122,7 +122,7 @@ function WargaHome() {
     } catch (e) {}
     return 'beranda'
   })
-  const [userProfile, setUserProfile] = useState({ full_name: 'Ahmadi' })
+  const [userProfile, setUserProfile] = useState(null)
   const [selectedVillageId, setSelectedVillageId] = useState(null)
   const [isEmergencyActive, setIsEmergencyActive] = useState(false)
   const [simStatus, setSimStatus] = useState(null)
@@ -180,6 +180,7 @@ function WargaHome() {
     if (target) {
       geo.setVillageLocation(target)
       setSelectedVillageId(target.id)
+      wsService.updateVillage(target.id, 'alerts')
       setShowLocationModal(false)
     }
   }
@@ -279,6 +280,7 @@ function WargaHome() {
           setUserProfile(res)
           if (res.village_id) {
             setSelectedVillageId(res.village_id)
+            wsService.updateVillage(res.village_id, 'alerts')
           }
           const targetVillageId = res.village_id || 1
           apiFetch(`/emergency/${targetVillageId}`)
@@ -770,7 +772,7 @@ function WargaHome() {
                 )}
               </div>
               <div className="warga-profile-info">
-                <strong>{userProfile?.full_name || 'Warga Baureno (Demo)'}</strong>
+                <strong>{userProfile?.full_name || 'Warga Baureno'}</strong>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                   <span>Warga terverifikasi</span>
                 </span>
@@ -1080,22 +1082,6 @@ function WargaHome() {
             initialScrollToMap={activeTab === 'peta'}
             isEmergencyActive={isEmergencyActive}
             simStatus={simStatus}
-            onToggleSimulatedEmergency={async (val) => {
-              try {
-                if (val) {
-                  const res = await startSimulation()
-                  setSimStatus(res.status)
-                  setIsEmergencyActive(res.status?.risk_level === 'awas')
-                  playSosAlertTone()
-                } else {
-                  await stopSimulation()
-                  setSimStatus({ is_running: false })
-                  setIsEmergencyActive(false)
-                }
-              } catch (e) {
-                setIsEmergencyActive(val)
-              }
-            }}
           />
         )}
         {activeTab === 'riwayat' && <WargaRiwayatKejadian />}

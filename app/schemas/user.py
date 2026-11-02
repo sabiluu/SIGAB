@@ -17,7 +17,7 @@ class UserCreate(BaseModel):
     avatar_url: Optional[str] = None
     nik: Optional[str] = None
     address: Optional[str] = None
-    family_count: Optional[int] = 4
+    family_count: Optional[int] = None
     elderly_count: Optional[int] = 0
     toddler_count: Optional[int] = 0
     pregnant_count: Optional[int] = 0
@@ -60,7 +60,7 @@ class CitizenDetailResponse(BaseModel):
     notification_enabled: bool
     nik: Optional[str] = None
     address: Optional[str] = None
-    family_count: int = 1
+    family_count: Optional[int] = None
     elderly_count: int = 0
     toddler_count: int = 0
     pregnant_count: int = 0

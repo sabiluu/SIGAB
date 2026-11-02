@@ -101,7 +101,22 @@ def handle_register(body: RegisterBody, db: Session):
             detail="Pendaftaran sebagai admin tidak diizinkan melalui jalur publik.",
         )
     norm_role = "admin" if body.role in ("petugas", "admin") else "user"
-    phone = (body.phone or "081234567890").strip()
+    # Nomor WhatsApp tidak boleh mengandung huruf, harus angka semua
+    phone_raw = (body.phone or "").strip()
+    if phone_raw:
+        if not phone_raw.isdigit():
+            raise HTTPException(
+                status_code=400,
+                detail="Nomor WhatsApp tidak boleh mengandung huruf, harus angka semua.",
+            )
+        if len(phone_raw) < 9 or len(phone_raw) > 15:
+            raise HTTPException(
+                status_code=400,
+                detail="Nomor WhatsApp harus terdiri dari 9 hingga 15 digit angka.",
+            )
+        phone = phone_raw
+    else:
+        phone = "081234567890"
 
     new_user = User(
         full_name=full_name,
@@ -111,6 +126,13 @@ def handle_register(body: RegisterBody, db: Session):
         role=norm_role,
         village_id=body.village_id,
         nik=nik_clean or None,
+        address=None,
+        family_count=None,
+        elderly_count=0,
+        toddler_count=0,
+        pregnant_count=0,
+        disabled_count=0,
+        notes=None,
         is_active=True,
     )
     db.add(new_user)
@@ -256,7 +278,7 @@ def format_user_profile(user: User):
         "village_id": user.village_id,
         "nik": user.nik or "",
         "address": user.address or "",
-        "family_count": user.family_count if user.family_count is not None else 4,
+        "family_count": user.family_count,
         "elderly_count": user.elderly_count if user.elderly_count is not None else 0,
         "toddler_count": user.toddler_count if user.toddler_count is not None else 0,
         "pregnant_count": user.pregnant_count if user.pregnant_count is not None else 0,
@@ -285,7 +307,13 @@ def update_me(
         current_user.full_name = body.full_name.strip()
 
     if body.phone is not None:
-        current_user.phone = body.phone.strip()
+        p_clean = body.phone.strip()
+        if p_clean and not p_clean.isdigit():
+            raise HTTPException(
+                status_code=400,
+                detail="Nomor WhatsApp tidak boleh mengandung huruf, harus angka semua.",
+            )
+        current_user.phone = p_clean
     if body.village_id is not None:
         current_user.village_id = body.village_id
     if body.nik is not None:

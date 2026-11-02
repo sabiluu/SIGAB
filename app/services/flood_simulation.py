@@ -340,20 +340,11 @@ class FloodSimulationManager:
 
             db.commit()
 
-            # 4. Jalankan Flood Engine untuk menarik data cuaca & debit LIVE (Open-Meteo & GloFAS)
-            try:
-                from .flood_engine import assess_and_update_flood_risks
-                await assess_and_update_flood_risks(db)
-                db.commit()
-                logger.info("[Simulasi] Engine real-time berhasil mengkalkulasi ulang data.")
-            except Exception as fe_err:
-                logger.error(f"[Simulasi] Gagal kalkulasi ulang flood engine saat restore: {fe_err}")
-
-            # 5. Broadcast update dashboard final ke WebSocket
+            # 4. Broadcast update dashboard final langsung dari DB yang telah dipulihkan
             snapshot = build_dashboard_snapshot(db)
             await ws_manager.broadcast("dashboard", snapshot)
 
-            # 6. Broadcast status simulasi nonaktif ke semua client
+            # 5. Broadcast status simulasi nonaktif ke semua client seketika
             await ws_manager.broadcast_all({
                 "type": "simulation_status",
                 "data": {
@@ -373,6 +364,23 @@ class FloodSimulationManager:
                     "timestamp": datetime.now().isoformat(),
                 },
             })
+
+            # 6. Tarik data cuaca & debit LIVE (Open-Meteo & GloFAS) di latar belakang agar response HTTP instan
+            async def _bg_live_sync():
+                bg_db = db_session_factory()
+                try:
+                    from .flood_engine import assess_and_update_flood_risks
+                    await assess_and_update_flood_risks(bg_db)
+                    bg_db.commit()
+                    fresh = build_dashboard_snapshot(bg_db)
+                    await ws_manager.broadcast("dashboard", fresh)
+                    logger.info("[Simulasi] Engine real-time background sync berhasil.")
+                except Exception as bg_err:
+                    logger.error(f"[Simulasi] Gagal kalkulasi ulang flood engine background: {bg_err}")
+                finally:
+                    bg_db.close()
+
+            asyncio.create_task(_bg_live_sync())
         finally:
             db.close()
 

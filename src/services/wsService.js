@@ -38,7 +38,9 @@ class WebSocketService {
    */
   connect(channel = 'alerts', options = {}) {
     if (this._connections[channel]?.readyState === WebSocket.OPEN) {
-      console.log(`[WS] Already connected to '${channel}'`);
+      if (options.villageId && options.villageId !== this._channelOptions[channel]?.villageId) {
+        this.updateVillage(options.villageId, channel);
+      }
       return;
     }
 

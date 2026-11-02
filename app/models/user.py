@@ -23,7 +23,7 @@ class User(Base):
     notification_enabled = Column(Boolean, nullable=False, default=True)
     nik = Column(String(20), nullable=True, index=True)
     address = Column(String(255), nullable=True)
-    family_count = Column(Integer, nullable=True, default=4)
+    family_count = Column(Integer, nullable=True, default=None)
     elderly_count = Column(Integer, nullable=True, default=0)
     toddler_count = Column(Integer, nullable=True, default=0)
     pregnant_count = Column(Integer, nullable=True, default=0)
