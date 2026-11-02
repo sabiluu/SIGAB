@@ -66,3 +66,15 @@ export async function apiFetch(endpoint, options = {}) {
 }
 
 export default API_BASE_URL;
+
+export async function getSimulationStatus() {
+  return apiFetch('/simulation/status');
+}
+
+export async function startSimulation() {
+  return apiFetch('/simulation/start', { method: 'POST', body: JSON.stringify({}) });
+}
+
+export async function stopSimulation() {
+  return apiFetch('/simulation/stop', { method: 'POST', body: JSON.stringify({}) });
+}

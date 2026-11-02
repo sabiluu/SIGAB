@@ -352,8 +352,7 @@
 }
 
 .warga-sidebar-sim-btn.active {
-  background: rgba(220, 38, 38, 0.14);
-  border-color: rgba(220, 38, 38, 0.45);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 .warga-sidebar-sim-info {
@@ -387,7 +386,6 @@
 }
 
 .warga-sidebar-sim-btn.active .warga-sidebar-sim-text .sim-desc {
-  color: #f87171;
   font-weight: 700;
 }
 
@@ -402,7 +400,7 @@
 }
 
 .warga-sidebar-sim-toggle.on {
-  background: #ef4444;
+  /* dynamic phase color */
 }
 
 .warga-sidebar-sim-toggle .sim-knob {

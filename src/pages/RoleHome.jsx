@@ -3,6 +3,7 @@ import { logout, getProfile } from '../services/authService'
 import { apiFetch } from '../services/api'
 import wsService from '../services/wsService'
 import { getSOSTickets, createSOSTicket } from '../services/sosService'
+import { getSimulationStatus, startSimulation, stopSimulation } from '../services/api'
 import RiskMap from '../components/RiskMap'
 import WargaBeranda from '../components/warga/WargaBeranda'
 import WargaRiwayatKejadian from '../components/warga/WargaRiwayatKejadian'
@@ -19,6 +20,81 @@ import LogoutModal from '../components/common/LogoutModal'
 import ProfileModal from '../components/warga/ProfileModal'
 import '../styles/role-home.css'
 import '../styles/warga-portal.css'
+
+
+function formatCountdown(sec) {
+  if (sec == null || isNaN(sec)) return '00:00'
+  const m = Math.floor(sec / 60)
+  const s = sec % 60
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
+function getSimPhaseInfo(status) {
+  if (!status?.is_running) {
+    return {
+      themeColor: '#334155',
+      bgColor: '#11222f',
+      borderColor: '#1a3245',
+      textColor: '#7d93a4',
+      icon: '🧪',
+      phaseName: 'Normal (OFF)',
+      desc: 'Status: Normal (OFF)',
+    }
+  }
+
+  const phase = (status.phase_name || '').toUpperCase()
+  const risk = (status.risk_level || '').toLowerCase()
+  const current = status.current_phase || 1
+  const rem = status.remaining_seconds || 0
+  const countdown = `${Math.floor(rem / 60)}:${String(rem % 60).padStart(2, '0')}`
+
+  if (risk === 'awas' || phase.includes('AWAS')) {
+    return {
+      themeColor: '#ef4444',
+      bgColor: 'rgba(239, 68, 68, 0.16)',
+      borderColor: 'rgba(239, 68, 68, 0.6)',
+      textColor: '#f87171',
+      icon: '🚨',
+      phaseName: 'AWAS',
+      desc: `Fase ${current}/7: AWAS (${countdown})`,
+    }
+  }
+
+  if (risk === 'tinggi' || phase.includes('SIAGA')) {
+    return {
+      themeColor: '#f97316',
+      bgColor: 'rgba(249, 115, 22, 0.16)',
+      borderColor: 'rgba(249, 115, 22, 0.6)',
+      textColor: '#fb923c',
+      icon: '🟠',
+      phaseName: 'SIAGA',
+      desc: `Fase ${current}/7: SIAGA (${countdown})`,
+    }
+  }
+
+  if (risk === 'sedang' || phase.includes('WASPADA')) {
+    return {
+      themeColor: '#f59e0b',
+      bgColor: 'rgba(245, 158, 11, 0.16)',
+      borderColor: 'rgba(245, 158, 11, 0.6)',
+      textColor: '#fbbf24',
+      icon: '🟡',
+      phaseName: 'WASPADA',
+      desc: `Fase ${current}/7: WASPADA (${countdown})`,
+    }
+  }
+
+  // Default: AMAN (Hijau)
+  return {
+    themeColor: '#10b981',
+    bgColor: 'rgba(16, 185, 129, 0.16)',
+    borderColor: 'rgba(16, 185, 129, 0.6)',
+    textColor: '#34d399',
+    icon: '🟢',
+    phaseName: 'AMAN',
+    desc: `Fase ${current}/7: AMAN (${countdown})`,
+  }
+}
 
 function Brand({ admin = false, locName = '' }) {
   return (
@@ -49,6 +125,7 @@ function WargaHome() {
   const [userProfile, setUserProfile] = useState({ full_name: 'Ahmadi' })
   const [selectedVillageId, setSelectedVillageId] = useState(null)
   const [isEmergencyActive, setIsEmergencyActive] = useState(false)
+  const [simStatus, setSimStatus] = useState(null)
   const [showNotifDropdown, setShowNotifDropdown] = useState(false)
   const [showProfileDropdown, setShowProfileDropdown] = useState(false)
   const [showProfileModal, setShowProfileModal] = useState(false)
@@ -221,7 +298,25 @@ function WargaHome() {
       role: 'user',
     })
     const unsub = wsService.on('emergency_status', (data) => setIsEmergencyActive(data.is_active))
-    return () => unsub()
+    getSimulationStatus().then(st => {
+      setSimStatus(st)
+      if (st && st.is_running) {
+        setIsEmergencyActive(st.risk_level === 'awas')
+      } else {
+        setIsEmergencyActive(false)
+      }
+    }).catch(() => {})
+    const unsubSim = wsService.on('simulation_status', (data) => {
+      setSimStatus(data)
+      if (data) {
+        if (data.is_running) {
+          setIsEmergencyActive(data.risk_level === 'awas')
+        } else {
+          setIsEmergencyActive(false)
+        }
+      }
+    })
+    return () => { unsub(); unsubSim(); }
   }, [])
 
   const handleSelectTab = (tab) => {
@@ -387,27 +482,66 @@ function WargaHome() {
 
         <div className="warga-sidebar-bottom">
           {/* Simulation Toggle in Sidebar */}
-          <button
-            type="button"
-            className={`warga-sidebar-sim-btn ${isEmergencyActive ? 'active' : ''}`}
-            onClick={() => {
-              const next = !isEmergencyActive
-              setIsEmergencyActive(next)
-              if (next) playSosAlertTone()
-            }}
-            title={isEmergencyActive ? "Nonaktifkan simulasi banjir" : "Aktifkan simulasi banjir parah"}
-          >
-            <div className="warga-sidebar-sim-info">
-              <span className="warga-sidebar-sim-icon">{isEmergencyActive ? '🚨' : '🧪'}</span>
-              <div className="warga-sidebar-sim-text">
-                <span className="sim-title">Simulasi Banjir</span>
-                <span className="sim-desc">{isEmergencyActive ? 'Status: PARAH (ON)' : 'Status: Normal (OFF)'}</span>
-              </div>
-            </div>
-            <div className={`warga-sidebar-sim-toggle ${isEmergencyActive ? 'on' : ''}`}>
-              <div className="sim-knob" />
-            </div>
-          </button>
+          {(() => {
+            const simInfo = getSimPhaseInfo(simStatus)
+            return (
+              <button
+                type="button"
+                className={`warga-sidebar-sim-btn ${simStatus?.is_running ? 'active' : ''}`}
+                style={{
+                  background: simInfo.bgColor,
+                  borderColor: simInfo.borderColor,
+                }}
+                onClick={async () => {
+                  try {
+                    if (simStatus?.is_running) {
+                      await stopSimulation()
+                      setSimStatus({ is_running: false })
+                      setIsEmergencyActive(false)
+                      try {
+                        const fresh = await apiFetch('/dashboard/realtime')
+                        if (fresh) wsService._emit('dashboard_update', fresh)
+                      } catch (e) {}
+                    } else {
+                      const res = await startSimulation()
+                      if (res && res.status) {
+                        setSimStatus(res.status)
+                        setIsEmergencyActive(res.status.risk_level === 'awas')
+                      }
+                      playSosAlertTone()
+                    }
+                  } catch (err) {
+                    console.error('Gagal toggle simulasi:', err)
+                  }
+                }}
+                title={simStatus?.is_running ? 'Hentikan simulasi banjir' : 'Mulai simulasi banjir bertahap (Aman → Waspada → Siaga → Awas → Aman)'}
+              >
+                <div className="warga-sidebar-sim-info">
+                  <span className="warga-sidebar-sim-icon">{simInfo.icon}</span>
+                  <div className="warga-sidebar-sim-text">
+                    <span className="sim-title">Simulasi Banjir</span>
+                    <span 
+                      className="sim-desc"
+                      style={{
+                        color: simInfo.textColor,
+                        fontWeight: simStatus?.is_running ? 700 : 500,
+                      }}
+                    >
+                      {simInfo.desc}
+                    </span>
+                  </div>
+                </div>
+                <div 
+                  className={`warga-sidebar-sim-toggle ${simStatus?.is_running ? 'on' : ''}`}
+                  style={{
+                    backgroundColor: simStatus?.is_running ? simInfo.themeColor : '#334155'
+                  }}
+                >
+                  <div className="sim-knob" />
+                </div>
+              </button>
+            )
+          })()}
 
           <div className="warga-sidebar-help-card">
             <div className="warga-sidebar-help-icon">
@@ -945,7 +1079,23 @@ function WargaHome() {
             onOpenLocationModal={handleOpenLocationModal}
             initialScrollToMap={activeTab === 'peta'}
             isEmergencyActive={isEmergencyActive}
-            onToggleSimulatedEmergency={(val) => setIsEmergencyActive(val)}
+            simStatus={simStatus}
+            onToggleSimulatedEmergency={async (val) => {
+              try {
+                if (val) {
+                  const res = await startSimulation()
+                  setSimStatus(res.status)
+                  setIsEmergencyActive(res.status?.risk_level === 'awas')
+                  playSosAlertTone()
+                } else {
+                  await stopSimulation()
+                  setSimStatus({ is_running: false })
+                  setIsEmergencyActive(false)
+                }
+              } catch (e) {
+                setIsEmergencyActive(val)
+              }
+            }}
           />
         )}
         {activeTab === 'riwayat' && <WargaRiwayatKejadian />}
@@ -976,6 +1126,7 @@ function AdminHome() {
   const [sidebarOpen, setSidebarOpen] = useState(() => getStoredSidebarState(typeof window !== 'undefined' ? window.innerWidth > 1024 : true))
   const [currentTime, setCurrentTime] = useState(new Date())
   const [isEmergency, setIsEmergency] = useState(false)
+  const [simStatus, setSimStatus] = useState(null)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [tickets, setTickets] = useState([])
   const [adminToast, setAdminToast] = useState(null)
@@ -1008,11 +1159,25 @@ function AdminHome() {
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000)
     apiFetch('/emergency/1').then(res => setIsEmergency(res.is_emergency_active)).catch(() => {})
+    getSimulationStatus().then(st => {
+      setSimStatus(st)
+      if (st && st.is_running) setIsEmergency(true)
+    }).catch(() => {})
     fetchTickets()
 
     wsService.connect('alerts', { role: 'admin' })
     wsService.connect('sos')
     const unsubAlerts = wsService.on('emergency_status', (data) => setIsEmergency(data.is_active))
+    const unsubSim = wsService.on('simulation_status', (data) => {
+      setSimStatus(data)
+      if (data) {
+        if (data.is_running) {
+          setIsEmergency(data.risk_level === 'awas')
+        } else {
+          setIsEmergency(false)
+        }
+      }
+    })
     const unsubSosNew = wsService.on('sos_new', () => {
       playSosAlertTone()
       fetchTickets()
@@ -1024,25 +1189,33 @@ function AdminHome() {
     return () => {
       clearInterval(timer)
       unsubAlerts()
+      unsubSim()
       unsubSosNew()
       unsubSosUpd()
     }
   }, [])
 
   const toggleEmergency = async () => {
-    const nextState = !isEmergency
-    setIsEmergency(nextState)
-
     try {
-      if (isEmergency) {
+      if (simStatus?.is_running || isEmergency) {
+        await stopSimulation().catch(() => {})
         await apiFetch('/emergency/3/deactivate', { method: 'POST', body: JSON.stringify({}) }).catch(() => {})
         await apiFetch('/emergency/1/deactivate', { method: 'POST', body: JSON.stringify({}) }).catch(() => {})
+        setIsEmergency(false)
+        setSimStatus({ is_running: false })
+        setAdminToast({ type: 'success', text: '? Simulasi banjir dihentikan. Data desa kembali normal.' })
       } else {
-        await apiFetch('/emergency/3/activate', { method: 'POST', body: JSON.stringify({ notes: 'Simulasi darurat aktif' }) }).catch(() => {})
-        await apiFetch('/emergency/1/activate', { method: 'POST', body: JSON.stringify({ notes: 'Simulasi darurat aktif' }) }).catch(() => {})
+        const res = await startSimulation()
+        setSimStatus(res.status)
+        setIsEmergency(true)
+        playSosAlertTone()
+        setAdminToast({ type: 'success', text: 'Simulasi banjir 4 desa (Kedungrejo, Kalisari, Lebaksari, Tanggungan) aktif: Aman (30d) -> Waspada (30d) -> Siaga (30d) -> Awas (10m) -> Siaga (30d) -> Waspada (30d) -> Aman' })
       }
+      setTimeout(() => setAdminToast(null), 6000)
     } catch(e) { 
       console.error(e)
+      setAdminToast({ type: 'error', text: '?? Kendala simulasi: ' + (e.message || 'Error') })
+      setTimeout(() => setAdminToast(null), 4000)
     }
   }
 
@@ -1179,25 +1352,38 @@ function AdminHome() {
             <strong>{timeStr}</strong>
             <small>{dateStr}</small>
           </div>
-          <div 
-            className={`danger-toggle ${isEmergency ? 'active' : ''}`} 
-            onClick={toggleEmergency}
-            style={{ cursor: 'pointer', background: isEmergency ? '#fff1f2' : '#f1f5f9', borderColor: isEmergency ? '#fecdd3' : '#e2e8f0' }}
-            title="Klik untuk mengaktifkan simulasi banjir parah atau mengembalikan ke kondisi normal"
-          >
-            <span>
-              STATUS DARURAT
-              <br />
-              <strong style={{ color: isEmergency ? '#e11d48' : '#64748b' }}>
-                {isEmergency ? 'AKTIF' : 'NONAKTIF'}
-              </strong>
-            </span>
-            <i className="toggle-indicator" />
-            <style>{`
-              .danger-toggle i.toggle-indicator { background: ${isEmergency ? '#e11d48' : '#cbd5e1'}; transition: all 0.3s; }
-              .danger-toggle i.toggle-indicator::after { right: ${isEmergency ? '2px' : '22px'}; transition: all 0.3s; }
-            `}</style>
-          </div>
+          {(() => {
+            const simInfo = getSimPhaseInfo(simStatus)
+            const isDanger = simStatus?.is_running || isEmergency
+            return (
+              <div 
+                className={`danger-toggle ${isDanger ? 'active' : ''}`} 
+                onClick={toggleEmergency}
+                style={{ 
+                  cursor: 'pointer', 
+                  background: simStatus?.is_running ? simInfo.bgColor : (isEmergency ? '#fff1f2' : '#f1f5f9'), 
+                  borderColor: simStatus?.is_running ? simInfo.borderColor : (isEmergency ? '#fecdd3' : '#e2e8f0'),
+                  minWidth: simStatus?.is_running ? '190px' : 'auto'
+                }}
+                title={simStatus?.is_running ? 'Klik untuk menghentikan simulasi banjir' : 'Klik untuk mengaktifkan simulasi banjir 4 desa'}
+              >
+                <span>
+                  {simStatus?.is_running ? `SIMULASI: FASE ${simStatus.current_phase || 1}/7` : 'STATUS DARURAT'}
+                  <br />
+                  <strong style={{ color: simStatus?.is_running ? simInfo.themeColor : (isEmergency ? '#e11d48' : '#64748b') }}>
+                    {simStatus?.is_running 
+                      ? `${simStatus.phase_name} (${formatCountdown(simStatus.remaining_seconds)})` 
+                      : (isEmergency ? 'AKTIF' : 'NONAKTIF')}
+                  </strong>
+                </span>
+                <i className="toggle-indicator" />
+                <style>{`
+                  .danger-toggle i.toggle-indicator { background: ${simStatus?.is_running ? simInfo.themeColor : (isEmergency ? '#e11d48' : '#cbd5e1')}; transition: all 0.3s; }
+                  .danger-toggle i.toggle-indicator::after { right: ${isDanger ? '2px' : '22px'}; transition: all 0.3s; }
+                `}</style>
+              </div>
+            )
+          })()}
 
         </header>
         <div className="admin-dashboard">
@@ -1257,7 +1443,7 @@ function AdminHome() {
                 </button>
               </div>
               <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1.5px solid #cbd5e1', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.02)' }}>
-                <RiskMap height="480px" villagesData={realtimeData?.villages || []} shelters={shelters} />
+                <RiskMap height="480px" villagesData={realtimeData?.villages || []} simStatus={simStatus} shelters={shelters} />
               </div>
             </article>
             <article className="sos-queue portal-card">

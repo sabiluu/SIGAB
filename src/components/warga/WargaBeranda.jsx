@@ -105,6 +105,24 @@ const DEFAULT_SHELTERS = [
   }
 ]
 
+
+const SIMULATION_PHASE_STEPS = [
+  { id: 1, name: 'Aman', duration: '1m', color: '#10b981' },
+  { id: 2, name: 'Waspada', duration: '1m', color: '#f59e0b' },
+  { id: 3, name: 'Siaga', duration: '1m', color: '#ea580c' },
+  { id: 4, name: 'Awas', duration: '10m', color: '#ef4444' },
+  { id: 5, name: 'Siaga', duration: '1m', color: '#ea580c' },
+  { id: 6, name: 'Waspada', duration: '1m', color: '#f59e0b' },
+  { id: 7, name: 'Aman', duration: '1m', color: '#10b981' },
+]
+
+function formatCountdown(sec) {
+  if (sec == null || isNaN(sec)) return '00:00'
+  const m = Math.floor(sec / 60)
+  const s = sec % 60
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
 export default function WargaBeranda({
   onNavigate,
   geo: externalGeo,
@@ -116,6 +134,7 @@ export default function WargaBeranda({
   initialScrollToMap = false,
   activeTab = 'beranda',
   isEmergencyActive = false,
+  simStatus = null,
   onToggleSimulatedEmergency
 }) {
   const { data, loading } = useDashboardRealtime()
@@ -212,10 +231,19 @@ export default function WargaBeranda({
     })
   }, [data?.villages, selectedVillageId, userProfile?.village_id])
 
-  const isSevereFlood = isEmergencyActive || simulatedEmergency
-  const rawProb = isSevereFlood 
-    ? 94 
-    : (selectedVillageObj?.probability ?? data?.kecamatan_summary?.average_probability ?? 22)
+  const targetSimVillages = [9, 12, 13, 22] // Kalisari, Kedungrejo, Lebaksari, Tanggungan
+  const currentVillageId = Number(selectedVillageId || userProfile?.village_id || 3)
+  const isTargetSimVillage = targetSimVillages.includes(currentVillageId)
+
+  const isSevereFlood = simStatus?.is_running
+    ? (simStatus.risk_level === 'awas' && isTargetSimVillage)
+    : (isEmergencyActive || simulatedEmergency)
+
+  const rawProb = (simStatus?.is_running && isTargetSimVillage)
+    ? simStatus.probability
+    : (isSevereFlood 
+        ? 94 
+        : (selectedVillageObj?.probability ?? data?.kecamatan_summary?.average_probability ?? 22))
   const probVal = Math.round(rawProb)
   
   // Theme and status
@@ -408,6 +436,8 @@ export default function WargaBeranda({
               <RiskMap
                 height="100%"
                 shelters={sheltersList}
+                villagesData={data?.villages || []}
+                simStatus={simStatus}
                 userLocation={userLocation}
                 selectedShelterId={selectedShelter?.id}
                 onSelectShelter={handleSelectShelter}
@@ -698,13 +728,13 @@ export default function WargaBeranda({
             <div className="warga-metric-subcard">
               <span className="metric-label">Curah hujan</span>
               <div className="metric-val">
-                {isSevereFlood ? '148.0' : (data?.weather?.precipitation_mm != null ? Number(data.weather.precipitation_mm).toFixed(1) : '2.4')} <span>mm</span>
+                {simStatus?.is_running ? Number(simStatus.rainfall_mm || 0).toFixed(1) : (isSevereFlood ? '148.0' : (data?.weather?.precipitation_mm != null ? Number(data.weather.precipitation_mm).toFixed(1) : '2.4'))} <span>mm</span>
               </div>
             </div>
             <div className="warga-metric-subcard">
               <span className="metric-label">Debit sungai</span>
               <div className="metric-val">
-                {isSevereFlood ? '1.950' : Math.round(data?.discharge?.discharge_m3s || 1210).toLocaleString('id-ID')} <span>m³/s</span>
+                {simStatus?.is_running ? Math.round(simStatus.discharge_m3s || 0).toLocaleString('id-ID') : (isSevereFlood ? '1.950' : Math.round(data?.discharge?.discharge_m3s || 1210).toLocaleString('id-ID'))} <span>m³/s</span>
               </div>
             </div>
           </div>

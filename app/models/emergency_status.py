@@ -3,11 +3,9 @@ Model EmergencyStatus — tabel 'emergency_status'.
 Log aktivasi/deaktivasi Mode Evakuasi Darurat per desa.
 """
 
-from sqlalchemy import Column, Integer, String, Text, Enum, DateTime, Boolean, DECIMAL, ForeignKey, func
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, DECIMAL, ForeignKey
 from sqlalchemy.orm import relationship
 from ..core.database import Base
-
-
 from ..core.timezone import get_wib_now
 
 
@@ -17,10 +15,7 @@ class EmergencyStatus(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     village_id = Column(Integer, ForeignKey("villages.id", ondelete="CASCADE"), nullable=False)
     is_emergency_active = Column(Boolean, nullable=False, default=False)
-    trigger_type = Column(
-        Enum("auto_probability", "manual_admin", name="trigger_type_enum"),
-        nullable=False
-    )
+    trigger_type = Column(String(50), nullable=False, default="auto_probability")
     triggered_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     probability_at_trigger = Column(DECIMAL(5, 2), nullable=True)
     notes = Column(Text, nullable=True)

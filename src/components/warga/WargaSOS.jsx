@@ -7,7 +7,7 @@ import wsService from '../../services/wsService';
 import { useAuth } from '../../context/AuthContext';
 import { formatWIBDateTime } from '../../utils/helpers';
 
-import useGeolocation from '../../hooks/useGeolocation';
+import useGeolocation, { reverseGeocodeLocation } from '../../hooks/useGeolocation';
 
 const userPinIcon = L.divIcon({
   className: 'custom-sos-pin',
@@ -123,103 +123,9 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
     geo?.isRealDevice ? 'real_gps' : 'syncing'
   );
 
-  const reverseGeocodeCoords = async (lat, lng) => {
-    try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
-        { headers: { 'Accept-Language': 'id', 'User-Agent': 'SIGAB-Disaster-App/1.0' } }
-      );
-      if (res.ok) {
-        const data = await res.json();
-        const addr = data.address || {};
-        const subdistrict = addr.village || addr.suburb || addr.neighbourhood || addr.municipality || '';
-        const city = addr.city || addr.town || addr.county || addr.state || '';
-        const label = [subdistrict, city].filter(Boolean).join(', ') || data.display_name;
-        return { short: label, full: data.display_name || label };
-      }
-    } catch {}
-
-    try {
-      const res = await fetch(
-        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=id`
-      );
-      if (res.ok) {
-        const data = await res.json();
-        const label = [data.locality, data.city].filter(Boolean).join(', ');
-        return { short: label, full: `${label}, ${data.countryName || 'Indonesia'}` };
-      }
-    } catch {}
-
-    return { short: `${lat.toFixed(5)}, ${lng.toFixed(5)}`, full: `Koordinat ${lat.toFixed(5)}, ${lng.toFixed(5)}` };
-  };
-
-  // Fungsi sinkronisasi koordinat GPS nyata dari device
-  const syncRealDeviceLocation = useCallback(async () => {
-    setLoadingGps(true);
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
-          const acc = pos.coords.accuracy;
-          setGpsLocation({ lat, lng });
-          setGpsAccuracy(acc);
-          setLocationSource('real_gps');
-
-          const names = await reverseGeocodeCoords(lat, lng);
-          setAddress(names.full || names.short);
-          setLoadingGps(false);
-
-          if (geo?.setCustomCoordinates) {
-            geo.setCustomCoordinates(lat, lng, acc);
-          }
-        },
-        async (err) => {
-          console.warn('Geolocation error, fallback to IP:', err);
-          try {
-            const ipRes = await fetch('https://get.geojs.io/v1/ip/geo.json');
-            if (ipRes.ok) {
-              const ipData = await ipRes.json();
-              const ipLat = parseFloat(ipData.latitude);
-              const ipLng = parseFloat(ipData.longitude);
-              if (!isNaN(ipLat) && !isNaN(ipLng)) {
-                setGpsLocation({ lat: ipLat, lng: ipLng });
-                setGpsAccuracy(1000);
-                setLocationSource('ip');
-                const names = await reverseGeocodeCoords(ipLat, ipLng);
-                setAddress(names.full || names.short);
-                setLoadingGps(false);
-                return;
-              }
-            }
-          } catch (e) {}
-          setLoadingGps(false);
-        },
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
-      );
-    } else {
-      setLoadingGps(false);
-    }
-  }, [geo]);
-
-  // Handler jika user menggeser pin atau mengklik titik pada peta
-  const handleMapLocationSelect = async (lat, lng) => {
-    setGpsLocation({ lat, lng });
-    setLocationSource('manual');
-    const names = await reverseGeocodeCoords(lat, lng);
-    setAddress(names.full || names.short);
-    if (geo?.setCustomCoordinates) {
-      geo.setCustomCoordinates(lat, lng);
-    }
-  };
-
-  // Jalankan sinkronisasi GPS nyata perangkat saat halaman SOS dibuka
-  useEffect(() => {
-    syncRealDeviceLocation();
-  }, [syncRealDeviceLocation]);
-
   // Sinkronkan GPS otomatis saat terdeteksi dari hook geo
   useEffect(() => {
+    if (locationSource === 'manual') return; // jangan override jika pengguna sengaja menggeser pin
     if (geo?.position?.latitude && geo?.position?.longitude) {
       setGpsLocation({ lat: geo.position.latitude, lng: geo.position.longitude });
       if (geo.position.accuracy) {
@@ -228,14 +134,54 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
       if (geo.fullAddress || geo.address) {
         setAddress(geo.fullAddress || geo.address);
       }
+      setLocationSource(geo.isRealDevice ? 'real_gps' : 'ip');
+      setLoadingGps(false);
     }
-  }, [geo?.position?.latitude, geo?.position?.longitude, geo?.position?.accuracy, geo?.fullAddress, geo?.address]);
+  }, [geo?.position?.latitude, geo?.position?.longitude, geo?.position?.accuracy, geo?.fullAddress, geo?.address, geo?.isRealDevice, locationSource]);
 
-  // Handler Refresh GPS
-  const detectGPS = () => {
-    syncRealDeviceLocation();
+  // Handler jika user menggeser pin atau mengklik titik pada peta
+  const handleMapLocationSelect = async (lat, lng) => {
+    setGpsLocation({ lat, lng });
+    setLocationSource('manual');
+    const names = await reverseGeocodeLocation(lat, lng);
+    setAddress(names.full || names.short);
+    if (geo?.setCustomCoordinates) {
+      geo.setCustomCoordinates(lat, lng);
+    }
+  };
+
+  // Handler Refresh GPS secara manual saat tombol diklik
+  const detectGPS = async () => {
+    setLoadingGps(true);
+    setLocationSource('syncing');
+
     if (geo?.refresh) {
       geo.refresh();
+      setTimeout(() => setLoadingGps(false), 2500);
+      return;
+    }
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          const acc = pos.coords.accuracy || 10;
+          setGpsLocation({ lat, lng });
+          setGpsAccuracy(acc);
+          setLocationSource('real_gps');
+
+          const names = await reverseGeocodeLocation(lat, lng);
+          setAddress(names.full || names.short);
+          setLoadingGps(false);
+        },
+        async () => {
+          setLoadingGps(false);
+        },
+        { enableHighAccuracy: false, timeout: 5000, maximumAge: 10000 }
+      );
+    } else {
+      setLoadingGps(false);
     }
   };
 
