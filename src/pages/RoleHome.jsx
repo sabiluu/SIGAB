@@ -546,8 +546,9 @@ function WargaHome() {
 
       {/* 2. MAIN CONTAINER */}
       <div className="warga-main-container">
-        {/* 0. EMERGENCY TOP INDICATOR BAR */}
-        {isEmergencyActive && (
+        <div className="warga-sticky-top-wrap">
+          {/* 0. EMERGENCY TOP INDICATOR BAR */}
+          {isEmergencyActive && (
           <div className="warga-emergency-top-banner">
             <div className="warga-emergency-top-info">
               <span className="warga-emergency-icon">📢</span>
@@ -635,7 +636,7 @@ function WargaHome() {
               <span>Data live • {liveTimeStr}</span>
             </div>
 
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', zIndex: 9999 }}>
               <button
                 type="button"
                 className="warga-circle-btn"
@@ -770,6 +771,7 @@ function WargaHome() {
             </div>
           </div>
         </header>
+      </div>
 
       {/* User Profile & Household Modal */}
       <ProfileModal

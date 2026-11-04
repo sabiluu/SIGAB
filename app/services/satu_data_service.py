@@ -538,3 +538,4 @@ class SatuDataBojonegoroService:
 
 # Singleton instance
 satu_data_service = SatuDataBojonegoroService()
+
