@@ -29,10 +29,10 @@ export const PERSONAL_SIM_PHASES = [
     name: 'SIAGA',
     risk_level: 'tinggi',
     probability: 68,
-    duration: 30,
+    duration: 30, // 30 detik menuju AWAS
     themeColor: '#f97316',
     icon: '🟠',
-    description: 'Fase 3/7: Siaga — Hujan lebat intensif, TMA mendekati bibir tanggul.',
+    description: 'Fase 3/7: SIAGA (30 detik) — Debit sungai mendekati bibir tanggul, menuju status AWAS.',
     isEmergency: false,
   },
   {
@@ -40,10 +40,10 @@ export const PERSONAL_SIM_PHASES = [
     name: 'AWAS',
     risk_level: 'awas',
     probability: 94,
-    duration: 600, // 10 menit untuk simulasi darurat & pengajuan SOS
+    duration: 600, // 10 menit (Awas menuju Siaga)
     themeColor: '#ef4444',
     icon: '🚨',
-    description: 'Fase 4/7: AWAS (DARURAT) — Tanggul meluap, status darurat aktif! Warga dapat mengajukan tiket SOS.',
+    description: 'Fase 4/7: AWAS (10 Menit) — Status darurat banjir aktif menuju Siaga Menurun. Warga dapat mengajukan tiket SOS.',
     isEmergency: true,
   },
   {
@@ -51,10 +51,10 @@ export const PERSONAL_SIM_PHASES = [
     name: 'SIAGA Menurun',
     risk_level: 'tinggi',
     probability: 60,
-    duration: 30,
+    duration: 30, // 30 detik menuju Waspada
     themeColor: '#f97316',
     icon: '🟠',
-    description: 'Fase 5/7: Siaga Menurun — Hujan reda, debit air mulai tertahan.',
+    description: 'Fase 5/7: SIAGA Menurun (30 detik) — Hujan reda, air berangsur stabil.',
     isEmergency: false,
   },
   {
