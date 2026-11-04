@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { getFloodIncidents, syncSatuData, getSatuDataStatus } from '../../services/floodService'
+import { getFloodIncidents, syncSatuData } from '../../services/floodService'
 
 export default function WargaRiwayatKejadian() {
   const [filter, setFilter] = useState('semua')
@@ -8,9 +8,6 @@ export default function WargaRiwayatKejadian() {
   const [allEvents, setAllEvents] = useState([])
   const [serverStats, setServerStats] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [syncing, setSyncing] = useState(false)
-  const [syncFeedback, setSyncFeedback] = useState(null)
-  const [portalStatus, setPortalStatus] = useState(null)
 
   const fetchData = async () => {
     setLoading(true)
@@ -33,52 +30,22 @@ export default function WargaRiwayatKejadian() {
     }
   }
 
-  // Cek konektivitas API Satu Data Bojonegoro saat pertama kali komponen dimuat
+  // Sinkronisasi otomatis di latar belakang dengan Satu Data Bojonegoro
   useEffect(() => {
-    getSatuDataStatus()
-      .then((status) => {
-        if (status) setPortalStatus(status)
+    syncSatuData()
+      .then((res) => {
+        if (res && res.new_added > 0) {
+          fetchData()
+        }
       })
-      .catch((e) => {
-        console.warn('Gagal memverifikasi koneksi Satu Data Bojonegoro:', e)
-        setPortalStatus({ reachable: false, error: 'Koneksi lokal aktif' })
+      .catch((err) => {
+        console.warn('Auto-sync Satu Data Bojonegoro (background):', err)
       })
   }, [])
 
   useEffect(() => {
     fetchData()
   }, [filter, year])
-
-  // Aksi sinkronisasi langsung dengan portal Satu Data Bojonegoro
-  const handleSyncSatuData = async () => {
-    setSyncing(true)
-    setSyncFeedback(null)
-    try {
-      const res = await syncSatuData()
-      if (res && res.success) {
-        setSyncFeedback({
-          type: 'success',
-          text: res.message || 'Sinkronisasi Satu Data Bojonegoro berhasil! Data riwayat kejadian telah diperbarui.',
-        })
-        await fetchData()
-      } else {
-        setSyncFeedback({
-          type: 'error',
-          text: res?.message || 'Gagal sinkronisasi data dari portal Satu Data.',
-        })
-      }
-    } catch (err) {
-      setSyncFeedback({
-        type: 'error',
-        text: 'Terjadi kendala saat menghubungkan ke Satu Data Bojonegoro: ' + (err.message || 'Koneksi gagal'),
-      })
-    } finally {
-      setSyncing(false)
-      setTimeout(() => {
-        setSyncFeedback(null)
-      }, 7000)
-    }
-  }
 
   // Pencarian instan: setiap huruf yang diketik langsung memfilter daftar (tanpa menunggu server)
   const events = useMemo(() => {
@@ -159,13 +126,13 @@ export default function WargaRiwayatKejadian() {
     <div className="warga-riwayat-page">
       <span className="riwayat-kicker-pill">RIWAYAT KEJADIAN</span>
       
-      <div className="riwayat-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
+      <div className="riwayat-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
         <div>
           <h1 style={{ margin: '0 0 6px', fontSize: '1.85rem', fontWeight: 800, color: '#0f172a' }}>
             Arsip Kejadian Hidrometeorologi
           </h1>
           <p style={{ margin: 0, fontSize: '0.88rem', color: '#64748b' }}>
-            Rekam jejak kejadian banjir resmi BPBD Kabupaten Bojonegoro untuk seluruh desa di wilayah Kecamatan Baureno.
+            Rekam jejak kejadian banjir, elevasi muka air Bengawan Solo, dan data evakuasi warga di wilayah Kecamatan Baureno.
           </p>
         </div>
 
@@ -250,155 +217,6 @@ export default function WargaRiwayatKejadian() {
           </div>
         </div>
       </div>
-
-      {/* Satu Data Bojonegoro Integration Card */}
-      <div 
-        style={{
-          background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)',
-          border: '1.5px solid #a7f3d0',
-          borderRadius: '16px',
-          padding: '16px 20px',
-          marginBottom: '24px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '14px',
-          boxShadow: '0 2px 8px rgba(16, 185, 129, 0.06)'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: '1 1 340px' }}>
-          <div style={{
-            width: '44px',
-            height: '44px',
-            borderRadius: '12px',
-            background: '#10b981',
-            color: '#fff',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '1.3rem',
-            boxShadow: '0 4px 10px rgba(16, 185, 129, 0.3)'
-          }}>
-            🏛️
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <strong style={{ fontSize: '0.98rem', color: '#065f46' }}>
-                Terhubung ke API Satu Data Bojonegoro
-              </strong>
-              <span style={{
-                fontSize: '0.7rem',
-                fontWeight: 800,
-                color: portalStatus?.reachable ? '#047857' : '#b45309',
-                background: portalStatus?.reachable ? '#d1fae5' : '#fef3c7',
-                border: `1px solid ${portalStatus?.reachable ? '#6ee7b7' : '#fde68a'}`,
-                padding: '2px 8px',
-                borderRadius: '999px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}>
-                <span style={{
-                  width: '6px',
-                  height: '6px',
-                  borderRadius: '50%',
-                  background: portalStatus?.reachable ? '#10b981' : '#f59e0b'
-                }} />
-                {portalStatus?.reachable ? 'Online (Real-time)' : 'Tersinkronisasi Lokal'}
-              </span>
-            </div>
-            <p style={{ margin: '3px 0 0', fontSize: '0.8rem', color: '#047857', lineHeight: '1.4' }}>
-              Filter: <b>Kecamatan Baureno</b> (Seluruh Desa) • Jenis Bencana: <b>Banjir Bengawan Solo (Luapan Sungai)</b> &amp; <b>Banjir Luapan Sungai / Genangan</b> • Semua Tahun
-            </p>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          <a
-            href="https://data.bojonegorokab.go.id/badan-penanggulangan-bencana.html@detail=kejadian-bencana"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 14px',
-              background: '#ffffff',
-              border: '1.5px solid #d1fae5',
-              borderRadius: '10px',
-              color: '#065f46',
-              fontSize: '0.8rem',
-              fontWeight: 700,
-              textDecoration: 'none',
-              transition: 'all 0.2s'
-            }}
-            title="Buka portal Satu Data Bojonegoro resmi"
-          >
-            <span>Buka Portal Resmi</span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-              <polyline points="15 3 21 3 21 9" />
-              <line x1="10" y1="14" x2="21" y2="3" />
-            </svg>
-          </a>
-
-          <button
-            type="button"
-            onClick={handleSyncSatuData}
-            disabled={syncing}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 16px',
-              background: syncing ? '#94a3b8' : '#047857',
-              border: 'none',
-              borderRadius: '10px',
-              color: '#ffffff',
-              fontSize: '0.82rem',
-              fontWeight: 700,
-              cursor: syncing ? 'not-allowed' : 'pointer',
-              boxShadow: '0 2px 6px rgba(4, 120, 87, 0.2)',
-              transition: 'background 0.2s'
-            }}
-          >
-            <span style={{ display: 'inline-block', transform: syncing ? 'rotate(360deg)' : 'none', transition: 'transform 0.8s infinite linear' }}>
-              🔄
-            </span>
-            <span>{syncing ? 'Menyinkronkan...' : 'Sinkronkan Data'}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Sync Feedback Toast */}
-      {syncFeedback && (
-        <div
-          style={{
-            marginBottom: '20px',
-            padding: '12px 18px',
-            borderRadius: '12px',
-            background: syncFeedback.type === 'error' ? '#fef2f2' : '#ecfdf5',
-            border: `1.5px solid ${syncFeedback.type === 'error' ? '#fecaca' : '#a7f3d0'}`,
-            color: syncFeedback.type === 'error' ? '#991b1b' : '#065f46',
-            fontSize: '0.86rem',
-            fontWeight: 700,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
-          }}
-        >
-          <span>{syncFeedback.text}</span>
-          <button
-            type="button"
-            onClick={() => setSyncFeedback(null)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 800, color: 'inherit' }}
-          >
-            ✕
-          </button>
-        </div>
-      )}
 
       {/* 4 Stat Cards in a row */}
       <div className="riwayat-stats-grid">
