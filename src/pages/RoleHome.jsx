@@ -307,6 +307,8 @@ function WargaHome() {
   }, [])
 
   const handleSelectTab = (tab) => {
+    setShowNotifDropdown(false)
+    setShowProfileDropdown(false)
     setActiveTab(tab)
     try {
       sessionStorage.setItem('sigab_warga_tab', tab)
@@ -651,10 +653,10 @@ function WargaHome() {
                 <>
                   {/* Invisible backdrop to dismiss dropdown on click outside */}
                   <div 
-                    style={{ position: 'fixed', inset: 0, zIndex: 999 }} 
+                    style={{ position: 'fixed', inset: 0, zIndex: 9998, background: 'transparent' }} 
                     onClick={() => setShowNotifDropdown(false)} 
                   />
-                  <div className="notif-panel">
+                  <div className="notif-panel" style={{ zIndex: 9999 }}>
                     <div className="notif-panel-header">
                       <h4>
                         <span>🔔</span> Pemberitahuan ({displayNotifs.length})
@@ -680,6 +682,23 @@ function WargaHome() {
                             Bersihkan
                           </button>
                         )}
+                        <button
+                          type="button"
+                          onClick={() => setShowNotifDropdown(false)}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontSize: '0.95rem',
+                            color: '#64748b',
+                            padding: '2px 6px',
+                            lineHeight: 1,
+                            borderRadius: '4px'
+                          }}
+                          title="Tutup pemberitahuan"
+                        >
+                          ✕
+                        </button>
                       </div>
                     </div>
                     <div className="notif-panel-body">
