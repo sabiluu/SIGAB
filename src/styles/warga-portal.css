@@ -3498,7 +3498,7 @@
 }
 
 .sos-step-label {
-  font-size: 0.76rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: var(--warga-text-muted);
 }
@@ -3527,27 +3527,27 @@
   align-items: center;
   gap: 8px;
   color: #b91c1c;
-  font-size: 0.88rem;
+  font-size: 0.98rem;
   font-weight: 800;
 }
 
 .sos-sim-text p {
-  margin: 3px 0 0;
+  margin: 4px 0 0;
   color: #7f1d1d;
-  font-size: 0.78rem;
-  line-height: 1.4;
+  font-size: 0.875rem;
+  line-height: 1.5;
 }
 
 .btn-fill-sim {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 16px;
+  padding: 9px 18px;
   border-radius: 8px;
   background: #dc2626;
   color: #ffffff;
   border: none;
-  font-size: 0.78rem;
+  font-size: 0.86rem;
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
@@ -3559,6 +3559,20 @@
 .btn-fill-sim:hover {
   background: #b91c1c;
   transform: translateY(-1px);
+}
+
+.sos-section-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--warga-navy);
+  margin: 0 0 6px 0;
+}
+
+.sos-section-desc {
+  font-size: 0.88rem;
+  color: #475569;
+  line-height: 1.55;
+  margin: 0 0 16px 0;
 }
 
 /* Form Card */
@@ -3622,31 +3636,31 @@
 }
 
 .sos-location-label {
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 700;
   text-transform: uppercase;
   color: var(--warga-text-muted);
   letter-spacing: 0.04em;
-  margin-bottom: 3px;
+  margin-bottom: 4px;
 }
 
 .sos-location-address {
-  font-size: 0.92rem;
+  font-size: 0.96rem;
   font-weight: 700;
   color: var(--warga-navy);
-  line-height: 1.4;
+  line-height: 1.45;
 }
 
 .btn-refresh-gps {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 14px;
+  padding: 8px 16px;
   border-radius: 8px;
   background: #ffffff;
   border: 1.5px solid var(--warga-teal);
   color: var(--warga-teal);
-  font-size: 0.76rem;
+  font-size: 0.82rem;
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
@@ -3667,7 +3681,7 @@
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   color: var(--warga-text-muted);
   border-top: 1px solid var(--warga-border);
   padding-top: 10px;

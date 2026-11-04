@@ -685,7 +685,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                   color: 'white',
                   padding: '6px 14px',
                   borderRadius: '20px',
-                  fontSize: '11px',
+                  fontSize: '12.5px',
                   fontWeight: 700,
                   pointerEvents: 'none',
                   display: 'flex',
