@@ -472,77 +472,47 @@ function WargaHome() {
           {(() => {
             const simInfo = getSimPhaseInfo(simStatus)
             return (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <button
-                  type="button"
-                  className={`warga-sidebar-sim-btn ${personalSim.isRunning ? 'active' : ''}`}
+              <button
+                type="button"
+                className={`warga-sidebar-sim-btn ${personalSim.isRunning ? 'active' : ''}`}
+                style={{
+                  background: simInfo.bgColor,
+                  borderColor: simInfo.borderColor,
+                }}
+                onClick={() => {
+                  if (personalSim.isRunning) {
+                    personalSim.stopSimulation()
+                  } else {
+                    personalSim.startSimulation(0)
+                    playSosAlertTone()
+                  }
+                }}
+                title={personalSim.isRunning ? 'Hentikan simulasi banjir akun ini' : 'Mulai simulasi banjir bertahap untuk akun ini (Aman → Waspada → Siaga → Awas → Aman)'}
+              >
+                <div className="warga-sidebar-sim-info">
+                  <span className="warga-sidebar-sim-icon">{simInfo.icon}</span>
+                  <div className="warga-sidebar-sim-text">
+                    <span className="sim-title">Simulasi Akun Warga</span>
+                    <span 
+                      className="sim-desc"
+                      style={{
+                        color: simInfo.textColor,
+                        fontWeight: personalSim.isRunning ? 700 : 500,
+                      }}
+                    >
+                      {simInfo.desc}
+                    </span>
+                  </div>
+                </div>
+                <div 
+                  className={`warga-sidebar-sim-toggle ${personalSim.isRunning ? 'on' : ''}`}
                   style={{
-                    background: simInfo.bgColor,
-                    borderColor: simInfo.borderColor,
+                    backgroundColor: personalSim.isRunning ? simInfo.themeColor : '#334155'
                   }}
-                  onClick={() => {
-                    if (personalSim.isRunning) {
-                      personalSim.stopSimulation()
-                    } else {
-                      personalSim.startSimulation(0)
-                      playSosAlertTone()
-                    }
-                  }}
-                  title={personalSim.isRunning ? 'Hentikan simulasi banjir akun ini' : 'Mulai simulasi banjir bertahap untuk akun ini (Aman → Waspada → Siaga → Awas → Aman)'}
                 >
-                  <div className="warga-sidebar-sim-info">
-                    <span className="warga-sidebar-sim-icon">{simInfo.icon}</span>
-                    <div className="warga-sidebar-sim-text">
-                      <span className="sim-title">Simulasi Akun Warga</span>
-                      <span 
-                        className="sim-desc"
-                        style={{
-                          color: simInfo.textColor,
-                          fontWeight: personalSim.isRunning ? 700 : 500,
-                        }}
-                      >
-                        {simInfo.desc}
-                      </span>
-                    </div>
-                  </div>
-                  <div 
-                    className={`warga-sidebar-sim-toggle ${personalSim.isRunning ? 'on' : ''}`}
-                    style={{
-                      backgroundColor: personalSim.isRunning ? simInfo.themeColor : '#334155'
-                    }}
-                  >
-                    <div className="sim-knob" />
-                  </div>
-                </button>
-
-                {/* Tombol pintas uji situasi darurat SOS */}
-                {personalSim.isRunning && !personalSim.isEmergency && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      personalSim.jumpToPhase(3) // Fase index 3 adalah Fase 4: AWAS
-                      playSosAlertTone()
-                    }}
-                    style={{
-                      background: 'rgba(239, 68, 68, 0.15)',
-                      border: '1px dashed #ef4444',
-                      color: '#f87171',
-                      borderRadius: '8px',
-                      padding: '5px 8px',
-                      fontSize: '0.73rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '4px',
-                      transition: 'all 0.2s ease',
-                    }}
-                  >
-                    ⚡ Lompat ke Fase Darurat (Uji SOS)
-                  </button>
-                )}
-              </div>
+                  <div className="sim-knob" />
+                </div>
+              </button>
             )
           })()}
 
