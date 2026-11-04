@@ -16,7 +16,7 @@ import useGeolocation, { BAURENO_VILLAGES } from '../hooks/useGeolocation'
 import useRealtimeNotifications from '../hooks/useRealtimeNotifications'
 import usePersonalSimulation from '../hooks/usePersonalSimulation'
 import { playSosAlertTone } from '../utils/audioAlarm'
-import { formatWIBTime, getStoredSidebarState, setStoredSidebarState } from '../utils/helpers'
+import { formatWIBTime, getStoredSidebarState, setStoredSidebarState, getCurrentShift } from '../utils/helpers'
 import LogoutModal from '../components/common/LogoutModal'
 import ProfileModal from '../components/warga/ProfileModal'
 import '../styles/role-home.css'
@@ -1276,7 +1276,7 @@ function AdminHome() {
           <div className="op-text">
             <small>Petugas Jaga</small>
             <strong>Kec. Baureno</strong>
-            <span>Online · Shift Pagi</span>
+            <span>Online · {getCurrentShift(currentTime)}</span>
           </div>
         </div>
 
