@@ -430,6 +430,8 @@ export default function WargaBeranda({
                 shelters={sheltersList}
                 villagesData={data?.villages || []}
                 simStatus={simStatus}
+                userVillageName={activeVillageDisplay}
+                userVillageId={Number(selectedVillageId || userProfile?.village_id)}
                 userLocation={userLocation}
                 selectedShelterId={selectedShelter?.id}
                 onSelectShelter={handleSelectShelter}

@@ -200,6 +200,8 @@ export default function RiskMap({
   shelters = [], 
   villagesData = [],
   simStatus = null,
+  userVillageName = null,
+  userVillageId = null,
   onSelectShelter, 
   selectedShelterId,
   userLocation,
@@ -210,9 +212,7 @@ export default function RiskMap({
   const [liveSimStatus, setLiveSimStatus] = useState(simStatus || null);
 
   useEffect(() => {
-    if (simStatus !== undefined) {
-      setLiveSimStatus(simStatus);
-    }
+    setLiveSimStatus(simStatus || null);
   }, [simStatus]);
 
   useEffect(() => {
@@ -238,13 +238,6 @@ export default function RiskMap({
 
     fetchVillageData();
 
-    getSimulationStatus().then((st) => {
-      if (active && st) setLiveSimStatus(st);
-    }).catch(() => {});
-
-    const unsubSim = wsService.on('simulation_status', (data) => {
-      if (active) setLiveSimStatus(data);
-    });
     const unsubDash = wsService.on('dashboard_update', (data) => {
       if (active && data && Array.isArray(data.villages) && data.villages.length > 0) {
         setDbVillages(data.villages);
@@ -253,7 +246,6 @@ export default function RiskMap({
 
     return () => {
       active = false;
-      unsubSim();
       unsubDash();
     };
   }, []);
@@ -273,10 +265,24 @@ export default function RiskMap({
       let prob = 0;
       
       const realVillage = findMatchingVillage(name, activeList);
-      const targetSimNames = ['kalisari', 'lebaksari', 'tanggungan', 'kedungrejo', 'kadungrejo'];
-      const isTargetSim = targetSimNames.includes(cleanName);
 
-      if (liveSimStatus?.is_running && isTargetSim) {
+      // Cek apakah desa ini adalah desa domisili/pilihan warga yang sedang menyalakan simulasi
+      let isUserSimVillage = false;
+      if (liveSimStatus?.is_running) {
+        const targetClean = (userVillageName || selectedVillageName || '')
+          .replace(/^Desa\s+/i, '')
+          .replace(' (Pusat)', '')
+          .trim()
+          .toLowerCase();
+
+        if (targetClean) {
+          isUserSimVillage = (cleanName === targetClean || cleanName.includes(targetClean) || targetClean.includes(cleanName));
+        } else if (userVillageId && realVillage) {
+          isUserSimVillage = (Number(realVillage.id) === Number(userVillageId));
+        }
+      }
+
+      if (liveSimStatus?.is_running && isUserSimVillage) {
         prob = Number(liveSimStatus.probability != null ? liveSimStatus.probability : 10);
         status = liveSimStatus.risk_level || (prob >= 76 ? 'awas' : (prob >= 51 ? 'tinggi' : (prob >= 25 ? 'sedang' : 'rendah')));
       } else if (realVillage) {
