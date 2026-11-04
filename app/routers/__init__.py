@@ -11,6 +11,7 @@ from .audit_logs import router as audit_logs_router
 from .system_config import router as config_router, configs_router
 from .users import router as users_router
 from .health import router as health_router
+from .simulation import router as simulation_router
 
 
 

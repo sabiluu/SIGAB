@@ -45,6 +45,7 @@ class SOSTicketResponse(BaseModel):
     has_disability: bool
     has_pregnant: bool
     photo_url: Optional[str]
+    is_simulation: bool = False
     status: str
     priority_score: int
     assigned_admin_id: Optional[int]

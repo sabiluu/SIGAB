@@ -176,6 +176,41 @@ def sync_flood_csv_endpoint(
         raise HTTPException(status_code=500, detail=f"Gagal menyinkronkan CSV: {str(e)}")
 
 
+@router.get("/satu-data/status")
+@router.get("/archive/satu-data/status")
+def get_satu_data_status_endpoint():
+    """
+    Mengecek konektivitas dan status portal Satu Data Bojonegoro.
+    """
+    from ..services.satu_data_service import satu_data_service
+    return satu_data_service.check_connection()
+
+
+@router.post("/satu-data/sync")
+@router.post("/archive/sync-satu-data")
+def sync_satu_data_endpoint(
+    db: Session = Depends(get_db),
+):
+    """
+    Menyinkronkan data kejadian banjir resmi BPBD Baureno langsung dari portal Satu Data Bojonegoro.
+    Filter:
+    - Kecamatan: Baureno
+    - Jenis Bencana: Banjir Bengawan Solo (Luapan Sungai) & Banjir Luapan Sungai / Genangan
+    - Tahun: Semua Tahun
+    - Desa: Seluruh Desa di Baureno
+    """
+    try:
+        from ..services.satu_data_service import satu_data_service
+        res = satu_data_service.sync_to_database(db)
+        return res
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Gagal menyinkronkan data Satu Data Bojonegoro: {str(e)}"
+        )
+
+
+
 @router.get("/archive/export")
 def export_flood_archive(
     format: str = Query("csv", description="Format file: csv atau json"),

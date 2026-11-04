@@ -4,8 +4,6 @@
 
 import { apiFetch } from './api';
 
-// TODO Minggu 8: Implementasi setelah backend flood API selesai
-
 export async function getVillages() {
   return apiFetch('/villages');
 }
@@ -45,4 +43,10 @@ export async function syncFloodCsv() {
   return apiFetch('/flood/archive/sync-csv', { method: 'POST' });
 }
 
+export async function syncSatuData() {
+  return apiFetch('/flood/satu-data/sync', { method: 'POST' });
+}
 
+export async function getSatuDataStatus() {
+  return apiFetch('/flood/satu-data/status');
+}

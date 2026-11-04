@@ -18,9 +18,9 @@ export default function ProfileModal({
     email: '',
     village_id: 3,
     address: '',
-    family_count: 4,
-    elderly_count: 1,
-    toddler_count: 1,
+    family_count: '',
+    elderly_count: 0,
+    toddler_count: 0,
     pregnant_count: 0,
     disabled_count: 0,
     notes: '',
@@ -40,18 +40,20 @@ export default function ProfileModal({
   useEffect(() => {
     if (userProfile) {
       setFormData({
-        full_name: userProfile.full_name || 'Warga Baureno (Demo)',
-        nik: userProfile.nik || '3522141508890002',
-        phone: userProfile.phone || userProfile.phone_number || '081234567890',
-        email: userProfile.email || 'warga@baureno.id',
+        full_name: userProfile.full_name || userProfile.name || '',
+        nik: userProfile.nik || '',
+        phone: userProfile.phone || userProfile.phone_number || '',
+        email: userProfile.email || '',
         village_id: userProfile.village_id || 3,
-        address: userProfile.address || 'RT 03 / RW 01, Dusun Kauman',
-        family_count: userProfile.family_count ?? 4,
-        elderly_count: userProfile.elderly_count ?? 1,
-        toddler_count: userProfile.toddler_count ?? 1,
-        pregnant_count: userProfile.pregnant_count ?? 0,
-        disabled_count: userProfile.disabled_count ?? 0,
-        notes: userProfile.notes || 'Rumah lantai 2, dekat tanggul sungai',
+        address: userProfile.address || '',
+        family_count: (userProfile.family_count !== null && userProfile.family_count !== undefined && userProfile.family_count !== '')
+          ? userProfile.family_count
+          : '',
+        elderly_count: Number(userProfile.elderly_count) || 0,
+        toddler_count: Number(userProfile.toddler_count) || 0,
+        pregnant_count: Number(userProfile.pregnant_count) || 0,
+        disabled_count: Number(userProfile.disabled_count) || 0,
+        notes: userProfile.notes || '',
         avatar_url: userProfile.avatar_url || '',
       })
     }
@@ -158,7 +160,7 @@ export default function ProfileModal({
         email: formData.email.trim(),
         village_id: Number(formData.village_id),
         address: formData.address.trim(),
-        family_count: Number(formData.family_count) || 1,
+        family_count: formData.family_count ? Number(formData.family_count) : null,
         elderly_count: Number(formData.elderly_count) || 0,
         toddler_count: Number(formData.toddler_count) || 0,
         pregnant_count: Number(formData.pregnant_count) || 0,
@@ -335,8 +337,14 @@ export default function ProfileModal({
                   <div className="profile-info-label">
                     <span>🏠</span> Alamat Domisili
                   </div>
-                  <div className="profile-info-value">
-                    {formData.address || 'Belum diisi'}
+                  <div 
+                    className="profile-info-value"
+                    style={{ 
+                      color: formData.address ? 'inherit' : '#94a3b8',
+                      fontStyle: formData.address ? 'normal' : 'italic'
+                    }}
+                  >
+                    {formData.address || 'Belum diisi (Dusun, RT/RW)'}
                   </div>
                   <div className="profile-info-sub">
                     {selectedVillage.latitude?.toFixed(4)}, {selectedVillage.longitude?.toFixed(4)}
@@ -347,8 +355,14 @@ export default function ProfileModal({
                   <div className="profile-info-label">
                     <span>👨‍👩‍👧‍👦</span> Jumlah Keluarga
                   </div>
-                  <div className="profile-info-value">
-                    {formData.family_count} Jiwa
+                  <div 
+                    className="profile-info-value"
+                    style={{ 
+                      color: (formData.family_count !== '' && formData.family_count !== null) ? 'inherit' : '#94a3b8',
+                      fontStyle: (formData.family_count !== '' && formData.family_count !== null) ? 'normal' : 'italic'
+                    }}
+                  >
+                    {(formData.family_count !== '' && formData.family_count !== null) ? `${formData.family_count} Jiwa` : 'Belum diisi'}
                   </div>
                   <div className="profile-info-sub">
                     Prioritas:{' '}
@@ -392,16 +406,21 @@ export default function ProfileModal({
                 </div>
               </div>
 
-              {formData.notes && (
-                <div className="profile-info-card" style={{ marginBottom: '14px' }}>
-                  <div className="profile-info-label">
-                    <span>📝</span> Catatan Khusus Evakuasi / Riwayat Medis
-                  </div>
-                  <div style={{ fontSize: '0.85rem', color: '#334155', marginTop: '4px' }}>
-                    {formData.notes}
-                  </div>
+              <div className="profile-info-card" style={{ marginBottom: '14px' }}>
+                <div className="profile-info-label">
+                  <span>📝</span> Catatan Khusus Evakuasi / Riwayat Medis
                 </div>
-              )}
+                <div 
+                  style={{ 
+                    fontSize: '0.85rem', 
+                    color: formData.notes ? '#334155' : '#94a3b8', 
+                    fontStyle: formData.notes ? 'normal' : 'italic',
+                    marginTop: '4px' 
+                  }}
+                >
+                  {formData.notes || 'Belum ada catatan khusus'}
+                </div>
+              </div>
             </>
           ) : (
             /* ================= EDIT MODE ================= */
@@ -529,9 +548,12 @@ export default function ProfileModal({
                     <label>Nomor WhatsApp / HP *</label>
                     <input
                       type="tel"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={15}
                       required
                       value={formData.phone}
-                      onChange={(e) => handleInputChange('phone', e.target.value)}
+                      onChange={(e) => handleInputChange('phone', e.target.value.replace(/\D/g, ''))}
                       placeholder="0812xxxxxxxx"
                     />
                   </div>
@@ -643,7 +665,11 @@ export default function ProfileModal({
                         max={30}
                         style={{ maxWidth: '120px' }}
                         value={formData.family_count}
-                        onChange={(e) => handleInputChange('family_count', Math.max(1, parseInt(e.target.value) || 1))}
+                        onChange={(e) => {
+                          const val = e.target.value
+                          handleInputChange('family_count', val === '' ? '' : Math.max(1, parseInt(val, 10) || 1))
+                        }}
+                        placeholder="Contoh: 4"
                       />
                       <span style={{ fontSize: '0.82rem', color: '#64748b' }}>
                         Termasuk kepala keluarga &amp; anggota serumah

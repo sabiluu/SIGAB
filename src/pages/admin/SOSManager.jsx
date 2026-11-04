@@ -222,8 +222,23 @@ export default function SOSManager() {
                 return (
                 <tr key={ticket.id} className={selectedTicketId === ticket.id ? 'selected' : ''} onClick={() => setSelectedTicketId(ticket.id)} style={{ cursor: 'pointer' }}>
                   <td className="ticket-id">
-                    <strong>{ticket.ticket_number}</strong>
-                    <br/><small style={{ color: '#0284c7', fontWeight: 600 }}>◷ {formatWIBTime(ticket.submitted_at)}</small>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                      <strong>{ticket.ticket_number}</strong>
+                      {ticket.is_simulation ? (
+                        <span style={{
+                          background: '#8b5cf6',
+                          color: '#ffffff',
+                          fontSize: '0.66rem',
+                          fontWeight: 800,
+                          padding: '1px 6px',
+                          borderRadius: '4px',
+                          letterSpacing: '0.04em'
+                        }}>
+                          SIMULASI
+                        </span>
+                      ) : null}
+                    </div>
+                    <small style={{ color: '#0284c7', fontWeight: 600 }}>◷ {formatWIBTime(ticket.submitted_at)}</small>
                   </td>
                   <td>
                     <div style={{
@@ -302,7 +317,22 @@ export default function SOSManager() {
           <aside className="sos-detail-panel portal-card">
             <div className="detail-header" style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
               <div>
-                <strong>{activeTicket.ticket_number}</strong>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <strong>{activeTicket.ticket_number}</strong>
+                  {activeTicket.is_simulation ? (
+                    <span style={{
+                      background: '#8b5cf6',
+                      color: '#ffffff',
+                      fontSize: '0.68rem',
+                      fontWeight: 800,
+                      padding: '2px 7px',
+                      borderRadius: '4px',
+                      letterSpacing: '0.04em'
+                    }}>
+                      🧪 TIKET SIMULASI
+                    </span>
+                  ) : null}
+                </div>
                 <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '2px' }}>
                   Pelapor: <b>{activeTicket.reporter_name || 'Warga Baureno'}</b>
                 </div>
@@ -311,6 +341,21 @@ export default function SOSManager() {
                 <span>◷ {formatWIBDateTime(activeTicket.submitted_at)}</span>
               </div>
             </div>
+
+            {activeTicket.is_simulation ? (
+              <div style={{
+                margin: '12px 0 0',
+                background: '#f3e8ff',
+                border: '1px solid #d8b4fe',
+                borderRadius: '8px',
+                padding: '8px 12px',
+                fontSize: '0.78rem',
+                color: '#6b21a8',
+                lineHeight: 1.4
+              }}>
+                <strong>ℹ️ Simulasi Mandiri Warga:</strong> Tiket ini diajukan dari sesi latihan/simulasi akun warga. Anda dapat memproses status tindakan (Verifikasi/Kirim Unit/Selesai) secara normal untuk keperluan evaluasi.
+              </div>
+            ) : null}
 
             <div className="detail-content" style={{ marginTop: '16px' }}>
               {/* Box Rincian Skor Prioritas */}

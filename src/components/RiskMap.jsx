@@ -3,7 +3,8 @@ import { useMemo, useState, useEffect, useRef } from 'react'
 import L from 'leaflet'
 import * as turf from '@turf/turf'
 import baurenoVillagesData from '../data/baureno_villages_real.json'
-import { apiFetch } from '../services/api'
+import { apiFetch, getSimulationStatus } from '../services/api'
+import wsService from '../services/wsService'
 import { getVillages } from '../services/floodService'
 
 // Center coordinate & boundary bounds for map view - Kecamatan Baureno, Bojonegoro
@@ -193,11 +194,14 @@ function MapController({ bounds, recenterTrigger, targetCenter, userCenterTrigge
   return null;
 }
 
-export default function RiskMap({ 
+export default function RiskMap({
   onSelectVillage, 
   selectedVillageName, 
   shelters = [], 
   villagesData = [],
+  simStatus = null,
+  userVillageName = null,
+  userVillageId = null,
   onSelectShelter, 
   selectedShelterId,
   userLocation,
@@ -205,22 +209,23 @@ export default function RiskMap({
   height = '500px'
 }) {
   const [dbVillages, setDbVillages] = useState([]);
-  
+  const [liveSimStatus, setLiveSimStatus] = useState(simStatus || null);
+
+  useEffect(() => {
+    setLiveSimStatus(simStatus || null);
+  }, [simStatus]);
+
   useEffect(() => {
     let active = true;
     async function fetchVillageData() {
-      // 1. Try real-time dashboard endpoint
       try {
         const realtime = await apiFetch('/dashboard/realtime');
         if (active && realtime && Array.isArray(realtime.villages) && realtime.villages.length > 0) {
           setDbVillages(realtime.villages);
           return;
         }
-      } catch (e) {
-        // Fallback to /villages
-      }
+      } catch (e) {}
 
-      // 2. Try villages endpoint
       try {
         const vList = await getVillages();
         if (active && Array.isArray(vList) && vList.length > 0) {
@@ -232,7 +237,17 @@ export default function RiskMap({
     }
 
     fetchVillageData();
-    return () => { active = false; };
+
+    const unsubDash = wsService.on('dashboard_update', (data) => {
+      if (active && data && Array.isArray(data.villages) && data.villages.length > 0) {
+        setDbVillages(data.villages);
+      }
+    });
+
+    return () => {
+      active = false;
+      unsubDash();
+    };
   }, []);
 
   const villages = useMemo(() => {
@@ -250,15 +265,33 @@ export default function RiskMap({
       let prob = 0;
       
       const realVillage = findMatchingVillage(name, activeList);
-      
-      if (realVillage) {
+
+      // Cek apakah desa ini adalah desa domisili/pilihan warga yang sedang menyalakan simulasi
+      let isUserSimVillage = false;
+      if (liveSimStatus?.is_running) {
+        const targetClean = (userVillageName || selectedVillageName || '')
+          .replace(/^Desa\s+/i, '')
+          .replace(' (Pusat)', '')
+          .trim()
+          .toLowerCase();
+
+        if (targetClean) {
+          isUserSimVillage = (cleanName === targetClean || cleanName.includes(targetClean) || targetClean.includes(cleanName));
+        } else if (userVillageId && realVillage) {
+          isUserSimVillage = (Number(realVillage.id) === Number(userVillageId));
+        }
+      }
+
+      if (liveSimStatus?.is_running && isUserSimVillage) {
+        prob = Number(liveSimStatus.probability != null ? liveSimStatus.probability : 10);
+        status = liveSimStatus.risk_level || (prob >= 76 ? 'awas' : (prob >= 51 ? 'tinggi' : (prob >= 25 ? 'sedang' : 'rendah')));
+      } else if (realVillage) {
         const rawProb = realVillage.current_probability != null 
           ? Number(realVillage.current_probability) 
           : (realVillage.probability != null ? Number(realVillage.probability) : 0);
         prob = rawProb;
         status = realVillage.current_risk_level || realVillage.risk_level || (rawProb >= 76 ? 'awas' : (rawProb >= 51 ? 'tinggi' : (rawProb >= 25 ? 'sedang' : 'rendah')));
       } else {
-        // Fallback baseline for this specific Baureno village if API is still loading or offline
         const fallback = fallbackBaselines[cleanName];
         if (fallback) {
           prob = fallback.prob;
@@ -297,7 +330,7 @@ export default function RiskMap({
     });
     
     return finalVillages;
-  }, [dbVillages, villagesData]);
+  }, [dbVillages, villagesData, liveSimStatus]);
 
   const [recenterTrigger, setRecenterTrigger] = useState(0);
   const [userCenterTrigger, setUserCenterTrigger] = useState(0);
@@ -387,7 +420,7 @@ export default function RiskMap({
           const isSelected = selectedVillageName && v.name.toLowerCase().includes(selectedVillageName.toLowerCase());
           return (
             <Polygon 
-              key={v.id} 
+              key={`${v.id}-${v.status}-${Math.round(v.prob)}`} 
               positions={v.coords}
               eventHandlers={{
                 click: () => onSelectVillage && onSelectVillage({

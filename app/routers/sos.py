@@ -173,18 +173,20 @@ async def create_sos_ticket(
         .first()
     )
     if not active_emergency:
-        try:
-            auto_emergency = EmergencyStatus(
-                village_id=ticket.village_id,
-                is_emergency_active=True,
-                trigger_type="manual_admin",
-                notes=f"Status darurat diaktifkan otomatis melalui panggilan SOS warga Desa {village.name}",
-                activated_at=get_wib_now(),
-            )
-            db.add(auto_emergency)
-            db.commit()
-        except Exception as e:
-            db.rollback()
+        # Jika bukan simulasi, aktifkan status darurat desa. Jika ini simulasi warga, jangan ubah status desa di DB
+        if not ticket.is_simulation:
+            try:
+                auto_emergency = EmergencyStatus(
+                    village_id=ticket.village_id,
+                    is_emergency_active=True,
+                    trigger_type="manual_admin",
+                    notes=f"Status darurat diaktifkan otomatis melalui panggilan SOS warga Desa {village.name}",
+                    activated_at=get_wib_now(),
+                )
+                db.add(auto_emergency)
+                db.commit()
+            except Exception as e:
+                db.rollback()
 
     # Kalkulasi priority_score sesuai PRD Persamaan (5):
     # P_SOS = 10 * N_jiwa + 25 * I_lansia + 25 * I_balita + 30 * I_disabilitas + 20 * I_hamil
@@ -246,6 +248,7 @@ async def create_sos_ticket(
             has_disability=ticket.has_disability,
             has_pregnant=ticket.has_pregnant,
             photo_url=ticket.photo_url,
+            is_simulation=ticket.is_simulation,
             status="submitted",
             priority_score=priority_score,
             submitted_at=now,
@@ -284,6 +287,7 @@ async def create_sos_ticket(
             "family_count": new_ticket.family_count,
             "gps_latitude": str(ticket.gps_latitude),
             "gps_longitude": str(ticket.gps_longitude),
+            "is_simulation": bool(ticket.is_simulation),
         },
     )
     db.commit()
