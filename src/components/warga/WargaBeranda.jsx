@@ -105,6 +105,24 @@ const DEFAULT_SHELTERS = [
   }
 ]
 
+
+const SIMULATION_PHASE_STEPS = [
+  { id: 1, name: 'Aman', duration: '1m', color: '#10b981' },
+  { id: 2, name: 'Waspada', duration: '1m', color: '#f59e0b' },
+  { id: 3, name: 'Siaga', duration: '1m', color: '#ea580c' },
+  { id: 4, name: 'Awas', duration: '10m', color: '#ef4444' },
+  { id: 5, name: 'Siaga', duration: '1m', color: '#ea580c' },
+  { id: 6, name: 'Waspada', duration: '1m', color: '#f59e0b' },
+  { id: 7, name: 'Aman', duration: '1m', color: '#10b981' },
+]
+
+function formatCountdown(sec) {
+  if (sec == null || isNaN(sec)) return '00:00'
+  const m = Math.floor(sec / 60)
+  const s = sec % 60
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
 export default function WargaBeranda({
   onNavigate,
   geo: externalGeo,
@@ -116,7 +134,7 @@ export default function WargaBeranda({
   initialScrollToMap = false,
   activeTab = 'beranda',
   isEmergencyActive = false,
-  onToggleSimulatedEmergency
+  simStatus = null,
 }) {
   const { data, loading } = useDashboardRealtime()
   const internalGeo = useGeolocation()
@@ -124,7 +142,6 @@ export default function WargaBeranda({
 
   // State
   const [directShelters, setDirectShelters] = useState([])
-  const [simulatedEmergency, setSimulatedEmergency] = useState(false)
   const [selectedShelter, setSelectedShelter] = useState(null)
   const [routeData, setRouteData] = useState(null)
   const [routeLoading, setRouteLoading] = useState(false)
@@ -212,9 +229,12 @@ export default function WargaBeranda({
     })
   }, [data?.villages, selectedVillageId, userProfile?.village_id])
 
-  const isSevereFlood = isEmergencyActive || simulatedEmergency
-  const rawProb = isSevereFlood 
-    ? 94 
+  const isSevereFlood = simStatus?.is_running
+    ? Boolean(simStatus.is_emergency || simStatus.risk_level === 'awas')
+    : Boolean(isEmergencyActive)
+
+  const rawProb = simStatus?.is_running
+    ? simStatus.probability
     : (selectedVillageObj?.probability ?? data?.kecamatan_summary?.average_probability ?? 22)
   const probVal = Math.round(rawProb)
   
@@ -408,6 +428,10 @@ export default function WargaBeranda({
               <RiskMap
                 height="100%"
                 shelters={sheltersList}
+                villagesData={data?.villages || []}
+                simStatus={simStatus}
+                userVillageName={activeVillageDisplay}
+                userVillageId={Number(selectedVillageId || userProfile?.village_id)}
                 userLocation={userLocation}
                 selectedShelterId={selectedShelter?.id}
                 onSelectShelter={handleSelectShelter}
@@ -569,7 +593,7 @@ export default function WargaBeranda({
       <div className="warga-beranda-head">
         <div className="warga-greeting-wrap">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span className="greeting-sub">Halo, {userProfile?.full_name ? userProfile.full_name.split(' ')[0] : 'Ahmadi'}!</span>
+            <span className="greeting-sub">Halo, {userProfile?.full_name ? userProfile.full_name.split(' ')[0] : 'Warga'}!</span>
           </div>
           <h1>Kondisi banjir di desamu</h1>
         </div>
@@ -698,13 +722,13 @@ export default function WargaBeranda({
             <div className="warga-metric-subcard">
               <span className="metric-label">Curah hujan</span>
               <div className="metric-val">
-                {isSevereFlood ? '148.0' : (data?.weather?.precipitation_mm != null ? Number(data.weather.precipitation_mm).toFixed(1) : '2.4')} <span>mm</span>
+                {simStatus?.is_running ? Number(simStatus.rainfall_mm || 0).toFixed(1) : (data?.weather?.precipitation_mm != null ? Number(data.weather.precipitation_mm).toFixed(1) : '0.0')} <span>mm</span>
               </div>
             </div>
             <div className="warga-metric-subcard">
               <span className="metric-label">Debit sungai</span>
               <div className="metric-val">
-                {isSevereFlood ? '1.950' : Math.round(data?.discharge?.discharge_m3s || 1210).toLocaleString('id-ID')} <span>m³/s</span>
+                {simStatus?.is_running ? Math.round(simStatus.discharge_m3s || 0).toLocaleString('id-ID') : Math.round(data?.discharge?.discharge_m3s || 0).toLocaleString('id-ID')} <span>m³/s</span>
               </div>
             </div>
           </div>
@@ -846,85 +870,6 @@ export default function WargaBeranda({
           </svg>
           <span>Panduan siaga</span>
         </button>
-      </div>
-
-      {/* Simulation / Demo Mode Strip */}
-      <div 
-        className="warga-demo-strip"
-        style={{
-          background: isSevereFlood ? '#fef2f2' : '#f8fafc',
-          border: isSevereFlood ? '1.5px solid #fecaca' : '1px solid #e2e8f0',
-          padding: '14px 20px',
-          borderRadius: '12px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '12px',
-          marginTop: '22px'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '1.25rem' }}>{isSevereFlood ? '🚨' : '🧪'}</span>
-          <div>
-            <strong style={{ color: isSevereFlood ? '#b91c1c' : '#334155', fontSize: '0.86rem', display: 'block' }}>
-              {isSevereFlood ? 'Simulasi Banjir Parah Aktif (Awas Level 4)' : 'Mode Pengujian Skenario Banjir'}
-            </strong>
-            <span style={{ fontSize: '0.78rem', color: isSevereFlood ? '#dc2626' : '#64748b' }}>
-              {isSevereFlood 
-                ? 'TMA 5.4m, debit sungai 1.950 m³/s, risiko 94%. Form evakuasi SOS siap diuji.' 
-                : 'Uji simulasi banjir parah untuk mencoba pengiriman form SOS darurat dan verifikasi admin.'}
-            </span>
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          {isSevereFlood && (
-            <button
-              type="button"
-              onClick={() => onNavigate && onNavigate('sos')}
-              style={{
-                background: '#dc2626',
-                color: '#ffffff',
-                border: 'none',
-                padding: '8px 16px',
-                borderRadius: '8px',
-                fontSize: '0.82rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                boxShadow: '0 2px 6px rgba(220, 38, 38, 0.35)'
-              }}
-            >
-              🚨 Kirim Form SOS Sekarang ➔
-            </button>
-          )}
-          <button 
-            type="button" 
-            className="demo-action-btn"
-            style={{
-              background: isSevereFlood ? '#ffffff' : '#0f172a',
-              color: isSevereFlood ? '#dc2626' : '#ffffff',
-              border: isSevereFlood ? '1.5px solid #f87171' : 'none',
-              padding: '8px 16px',
-              borderRadius: '8px',
-              fontSize: '0.82rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease'
-            }}
-            onClick={() => {
-              const next = !isSevereFlood
-              setSimulatedEmergency(next)
-              if (onToggleSimulatedEmergency) {
-                onToggleSimulatedEmergency(next)
-              }
-            }}
-          >
-            {isSevereFlood ? '✕ Matikan Simulasi (Kembali ke Kondisi Real)' : '⚡ Aktifkan Simulasi Banjir Parah'}
-          </button>
-        </div>
       </div>
     </div>
   )

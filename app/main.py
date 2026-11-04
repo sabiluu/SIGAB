@@ -26,6 +26,7 @@ from .routers import (
     configs_router,
     users_router,
     health_router,
+    simulation_router,
 )
 
 logger = logging.getLogger("sigab.main")
@@ -79,6 +80,7 @@ app.include_router(config_router)
 app.include_router(configs_router)
 app.include_router(users_router)
 app.include_router(health_router)
+app.include_router(simulation_router)
 
 # Register aliases dengan prefiks /api sesuai spesifikasi PRD Tabel III
 app.include_router(villages_router, prefix="/api")
@@ -90,6 +92,7 @@ app.include_router(dashboard_router, prefix="/api")
 app.include_router(audit_logs_router, prefix="/api")
 app.include_router(config_router, prefix="/api")
 app.include_router(users_router, prefix="/api")
+app.include_router(simulation_router, prefix="/api")
 
 from fastapi import Request
 from fastapi.responses import JSONResponse
@@ -116,3 +119,4 @@ async def global_exception_handler(request: Request, exc: Exception):
 @app.get("/", tags=["Root"])
 def root():
     return {"message": "SiagaBencana API is running 🚀"}
+ 

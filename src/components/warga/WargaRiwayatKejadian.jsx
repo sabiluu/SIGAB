@@ -1,5 +1,5 @@
-﻿import { useState, useEffect, useMemo } from 'react'
-import { getFloodIncidents } from '../../services/floodService'
+import { useState, useEffect, useMemo } from 'react'
+import { getFloodIncidents, syncSatuData } from '../../services/floodService'
 
 export default function WargaRiwayatKejadian() {
   const [filter, setFilter] = useState('semua')
@@ -29,6 +29,19 @@ export default function WargaRiwayatKejadian() {
       setLoading(false)
     }
   }
+
+  // Sinkronisasi otomatis di latar belakang dengan Satu Data Bojonegoro
+  useEffect(() => {
+    syncSatuData()
+      .then((res) => {
+        if (res && res.new_added > 0) {
+          fetchData()
+        }
+      })
+      .catch((err) => {
+        console.warn('Auto-sync Satu Data Bojonegoro (background):', err)
+      })
+  }, [])
 
   useEffect(() => {
     fetchData()

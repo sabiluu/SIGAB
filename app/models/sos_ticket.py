@@ -30,6 +30,7 @@ class SOSTicket(Base):
     has_disability = Column(Boolean, nullable=False, default=False)
     has_pregnant = Column(Boolean, nullable=False, default=False)
     photo_url = Column(Text, nullable=True)
+    is_simulation = Column(Boolean, nullable=False, default=False)
     
     status = Column(
         Enum("submitted", "verified", "rejected", "dispatched", "on_route", "arrived", "completed", name="sos_status_enum"),

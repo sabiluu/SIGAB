@@ -58,6 +58,100 @@ export function getDistanceFromBaurenoKm(lat, lon) {
   return R * c;
 }
 
+// Global in-memory cache untuk reverse geocoding agar tidak spam API luar
+export const geocodeCache = new Map();
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = 3500) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(timer);
+    return res;
+  } catch (err) {
+    clearTimeout(timer);
+    throw err;
+  }
+}
+
+export async function reverseGeocodeLocation(lat, lon) {
+  if (!lat || !lon || isNaN(lat) || isNaN(lon)) {
+    return { short: DEFAULT_BAURENO_LABEL, full: DEFAULT_BAURENO_FULL };
+  }
+
+  const numLat = Number(lat);
+  const numLon = Number(lon);
+  const cacheKey = `${numLat.toFixed(4)}_${numLon.toFixed(4)}`;
+  if (geocodeCache.has(cacheKey)) {
+    return geocodeCache.get(cacheKey);
+  }
+
+  // 1. Coba OpenStreetMap Nominatim dengan timeout 3.5 detik
+  try {
+    const res = await fetchWithTimeout(
+      `https://nominatim.openstreetmap.org/reverse?lat=${numLat}&lon=${numLon}&format=json`,
+      { headers: { 'Accept-Language': 'id', 'User-Agent': 'SIGAB-Disaster-App/1.0' } },
+      3500
+    );
+    if (res.ok) {
+      const data = await res.json();
+      const addr = data.address || {};
+      const subdistrict = addr.village || addr.suburb || addr.neighbourhood || addr.municipality || '';
+      const district = addr.municipality || addr.city_district || addr.county || addr.city || '';
+      const city = addr.city || addr.town || addr.county || addr.state || '';
+
+      let shortLabel = '';
+      if (subdistrict && (city || district)) {
+        shortLabel = `${subdistrict}, ${district || city}`;
+      } else if (district) {
+        shortLabel = `${district}, ${city}`;
+      } else {
+        shortLabel = data.name || `${numLat.toFixed(4)}, ${numLon.toFixed(4)}`;
+      }
+
+      const result = {
+        short: shortLabel,
+        full: data.display_name || shortLabel
+      };
+      geocodeCache.set(cacheKey, result);
+      return result;
+    }
+  } catch (e) {
+    // Abaikan jika rate limit / offline
+  }
+
+  // 2. Fallback BigDataCloud dengan timeout 3.5 detik
+  try {
+    const res = await fetchWithTimeout(
+      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${numLat}&longitude=${numLon}&localityLanguage=id`,
+      {},
+      3500
+    );
+    if (res.ok) {
+      const data = await res.json();
+      const locality = data.locality || data.principalSubdivision || '';
+      const city = data.city || '';
+      const shortLabel = [locality, city].filter(Boolean).join(', ') || `${numLat.toFixed(4)}, ${numLon.toFixed(4)}`;
+      const full = `${shortLabel}, ${data.countryName || 'Indonesia'}`;
+
+      const result = { short: shortLabel, full };
+      geocodeCache.set(cacheKey, result);
+      return result;
+    }
+  } catch (e) {
+    // Abaikan
+  }
+
+  // 3. Fallback koordinat jika kedua API tidak merespons
+  const coordLabel = `${numLat.toFixed(5)}, ${numLon.toFixed(5)}`;
+  const fallbackResult = {
+    short: `Koordinat ${coordLabel}`,
+    full: `Koordinat: ${coordLabel}`
+  };
+  geocodeCache.set(cacheKey, fallbackResult);
+  return fallbackResult;
+}
+
 export function useGeolocation() {
   // 1. Cek apakah ada custom location yang dipilih warga
   const initialCustom = (() => {
@@ -99,92 +193,25 @@ export function useGeolocation() {
   const [loading, setLoading] = useState(false);
   const [isRealDevice, setIsRealDevice] = useState(Boolean(cachedDevice && !initialCustom));
 
-  const lastGeocodeRef = useRef({ lat: 0, lon: 0, time: 0 });
+  const hasIpFallbackRunRef = useRef(false);
 
-  // Fungsi reverse geocoding ke OpenStreetMap Nominatim dengan fallback ke BigDataCloud
+  // Fungsi reverse geocoding cepat dengan cache
   const reverseGeocode = useCallback(async (lat, lon) => {
     if (!lat || !lon) return;
-    const now = Date.now();
-    const last = lastGeocodeRef.current;
-    const distDiff = Math.abs(lat - last.lat) + Math.abs(lon - last.lon);
+    const res = await reverseGeocodeLocation(lat, lon);
+    setAddress(res.short);
+    setFullAddress(res.full);
 
-    if (distDiff < 0.0005 && now - last.time < 15000) {
-      return;
-    }
-    lastGeocodeRef.current = { lat, lon, time: now };
-
-    // 1. Coba OpenStreetMap Nominatim
     try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`,
-        { headers: { 'Accept-Language': 'id', 'User-Agent': 'SIGAB-Disaster-App/1.0' } }
-      );
-      if (res.ok) {
-        const data = await res.json();
-        const addr = data.address || {};
-        const subdistrict = addr.village || addr.suburb || addr.neighbourhood || addr.municipality || '';
-        const district = addr.municipality || addr.city_district || addr.county || addr.city || '';
-        const city = addr.city || addr.town || addr.county || addr.state || '';
-
-        let shortLabel = '';
-        if (subdistrict && (city || district)) {
-          shortLabel = `${subdistrict}, ${district || city}`;
-        } else if (district) {
-          shortLabel = `${district}, ${city}`;
-        } else {
-          shortLabel = data.name || `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
-        }
-
-        setAddress(shortLabel);
-        setFullAddress(data.display_name || shortLabel);
-
-        try {
-          localStorage.setItem('sigab_device_location', JSON.stringify({
-            position: { latitude: lat, longitude: lon },
-            address: shortLabel,
-            fullAddress: data.display_name,
-            timestamp: Date.now()
-          }));
-        } catch (e) {
-          console.warn('Failed to save location to localStorage', e);
-        }
-        return;
-      }
+      localStorage.setItem('sigab_device_location', JSON.stringify({
+        position: { latitude: lat, longitude: lon },
+        address: res.short,
+        fullAddress: res.full,
+        timestamp: Date.now()
+      }));
     } catch (e) {
-      console.warn('Nominatim reverse geocode error, trying BigDataCloud:', e);
+      // Abaikan error storage
     }
-
-    // 2. Fallback BigDataCloud (cepat, andal, tanpa API key)
-    try {
-      const res = await fetch(
-        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=id`
-      );
-      if (res.ok) {
-        const data = await res.json();
-        const locality = data.locality || data.principalSubdivision || '';
-        const city = data.city || '';
-        const shortLabel = [locality, city].filter(Boolean).join(', ') || `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
-        const full = `${shortLabel}, ${data.countryName || 'Indonesia'}`;
-
-        setAddress(shortLabel);
-        setFullAddress(full);
-
-        try {
-          localStorage.setItem('sigab_device_location', JSON.stringify({
-            position: { latitude: lat, longitude: lon },
-            address: shortLabel,
-            fullAddress: full,
-            timestamp: Date.now()
-          }));
-        } catch (e) { }
-        return;
-      }
-    } catch (e) { }
-
-    // 3. Fallback koordinat
-    const coordLabel = `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
-    setAddress(coordLabel);
-    setFullAddress(`Koordinat: ${coordLabel}`);
   }, []);
 
   // Handler sukses GPS Device nyata (selalu gunakan koordinat real perangkat)
@@ -207,12 +234,17 @@ export function useGeolocation() {
     setLoading(false);
   }, [reverseGeocode]);
 
-  // Handler gagal GPS (coba fallback IP Geolocation jika GPS hardware tidak ada)
+  // Handler gagal GPS (coba fallback IP Geolocation jika GPS hardware tidak ada, hanya sekali)
   const handleError = useCallback(async (err) => {
-    console.warn('GPS hardware error, trying IP Geolocation fallback:', err?.message || err);
+    if (hasIpFallbackRunRef.current) {
+      setLoading(false);
+      return;
+    }
+    hasIpFallbackRunRef.current = true;
+    console.debug('GPS hardware unavailable, trying IP fallback once:', err?.message || err);
 
     try {
-      const res = await fetch('https://get.geojs.io/v1/ip/geo.json');
+      const res = await fetchWithTimeout('https://get.geojs.io/v1/ip/geo.json', {}, 4000);
       if (res.ok) {
         const ipData = await res.json();
         const ipLat = parseFloat(ipData.latitude);
@@ -228,7 +260,7 @@ export function useGeolocation() {
         }
       }
     } catch (e) {
-      console.warn('IP geolocation fallback failed:', e);
+      console.debug('IP geolocation fallback failed:', e?.message || e);
     }
 
     // Jika gagal total dan belum ada posisi tersimpan
@@ -244,6 +276,7 @@ export function useGeolocation() {
 
   // Request & Watch Lokasi Device
   const refresh = useCallback(() => {
+    hasIpFallbackRunRef.current = false;
     setLoading(true);
     try {
       localStorage.removeItem('sigab_custom_location');
@@ -255,9 +288,16 @@ export function useGeolocation() {
       return;
     }
 
-    navigator.geolocation.getCurrentPosition(handleSuccess, handleError, {
+    navigator.geolocation.getCurrentPosition(handleSuccess, () => {
+      // Retry standard accuracy jika high accuracy gagal
+      navigator.geolocation.getCurrentPosition(handleSuccess, handleError, {
+        enableHighAccuracy: false,
+        timeout: 6000,
+        maximumAge: 60000
+      });
+    }, {
       enableHighAccuracy: true,
-      timeout: 10000,
+      timeout: 6000,
       maximumAge: 0
     });
   }, [handleSuccess, handleError]);
@@ -328,18 +368,36 @@ export function useGeolocation() {
     // Jalankan deteksi GPS device langsung & kontinu real-time (pure real GPS)
     if (navigator.geolocation) {
       setLoading(true);
-      // 1. Initial quick GPS reading
-      navigator.geolocation.getCurrentPosition(handleSuccess, handleError, {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
-      });
-      // 2. Continuous real-time location tracking
-      const watchId = navigator.geolocation.watchPosition(handleSuccess, handleError, {
-        enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 5000
-      });
+      // 1. Initial quick GPS reading: coba high-accuracy, fallback ke low-accuracy
+      navigator.geolocation.getCurrentPosition(
+        handleSuccess,
+        () => {
+          navigator.geolocation.getCurrentPosition(handleSuccess, handleError, {
+            enableHighAccuracy: false,
+            timeout: 5000,
+            maximumAge: 60000
+          });
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 6000,
+          maximumAge: 10000
+        }
+      );
+
+      // 2. Continuous real-time location tracking (tidak trigger error loop jika laptop tidak punya GPS)
+      const watchId = navigator.geolocation.watchPosition(
+        handleSuccess,
+        (wErr) => {
+          // Debug only, jangan panggil handleError agar tidak loop IP fetch
+          console.debug('GPS watch status:', wErr?.message);
+        },
+        {
+          enableHighAccuracy: false,
+          timeout: 30000,
+          maximumAge: 30000
+        }
+      );
       return () => {
         navigator.geolocation.clearWatch(watchId);
       };
@@ -369,4 +427,3 @@ export function useGeolocation() {
 }
 
 export default useGeolocation;
-

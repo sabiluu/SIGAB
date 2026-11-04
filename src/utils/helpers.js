@@ -146,3 +146,24 @@ export function setStoredSidebarState(isOpen) {
     // fallback
   }
 }
+
+/**
+ * Dapatkan nama shift jaga petugas berdasarkan jam saat ini:
+ * - Shift Pagi  : 07:00 - 15:00 WIB
+ * - Shift Sore  : 15:00 - 23:00 WIB
+ * - Shift Malam : 23:00 - 07:00 WIB
+ * @param {Date} [date]
+ * @returns {string}
+ */
+export function getCurrentShift(date = new Date()) {
+  const d = date instanceof Date ? date : new Date(date);
+  const hours = d.getHours();
+  if (hours >= 7 && hours < 15) {
+    return 'Shift Pagi';
+  } else if (hours >= 15 && hours < 23) {
+    return 'Shift Sore';
+  } else {
+    return 'Shift Malam';
+  }
+}
+

@@ -102,6 +102,9 @@ export async function login(email, password, role) {
  *   full_name, email, phone, password, role, village_id, avatar_url
  */
 export async function register(data) {
+  // Bersihkan cache profil lokal agar pendaftaran akun baru tidak mewarisi profil lama
+  localStorage.removeItem('sigab_user_profile');
+
   // Map role frontend ('warga'/'petugas') ke backend ('user'/'admin')
   const backendRole = data.role === 'petugas' ? 'admin' : 'user';
 
@@ -127,6 +130,7 @@ export async function register(data) {
 export function logout() {
   localStorage.removeItem('access_token');
   localStorage.removeItem('sigab_user_role');
+  localStorage.removeItem('sigab_user_profile');
   try { sessionStorage.removeItem('sigab_warga_tab'); } catch (e) { /* abaikan */ }
   window.location.hash = '';
 }
@@ -141,14 +145,6 @@ export async function getProfile() {
       method: 'GET',
     });
     const merged = {
-      nik: '3522141508890002',
-      address: 'RT 03 / RW 01, Dusun Kauman',
-      family_count: 4,
-      elderly_count: 1,
-      toddler_count: 1,
-      pregnant_count: 0,
-      disabled_count: 0,
-      notes: 'Rumah lantai 2, dekat tanggul sungai',
       ...localSaved,
       ...remote,
     };
@@ -165,14 +161,14 @@ export async function getProfile() {
         raw_role: 'user',
         phone: '081234567890',
         village_id: 3,
-        nik: '3522141508890002',
-        address: 'RT 03 / RW 01, Dusun Kauman',
-        family_count: 4,
-        elderly_count: 1,
-        toddler_count: 1,
+        nik: '',
+        address: '',
+        family_count: null,
+        elderly_count: 0,
+        toddler_count: 0,
         pregnant_count: 0,
         disabled_count: 0,
-        notes: 'Rumah lantai 2, dekat tanggul sungai',
+        notes: '',
         ...localSaved,
       };
       return fallback;

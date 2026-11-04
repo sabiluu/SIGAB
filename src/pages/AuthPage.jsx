@@ -120,11 +120,29 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
 
     const formData = Object.fromEntries(new FormData(event.currentTarget))
     
-    // Validasi NIK jika warga register
-    if (isRegister && role === 'warga' && formData.nik && formData.nik.length < 16) {
-      setError('NIK harus terdiri dari minimal 16 digit.')
-      setSubmitting(false)
-      return
+    // Validasi No. WhatsApp jika register (tidak boleh ada huruf, harus angka semua)
+    if (isRegister) {
+      const cleanPhone = (formData.phone || '').trim()
+      if (!cleanPhone || !/^\d+$/.test(cleanPhone)) {
+        setError('Nomor WhatsApp tidak boleh mengandung huruf, harus angka semua.')
+        setSubmitting(false)
+        return
+      }
+      if (cleanPhone.length < 9 || cleanPhone.length > 15) {
+        setError('Nomor WhatsApp harus terdiri dari 9 hingga 15 digit angka.')
+        setSubmitting(false)
+        return
+      }
+    }
+
+    // Validasi NIK jika warga register (harus 16 digit angka)
+    if (isRegister && role === 'warga') {
+      const cleanNik = (formData.nik || '').trim()
+      if (!cleanNik || !/^\d+$/.test(cleanNik) || cleanNik.length !== 16) {
+        setError('NIK harus terdiri dari 16 digit angka (tidak boleh ada huruf).')
+        setSubmitting(false)
+        return
+      }
     }
 
     try {
@@ -237,10 +255,20 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
                       id="reg-nik" 
                       name="nik" 
                       type="text" 
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       placeholder="16 digit NIK" 
                       required 
                       minLength={16} 
                       maxLength={16} 
+                      onInput={(e) => {
+                        e.target.value = e.target.value.replace(/\D/g, '')
+                      }}
+                      onKeyDown={(e) => {
+                        if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight'].includes(e.key) && !e.ctrlKey && !e.metaKey) {
+                          e.preventDefault()
+                        }
+                      }}
                     />
                   </div>
                   <div className="auth-field">
@@ -249,9 +277,21 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
                       id="reg-phone" 
                       name="phone" 
                       type="tel" 
-                      placeholder="08xx" 
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      placeholder="08xxxxxxxxxx (hanya angka)" 
                       required 
+                      minLength={9}
+                      maxLength={15}
                       autoComplete="tel" 
+                      onInput={(e) => {
+                        e.target.value = e.target.value.replace(/\D/g, '')
+                      }}
+                      onKeyDown={(e) => {
+                        if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight'].includes(e.key) && !e.ctrlKey && !e.metaKey) {
+                          e.preventDefault()
+                        }
+                      }}
                     />
                   </div>
                 </div>
@@ -334,9 +374,21 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
                       id="petugas-phone" 
                       name="phone" 
                       type="tel" 
-                      placeholder="08xx" 
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      placeholder="08xxxxxxxxxx (hanya angka)" 
                       required 
+                      minLength={9}
+                      maxLength={15}
                       autoComplete="tel" 
+                      onInput={(e) => {
+                        e.target.value = e.target.value.replace(/\D/g, '')
+                      }}
+                      onKeyDown={(e) => {
+                        if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight'].includes(e.key) && !e.ctrlKey && !e.metaKey) {
+                          e.preventDefault()
+                        }
+                      }}
                     />
                   </div>
                 </div>

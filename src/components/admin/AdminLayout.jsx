@@ -3,7 +3,7 @@ import { logout } from '../../services/authService'
 import { apiFetch } from '../../services/api'
 import wsService from '../../services/wsService'
 import LogoutModal from '../common/LogoutModal'
-import { getStoredSidebarState, setStoredSidebarState } from '../../utils/helpers'
+import { getStoredSidebarState, setStoredSidebarState, getCurrentShift } from '../../utils/helpers'
 import '../../styles/role-home.css'
 
 export default function AdminLayout({ children, activeMenu }) {
@@ -133,7 +133,7 @@ export default function AdminLayout({ children, activeMenu }) {
           <div className="op-text">
             <small>Petugas Jaga</small>
             <strong>Kec. Baureno</strong>
-            <span>Online · Shift Pagi</span>
+            <span>Online · {getCurrentShift(currentTime)}</span>
           </div>
         </div>
 

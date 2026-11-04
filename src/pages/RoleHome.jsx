@@ -3,6 +3,7 @@ import { logout, getProfile } from '../services/authService'
 import { apiFetch } from '../services/api'
 import wsService from '../services/wsService'
 import { getSOSTickets, createSOSTicket } from '../services/sosService'
+import { getSimulationStatus, startSimulation, stopSimulation } from '../services/api'
 import RiskMap from '../components/RiskMap'
 import WargaBeranda from '../components/warga/WargaBeranda'
 import WargaRiwayatKejadian from '../components/warga/WargaRiwayatKejadian'
@@ -13,12 +14,88 @@ import VillageStatsTable from '../components/dashboard/VillageStatsTable'
 import useDashboardRealtime from '../hooks/useDashboardRealtime'
 import useGeolocation, { BAURENO_VILLAGES } from '../hooks/useGeolocation'
 import useRealtimeNotifications from '../hooks/useRealtimeNotifications'
+import usePersonalSimulation from '../hooks/usePersonalSimulation'
 import { playSosAlertTone } from '../utils/audioAlarm'
-import { formatWIBTime, getStoredSidebarState, setStoredSidebarState } from '../utils/helpers'
+import { formatWIBTime, getStoredSidebarState, setStoredSidebarState, getCurrentShift } from '../utils/helpers'
 import LogoutModal from '../components/common/LogoutModal'
 import ProfileModal from '../components/warga/ProfileModal'
 import '../styles/role-home.css'
 import '../styles/warga-portal.css'
+
+
+function formatCountdown(sec) {
+  if (sec == null || isNaN(sec)) return '00:00'
+  const m = Math.floor(sec / 60)
+  const s = sec % 60
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
+function getSimPhaseInfo(status) {
+  if (!status?.is_running) {
+    return {
+      themeColor: '#334155',
+      bgColor: '#11222f',
+      borderColor: '#1a3245',
+      textColor: '#7d93a4',
+      icon: '🧪',
+      phaseName: 'Normal (OFF)',
+      desc: 'Status: Normal (OFF)',
+    }
+  }
+
+  const phase = (status.phase_name || '').toUpperCase()
+  const risk = (status.risk_level || '').toLowerCase()
+  const current = status.current_phase || 1
+  const rem = status.remaining_seconds || 0
+  const countdown = `${Math.floor(rem / 60)}:${String(rem % 60).padStart(2, '0')}`
+
+  if (risk === 'awas' || phase.includes('AWAS')) {
+    return {
+      themeColor: '#ef4444',
+      bgColor: 'rgba(239, 68, 68, 0.16)',
+      borderColor: 'rgba(239, 68, 68, 0.6)',
+      textColor: '#f87171',
+      icon: '🚨',
+      phaseName: 'AWAS',
+      desc: `Fase ${current}/7: AWAS (${countdown})`,
+    }
+  }
+
+  if (risk === 'tinggi' || phase.includes('SIAGA')) {
+    return {
+      themeColor: '#f97316',
+      bgColor: 'rgba(249, 115, 22, 0.16)',
+      borderColor: 'rgba(249, 115, 22, 0.6)',
+      textColor: '#fb923c',
+      icon: '🟠',
+      phaseName: 'SIAGA',
+      desc: `Fase ${current}/7: SIAGA (${countdown})`,
+    }
+  }
+
+  if (risk === 'sedang' || phase.includes('WASPADA')) {
+    return {
+      themeColor: '#f59e0b',
+      bgColor: 'rgba(245, 158, 11, 0.16)',
+      borderColor: 'rgba(245, 158, 11, 0.6)',
+      textColor: '#fbbf24',
+      icon: '🟡',
+      phaseName: 'WASPADA',
+      desc: `Fase ${current}/7: WASPADA (${countdown})`,
+    }
+  }
+
+  // Default: AMAN (Hijau)
+  return {
+    themeColor: '#10b981',
+    bgColor: 'rgba(16, 185, 129, 0.16)',
+    borderColor: 'rgba(16, 185, 129, 0.6)',
+    textColor: '#34d399',
+    icon: '🟢',
+    phaseName: 'AMAN',
+    desc: `Fase ${current}/7: AMAN (${countdown})`,
+  }
+}
 
 function Brand({ admin = false, locName = '' }) {
   return (
@@ -46,9 +123,12 @@ function WargaHome() {
     } catch (e) {}
     return 'beranda'
   })
-  const [userProfile, setUserProfile] = useState({ full_name: 'Ahmadi' })
+  const [userProfile, setUserProfile] = useState(null)
   const [selectedVillageId, setSelectedVillageId] = useState(null)
-  const [isEmergencyActive, setIsEmergencyActive] = useState(false)
+  const [realEmergencyActive, setRealEmergencyActive] = useState(false)
+  const personalSim = usePersonalSimulation(userProfile?.id)
+  const simStatus = personalSim.simStatus
+  const isEmergencyActive = personalSim.isRunning ? personalSim.isEmergency : realEmergencyActive
   const [showNotifDropdown, setShowNotifDropdown] = useState(false)
   const [showProfileDropdown, setShowProfileDropdown] = useState(false)
   const [showProfileModal, setShowProfileModal] = useState(false)
@@ -103,6 +183,7 @@ function WargaHome() {
     if (target) {
       geo.setVillageLocation(target)
       setSelectedVillageId(target.id)
+      wsService.updateVillage(target.id, 'alerts')
       setShowLocationModal(false)
     }
   }
@@ -202,17 +283,18 @@ function WargaHome() {
           setUserProfile(res)
           if (res.village_id) {
             setSelectedVillageId(res.village_id)
+            wsService.updateVillage(res.village_id, 'alerts')
           }
           const targetVillageId = res.village_id || 1
           apiFetch(`/emergency/${targetVillageId}`)
-            .then(em => setIsEmergencyActive(em.is_emergency_active))
+            .then(em => setRealEmergencyActive(em?.is_emergency_active || false))
             .catch(() => {})
         }
       })
       .catch(() => {})
 
     apiFetch('/emergency/1')
-      .then(res => setIsEmergencyActive(res.is_emergency_active))
+      .then(res => setRealEmergencyActive(res?.is_emergency_active || false))
       .catch(() => {})
       
     wsService.connect('alerts', {
@@ -220,11 +302,13 @@ function WargaHome() {
       userId: userProfile?.id,
       role: 'user',
     })
-    const unsub = wsService.on('emergency_status', (data) => setIsEmergencyActive(data.is_active))
-    return () => unsub()
+    const unsub = wsService.on('emergency_status', (data) => setRealEmergencyActive(data?.is_active || false))
+    return () => { unsub(); }
   }, [])
 
   const handleSelectTab = (tab) => {
+    setShowNotifDropdown(false)
+    setShowProfileDropdown(false)
     setActiveTab(tab)
     try {
       sessionStorage.setItem('sigab_warga_tab', tab)
@@ -386,28 +470,53 @@ function WargaHome() {
         </div>
 
         <div className="warga-sidebar-bottom">
-          {/* Simulation Toggle in Sidebar */}
-          <button
-            type="button"
-            className={`warga-sidebar-sim-btn ${isEmergencyActive ? 'active' : ''}`}
-            onClick={() => {
-              const next = !isEmergencyActive
-              setIsEmergencyActive(next)
-              if (next) playSosAlertTone()
-            }}
-            title={isEmergencyActive ? "Nonaktifkan simulasi banjir" : "Aktifkan simulasi banjir parah"}
-          >
-            <div className="warga-sidebar-sim-info">
-              <span className="warga-sidebar-sim-icon">{isEmergencyActive ? '🚨' : '🧪'}</span>
-              <div className="warga-sidebar-sim-text">
-                <span className="sim-title">Simulasi Banjir</span>
-                <span className="sim-desc">{isEmergencyActive ? 'Status: PARAH (ON)' : 'Status: Normal (OFF)'}</span>
-              </div>
-            </div>
-            <div className={`warga-sidebar-sim-toggle ${isEmergencyActive ? 'on' : ''}`}>
-              <div className="sim-knob" />
-            </div>
-          </button>
+          {/* Simulation Toggle in Sidebar (Personal Warga Simulation) */}
+          {(() => {
+            const simInfo = getSimPhaseInfo(simStatus)
+            return (
+              <button
+                type="button"
+                className={`warga-sidebar-sim-btn ${personalSim.isRunning ? 'active' : ''}`}
+                style={{
+                  background: simInfo.bgColor,
+                  borderColor: simInfo.borderColor,
+                }}
+                onClick={() => {
+                  if (personalSim.isRunning) {
+                    personalSim.stopSimulation()
+                  } else {
+                    personalSim.startSimulation(0)
+                    playSosAlertTone()
+                  }
+                }}
+                title={personalSim.isRunning ? 'Hentikan simulasi banjir akun ini' : 'Mulai simulasi banjir bertahap untuk akun ini (Aman → Waspada → Siaga → Awas → Aman)'}
+              >
+                <div className="warga-sidebar-sim-info">
+                  <span className="warga-sidebar-sim-icon">{simInfo.icon}</span>
+                  <div className="warga-sidebar-sim-text">
+                    <span className="sim-title">Simulasi Akun Warga</span>
+                    <span 
+                      className="sim-desc"
+                      style={{
+                        color: simInfo.textColor,
+                        fontWeight: personalSim.isRunning ? 700 : 500,
+                      }}
+                    >
+                      {simInfo.desc}
+                    </span>
+                  </div>
+                </div>
+                <div 
+                  className={`warga-sidebar-sim-toggle ${personalSim.isRunning ? 'on' : ''}`}
+                  style={{
+                    backgroundColor: personalSim.isRunning ? simInfo.themeColor : '#334155'
+                  }}
+                >
+                  <div className="sim-knob" />
+                </div>
+              </button>
+            )
+          })()}
 
           <div className="warga-sidebar-help-card">
             <div className="warga-sidebar-help-icon">
@@ -437,8 +546,9 @@ function WargaHome() {
 
       {/* 2. MAIN CONTAINER */}
       <div className="warga-main-container">
-        {/* 0. EMERGENCY TOP INDICATOR BAR */}
-        {isEmergencyActive && (
+        <div className="warga-sticky-top-wrap">
+          {/* 0. EMERGENCY TOP INDICATOR BAR */}
+          {isEmergencyActive && (
           <div className="warga-emergency-top-banner">
             <div className="warga-emergency-top-info">
               <span className="warga-emergency-icon">📢</span>
@@ -526,7 +636,7 @@ function WargaHome() {
               <span>Data live • {liveTimeStr}</span>
             </div>
 
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', zIndex: 9999 }}>
               <button
                 type="button"
                 className="warga-circle-btn"
@@ -544,10 +654,10 @@ function WargaHome() {
                 <>
                   {/* Invisible backdrop to dismiss dropdown on click outside */}
                   <div 
-                    style={{ position: 'fixed', inset: 0, zIndex: 999 }} 
+                    style={{ position: 'fixed', inset: 0, zIndex: 9998, background: 'transparent' }} 
                     onClick={() => setShowNotifDropdown(false)} 
                   />
-                  <div className="notif-panel">
+                  <div className="notif-panel" style={{ zIndex: 9999 }}>
                     <div className="notif-panel-header">
                       <h4>
                         <span>🔔</span> Pemberitahuan ({displayNotifs.length})
@@ -573,6 +683,23 @@ function WargaHome() {
                             Bersihkan
                           </button>
                         )}
+                        <button
+                          type="button"
+                          onClick={() => setShowNotifDropdown(false)}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontSize: '0.95rem',
+                            color: '#64748b',
+                            padding: '2px 6px',
+                            lineHeight: 1,
+                            borderRadius: '4px'
+                          }}
+                          title="Tutup pemberitahuan"
+                        >
+                          ✕
+                        </button>
                       </div>
                     </div>
                     <div className="notif-panel-body">
@@ -636,7 +763,7 @@ function WargaHome() {
                 )}
               </div>
               <div className="warga-profile-info">
-                <strong>{userProfile?.full_name || 'Warga Baureno (Demo)'}</strong>
+                <strong>{userProfile?.full_name || 'Warga Baureno'}</strong>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                   <span>Warga terverifikasi</span>
                 </span>
@@ -644,6 +771,7 @@ function WargaHome() {
             </div>
           </div>
         </header>
+      </div>
 
       {/* User Profile & Household Modal */}
       <ProfileModal
@@ -945,7 +1073,7 @@ function WargaHome() {
             onOpenLocationModal={handleOpenLocationModal}
             initialScrollToMap={activeTab === 'peta'}
             isEmergencyActive={isEmergencyActive}
-            onToggleSimulatedEmergency={(val) => setIsEmergencyActive(val)}
+            simStatus={simStatus}
           />
         )}
         {activeTab === 'riwayat' && <WargaRiwayatKejadian />}
@@ -957,6 +1085,8 @@ function WargaHome() {
             geo={geo} 
             userProfile={userProfile}
             isEmergencyActive={isEmergencyActive}
+            isPersonalSim={personalSim.isRunning}
+            simStatus={simStatus}
           />
         )}
       </main>
@@ -976,6 +1106,7 @@ function AdminHome() {
   const [sidebarOpen, setSidebarOpen] = useState(() => getStoredSidebarState(typeof window !== 'undefined' ? window.innerWidth > 1024 : true))
   const [currentTime, setCurrentTime] = useState(new Date())
   const [isEmergency, setIsEmergency] = useState(false)
+  const [simStatus, setSimStatus] = useState(null)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [tickets, setTickets] = useState([])
   const [adminToast, setAdminToast] = useState(null)
@@ -1008,11 +1139,25 @@ function AdminHome() {
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000)
     apiFetch('/emergency/1').then(res => setIsEmergency(res.is_emergency_active)).catch(() => {})
+    getSimulationStatus().then(st => {
+      setSimStatus(st)
+      if (st && st.is_running) setIsEmergency(true)
+    }).catch(() => {})
     fetchTickets()
 
     wsService.connect('alerts', { role: 'admin' })
     wsService.connect('sos')
     const unsubAlerts = wsService.on('emergency_status', (data) => setIsEmergency(data.is_active))
+    const unsubSim = wsService.on('simulation_status', (data) => {
+      setSimStatus(data)
+      if (data) {
+        if (data.is_running) {
+          setIsEmergency(data.risk_level === 'awas')
+        } else {
+          setIsEmergency(false)
+        }
+      }
+    })
     const unsubSosNew = wsService.on('sos_new', () => {
       playSosAlertTone()
       fetchTickets()
@@ -1024,25 +1169,33 @@ function AdminHome() {
     return () => {
       clearInterval(timer)
       unsubAlerts()
+      unsubSim()
       unsubSosNew()
       unsubSosUpd()
     }
   }, [])
 
   const toggleEmergency = async () => {
-    const nextState = !isEmergency
-    setIsEmergency(nextState)
-
     try {
-      if (isEmergency) {
+      if (simStatus?.is_running || isEmergency) {
+        await stopSimulation().catch(() => {})
         await apiFetch('/emergency/3/deactivate', { method: 'POST', body: JSON.stringify({}) }).catch(() => {})
         await apiFetch('/emergency/1/deactivate', { method: 'POST', body: JSON.stringify({}) }).catch(() => {})
+        setIsEmergency(false)
+        setSimStatus({ is_running: false })
+        setAdminToast({ type: 'success', text: '? Simulasi banjir dihentikan. Data desa kembali normal.' })
       } else {
-        await apiFetch('/emergency/3/activate', { method: 'POST', body: JSON.stringify({ notes: 'Simulasi darurat aktif' }) }).catch(() => {})
-        await apiFetch('/emergency/1/activate', { method: 'POST', body: JSON.stringify({ notes: 'Simulasi darurat aktif' }) }).catch(() => {})
+        const res = await startSimulation()
+        setSimStatus(res.status)
+        setIsEmergency(true)
+        playSosAlertTone()
+        setAdminToast({ type: 'success', text: 'Simulasi banjir 4 desa (Kedungrejo, Kalisari, Lebaksari, Tanggungan) aktif: Aman (30d) -> Waspada (30d) -> Siaga (30d) -> Awas (10m) -> Siaga (30d) -> Waspada (30d) -> Aman' })
       }
+      setTimeout(() => setAdminToast(null), 6000)
     } catch(e) { 
       console.error(e)
+      setAdminToast({ type: 'error', text: '?? Kendala simulasi: ' + (e.message || 'Error') })
+      setTimeout(() => setAdminToast(null), 4000)
     }
   }
 
@@ -1144,7 +1297,7 @@ function AdminHome() {
           <div className="op-text">
             <small>Petugas Jaga</small>
             <strong>Kec. Baureno</strong>
-            <span>Online · Shift Pagi</span>
+            <span>Online · {getCurrentShift(currentTime)}</span>
           </div>
         </div>
 
@@ -1179,25 +1332,38 @@ function AdminHome() {
             <strong>{timeStr}</strong>
             <small>{dateStr}</small>
           </div>
-          <div 
-            className={`danger-toggle ${isEmergency ? 'active' : ''}`} 
-            onClick={toggleEmergency}
-            style={{ cursor: 'pointer', background: isEmergency ? '#fff1f2' : '#f1f5f9', borderColor: isEmergency ? '#fecdd3' : '#e2e8f0' }}
-            title="Klik untuk mengaktifkan simulasi banjir parah atau mengembalikan ke kondisi normal"
-          >
-            <span>
-              STATUS DARURAT
-              <br />
-              <strong style={{ color: isEmergency ? '#e11d48' : '#64748b' }}>
-                {isEmergency ? 'AKTIF' : 'NONAKTIF'}
-              </strong>
-            </span>
-            <i className="toggle-indicator" />
-            <style>{`
-              .danger-toggle i.toggle-indicator { background: ${isEmergency ? '#e11d48' : '#cbd5e1'}; transition: all 0.3s; }
-              .danger-toggle i.toggle-indicator::after { right: ${isEmergency ? '2px' : '22px'}; transition: all 0.3s; }
-            `}</style>
-          </div>
+          {(() => {
+            const simInfo = getSimPhaseInfo(simStatus)
+            const isDanger = simStatus?.is_running || isEmergency
+            return (
+              <div 
+                className={`danger-toggle ${isDanger ? 'active' : ''}`} 
+                onClick={toggleEmergency}
+                style={{ 
+                  cursor: 'pointer', 
+                  background: simStatus?.is_running ? simInfo.bgColor : (isEmergency ? '#fff1f2' : '#f1f5f9'), 
+                  borderColor: simStatus?.is_running ? simInfo.borderColor : (isEmergency ? '#fecdd3' : '#e2e8f0'),
+                  minWidth: simStatus?.is_running ? '190px' : 'auto'
+                }}
+                title={simStatus?.is_running ? 'Klik untuk menghentikan simulasi banjir' : 'Klik untuk mengaktifkan simulasi banjir 4 desa'}
+              >
+                <span>
+                  {simStatus?.is_running ? `SIMULASI: FASE ${simStatus.current_phase || 1}/7` : 'STATUS DARURAT'}
+                  <br />
+                  <strong style={{ color: simStatus?.is_running ? simInfo.themeColor : (isEmergency ? '#e11d48' : '#64748b') }}>
+                    {simStatus?.is_running 
+                      ? `${simStatus.phase_name} (${formatCountdown(simStatus.remaining_seconds)})` 
+                      : (isEmergency ? 'AKTIF' : 'NONAKTIF')}
+                  </strong>
+                </span>
+                <i className="toggle-indicator" />
+                <style>{`
+                  .danger-toggle i.toggle-indicator { background: ${simStatus?.is_running ? simInfo.themeColor : (isEmergency ? '#e11d48' : '#cbd5e1')}; transition: all 0.3s; }
+                  .danger-toggle i.toggle-indicator::after { right: ${isDanger ? '2px' : '22px'}; transition: all 0.3s; }
+                `}</style>
+              </div>
+            )
+          })()}
 
         </header>
         <div className="admin-dashboard">
@@ -1257,7 +1423,7 @@ function AdminHome() {
                 </button>
               </div>
               <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1.5px solid #cbd5e1', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.02)' }}>
-                <RiskMap height="480px" villagesData={realtimeData?.villages || []} shelters={shelters} />
+                <RiskMap height="480px" villagesData={realtimeData?.villages || []} simStatus={simStatus} shelters={shelters} />
               </div>
             </article>
             <article className="sos-queue portal-card">
