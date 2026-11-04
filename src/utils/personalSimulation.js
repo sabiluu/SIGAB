@@ -7,10 +7,12 @@ export const PERSONAL_SIM_PHASES = [
     name: 'AMAN',
     risk_level: 'rendah',
     probability: 12,
-    duration: 30, // detik
+    duration: 30, // 30 detik menuju WASPADA
+    discharge_m3s: 850,
+    rainfall_mm: 5,
     themeColor: '#10b981',
     icon: '🟢',
-    description: 'Fase 1/7: Normal/Aman — Cuaca berawan, debit sungai normal.',
+    description: 'Fase 1/7: AMAN (30 detik) — Cuaca berawan, debit sungai normal menuju WASPADA.',
     isEmergency: false,
   },
   {
@@ -18,10 +20,12 @@ export const PERSONAL_SIM_PHASES = [
     name: 'WASPADA',
     risk_level: 'sedang',
     probability: 38,
-    duration: 30,
+    duration: 30, // 30 detik menuju SIAGA
+    discharge_m3s: 1200,
+    rainfall_mm: 25,
     themeColor: '#f59e0b',
     icon: '🟡',
-    description: 'Fase 2/7: Waspada — Hujan sedang merata, TMA sungai naik.',
+    description: 'Fase 2/7: WASPADA (30 detik) — Hujan sedang merata, TMA sungai naik menuju status SIAGA.',
     isEmergency: false,
   },
   {
@@ -30,6 +34,8 @@ export const PERSONAL_SIM_PHASES = [
     risk_level: 'tinggi',
     probability: 68,
     duration: 30, // 30 detik menuju AWAS
+    discharge_m3s: 1550,
+    rainfall_mm: 55,
     themeColor: '#f97316',
     icon: '🟠',
     description: 'Fase 3/7: SIAGA (30 detik) — Debit sungai mendekati bibir tanggul, menuju status AWAS.',
@@ -41,6 +47,8 @@ export const PERSONAL_SIM_PHASES = [
     risk_level: 'awas',
     probability: 94,
     duration: 600, // 10 menit (Awas menuju Siaga)
+    discharge_m3s: 2100,
+    rainfall_mm: 120,
     themeColor: '#ef4444',
     icon: '🚨',
     description: 'Fase 4/7: AWAS (10 Menit) — Status darurat banjir aktif menuju Siaga Menurun. Warga dapat mengajukan tiket SOS.',
@@ -52,9 +60,11 @@ export const PERSONAL_SIM_PHASES = [
     risk_level: 'tinggi',
     probability: 60,
     duration: 30, // 30 detik menuju Waspada
+    discharge_m3s: 1450,
+    rainfall_mm: 35,
     themeColor: '#f97316',
     icon: '🟠',
-    description: 'Fase 5/7: SIAGA Menurun (30 detik) — Hujan reda, air berangsur stabil.',
+    description: 'Fase 5/7: SIAGA Menurun (30 detik) — Hujan reda, air berangsur stabil menuju WASPADA.',
     isEmergency: false,
   },
   {
@@ -62,10 +72,12 @@ export const PERSONAL_SIM_PHASES = [
     name: 'WASPADA Menurun',
     risk_level: 'sedang',
     probability: 30,
-    duration: 30,
+    duration: 30, // 30 detik menuju Aman
+    discharge_m3s: 1100,
+    rainfall_mm: 15,
     themeColor: '#f59e0b',
     icon: '🟡',
-    description: 'Fase 6/7: Waspada Menurun — Air berangsur surut ke saluran utama.',
+    description: 'Fase 6/7: WASPADA Menurun (30 detik) — Air berangsur surut ke saluran utama menuju AMAN.',
     isEmergency: false,
   },
   {
@@ -73,10 +85,12 @@ export const PERSONAL_SIM_PHASES = [
     name: 'AMAN Normal',
     risk_level: 'rendah',
     probability: 10,
-    duration: 30,
+    duration: 30, // 30 detik kembali normal
+    discharge_m3s: 820,
+    rainfall_mm: 2,
     themeColor: '#10b981',
     icon: '🟢',
-    description: 'Fase 7/7: Normal Kembali — Situasi telah aman dan terkendali.',
+    description: 'Fase 7/7: AMAN Normal (30 detik) — Situasi telah aman dan terkendali sepenuhnya.',
     isEmergency: false,
   },
 ];
@@ -120,10 +134,11 @@ export function buildSimStatusObject(phaseIndex, remainingSec, isRunning = true)
     risk_level: currentPhaseObj.risk_level,
     probability: currentPhaseObj.probability,
     remaining_seconds: Math.max(0, remainingSec),
+    discharge_m3s: currentPhaseObj.discharge_m3s,
+    rainfall_mm: currentPhaseObj.rainfall_mm,
     description: currentPhaseObj.description,
     theme_color: currentPhaseObj.themeColor,
     is_emergency: currentPhaseObj.isEmergency,
     icon: currentPhaseObj.icon,
   };
 }
-
