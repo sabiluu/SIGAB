@@ -38,7 +38,7 @@ function MapPanController({ center }) {
 
 // Lokasi murni real GPS (mencegah pemalsuan lokasi)
 
-export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActive = false }) {
+export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActive = false, isPersonalSim = false, simStatus = null }) {
   const { user } = useAuth();
   const internalGeo = useGeolocation();
   const geo = externalGeo || internalGeo;
@@ -398,7 +398,8 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
         : (address || 'Lokasi Warga');
 
       const isSim = Boolean(
-        isEmergencyActive || 
+        isPersonalSim ||
+        simStatus?.is_running ||
         (detailPatokan && detailPatokan.toLowerCase().includes('simulasi')) || 
         (address && address.toLowerCase().includes('simulasi'))
       );

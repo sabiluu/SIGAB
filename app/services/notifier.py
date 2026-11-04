@@ -132,8 +132,10 @@ async def broadcast_sos_event(
     }
     label = event_labels.get(event_type, "📢 Update SOS")
 
-    title = f"{label} — {ticket_number}"
-    message = f"Tiket SOS dari {reporter_name} di Desa {village_name}. Status: {status}."
+    is_sim = bool((extra_data or {}).get("is_simulation", False))
+    sim_prefix = "[SIMULASI] " if is_sim else ""
+    title = f"{sim_prefix}{label} — {ticket_number}"
+    message = f"{'[SIMULASI WARGA] ' if is_sim else ''}Tiket SOS dari {reporter_name} di Desa {village_name}. Status: {status}."
 
     # Broadcast via WebSocket ke channel 'sos' (semua admin)
     ws_payload = {
@@ -145,6 +147,7 @@ async def broadcast_sos_event(
             "village_name": village_name,
             "village_id": village_id,
             "status": status,
+            "is_simulation": is_sim,
             "title": title,
             "message": message,
             "timestamp": datetime.now().isoformat(),
@@ -153,17 +156,18 @@ async def broadcast_sos_event(
     }
     await ws_manager.broadcast("sos", ws_payload)
 
-    # ✅ TERTARGET: Jika SOS baru, notify hanya ke warga di desa ybs
+    # ✅ TERTARGET: Jika SOS baru dan bukan simulasi, notify warga di desa ybs
     if event_type == "sos_new":
-        await ws_manager.broadcast_to_village("alerts", village_id, {
-            "type": "sos_nearby",
-            "data": {
-                "village_id": village_id,
-                "village_name": village_name,
-                "message": f"Ada permintaan SOS dari warga di Desa {village_name}.",
-                "timestamp": datetime.now().isoformat(),
-            },
-        })
+        if not is_sim:
+            await ws_manager.broadcast_to_village("alerts", village_id, {
+                "type": "sos_nearby",
+                "data": {
+                    "village_id": village_id,
+                    "village_name": village_name,
+                    "message": f"Ada permintaan SOS dari warga di Desa {village_name}.",
+                    "timestamp": datetime.now().isoformat(),
+                },
+            })
     else:
         # ✅ TERTARGET: Status update hanya ke warga di desa ybs agar pelapor bisa tracking
         await ws_manager.broadcast_to_village("alerts", village_id, ws_payload)
