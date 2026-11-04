@@ -589,69 +589,6 @@ export default function WargaBeranda({
   // =========================================================================
   return (
     <div className="warga-beranda-view">
-      {/* Banner Mode Simulasi Khusus Akun Warga Ini */}
-      {simStatus?.is_running && (
-        <div style={{
-          background: simStatus.is_emergency ? 'rgba(239, 68, 68, 0.12)' : 'rgba(59, 130, 246, 0.12)',
-          border: `1.5px solid ${simStatus.is_emergency ? '#ef4444' : '#3b82f6'}`,
-          borderRadius: '12px',
-          padding: '12px 18px',
-          marginBottom: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '14px',
-          flexWrap: 'wrap',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '1.6rem' }}>{simStatus.icon || '🧪'}</span>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                <strong style={{ color: simStatus.is_emergency ? '#dc2626' : '#1d4ed8', fontSize: '0.96rem' }}>
-                  Mode Simulasi Latihan Warga: Fase {simStatus.current_phase}/7 ({simStatus.phase_name})
-                </strong>
-                <span style={{
-                  background: simStatus.is_emergency ? '#ef4444' : '#3b82f6',
-                  color: '#fff',
-                  fontSize: '0.7rem',
-                  fontWeight: 700,
-                  padding: '2px 7px',
-                  borderRadius: '999px'
-                }}>
-                  {simStatus.remaining_seconds != null ? `${Math.floor(simStatus.remaining_seconds / 60)}:${String(simStatus.remaining_seconds % 60).padStart(2, '0')}` : 'AKTIF'}
-                </span>
-              </div>
-              <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: '#475569', lineHeight: 1.4 }}>
-                {simStatus.description || 'Simulasi berjalan khusus untuk akun Anda. Data riil kecamatan tetap normal & aman.'}
-              </p>
-            </div>
-          </div>
-          {simStatus.is_emergency && (
-            <button
-              type="button"
-              onClick={() => onNavigate && onNavigate('sos')}
-              style={{
-                background: '#ef4444',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '9px 16px',
-                fontWeight: 700,
-                fontSize: '0.85rem',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                boxShadow: '0 2px 6px rgba(239, 68, 68, 0.4)'
-              }}
-            >
-              🚨 Ajukan Tiket SOS Darurat
-            </button>
-          )}
-        </div>
-      )}
-
       {/* Header Row: Greeting & Village Selector */}
       <div className="warga-beranda-head">
         <div className="warga-greeting-wrap">
