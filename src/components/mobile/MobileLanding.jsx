@@ -140,7 +140,10 @@ export default function MobileLanding({
       <main>
         <section className="mobile-hero">
           <span className="mobile-eyebrow">SISTEM PERINGATAN DINI</span>
-          <h1>Lebih siap sebelum <span>air naik.</span></h1>
+          <h1>
+            Lebih siap sebelum<br />
+            <span>air naik.</span>
+          </h1>
           <p>
             Sistem peringatan dini dan respons banjir yang membantu warga Baureno
             mengambil keputusan tepat—sebelum kondisi menjadi darurat.

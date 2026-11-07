@@ -226,6 +226,7 @@
 
 .mobile-hero h1 span {
   color: #08a3b6;
+  white-space: nowrap;
 }
 
 .mobile-hero > p,
