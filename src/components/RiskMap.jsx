@@ -125,7 +125,7 @@ const userLocationIcon = L.divIcon({
   popupAnchor: [0, -18],
 });
 
-function MapController({ bounds, recenterTrigger, targetCenter, userCenterTrigger, userLocation }) {
+function MapController({ bounds, recenterTrigger, targetCenter, userCenterTrigger, routeCenterTrigger, userLocation }) {
   const map = useMap();
   const initialFitDone = useRef(false);
   const prevBoundsStrRef = useRef('');
@@ -165,6 +165,17 @@ function MapController({ bounds, recenterTrigger, targetCenter, userCenterTrigge
     }
   }, [bounds, map]);
 
+  // Route center trigger (button "Lihat Rute")
+  useEffect(() => {
+    if (routeCenterTrigger && bounds && bounds.length > 1) {
+      try {
+        map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
+      } catch (e) {
+        console.error("Route fitBounds error:", e);
+      }
+    }
+  }, [routeCenterTrigger, bounds, map]);
+
   // Target village center selection - pan gently HANYA jika TIDAK ADA rute aktif dan desa benar-benar berganti
   useEffect(() => {
     if (bounds && bounds.length > 1) return; // Prioritas rute, jangan tabrakan kamera
@@ -194,11 +205,11 @@ function MapController({ bounds, recenterTrigger, targetCenter, userCenterTrigge
     }
   }, [recenterTrigger, map]);
 
-  // User location focus trigger (HANYA saat user klik tombol "Lokasi Saya")
+  // User location focus trigger (saat user klik tombol "Lokasi Saya")
   useEffect(() => {
     if (userCenterTrigger && userLocation && userLocation[0] && userLocation[1]) {
       try {
-        map.flyTo([userLocation[0], userLocation[1]], 15, { duration: 0.8 });
+        map.flyTo([userLocation[0], userLocation[1]], 16, { duration: 0.8 });
       } catch (e) {
         console.error("FlyTo user location error:", e);
       }
@@ -348,6 +359,23 @@ export default function RiskMap({
 
   const [recenterTrigger, setRecenterTrigger] = useState(0);
   const [userCenterTrigger, setUserCenterTrigger] = useState(0);
+  const [routeCenterTrigger, setRouteCenterTrigger] = useState(0);
+
+  // Normalisasi koordinat lokasi pengguna (dukung format array [lat, lon] maupun object {latitude, longitude})
+  const userCoords = useMemo(() => {
+    if (!userLocation) return null;
+    if (Array.isArray(userLocation) && userLocation[0] != null && userLocation[1] != null) {
+      const lat = Number(userLocation[0]);
+      const lon = Number(userLocation[1]);
+      if (!isNaN(lat) && !isNaN(lon)) return [lat, lon];
+    }
+    const lat = Number(userLocation.latitude ?? userLocation.lat);
+    const lon = Number(userLocation.longitude ?? userLocation.lon ?? userLocation.lng);
+    if (!isNaN(lat) && !isNaN(lon) && (lat !== 0 || lon !== 0)) {
+      return [lat, lon];
+    }
+    return null;
+  }, [userLocation]);
 
   // Compute bounding box if route is active
   const mapBounds = useMemo(() => {
@@ -386,6 +414,45 @@ export default function RiskMap({
           border-top-left-radius: 6px !important;
           backdrop-filter: blur(2px) !important;
         }
+        .riskmap-actions-bar {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          z-index: 1000;
+          display: flex;
+          gap: 6px;
+          flex-wrap: wrap;
+          pointer-events: auto;
+        }
+        .riskmap-btn {
+          border-radius: 999px;
+          padding: 6px 12px;
+          font-size: 11px;
+          font-weight: 700;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+          transition: all 0.15s ease;
+          border: none;
+        }
+        .riskmap-btn.btn-user-loc {
+          background: #2563eb;
+          color: #ffffff;
+        }
+        .riskmap-btn.btn-route-focus {
+          background: #009aa6;
+          color: #ffffff;
+        }
+        .riskmap-btn.btn-recenter {
+          background: rgba(255, 255, 255, 0.95);
+          color: #0f172a;
+          border: 1px solid #cbd5e1;
+        }
+        .riskmap-btn:active {
+          transform: scale(0.96);
+        }
         @keyframes mapPulse {
           0% { transform: scale(0.95); opacity: 0.8; }
           70% { transform: scale(2.2); opacity: 0; }
@@ -393,9 +460,9 @@ export default function RiskMap({
         }
       `}</style>
 
-      {/* Quick action buttons: User location & Recenter Baureno */}
+      {/* Quick action buttons: User location, Route Focus & Recenter Baureno */}
       <div className="riskmap-actions-bar">
-        {userLocation && userLocation[0] && userLocation[1] && (
+        {userCoords && (
           <button
             type="button"
             onClick={() => setUserCenterTrigger(prev => prev + 1)}
@@ -403,6 +470,16 @@ export default function RiskMap({
             title="Arahkan peta ke posisi lokasi Anda saat ini"
           >
             <span>📍</span> <span className="riskmap-btn-text">Lokasi Saya</span>
+          </button>
+        )}
+        {routeCoordinates && routeCoordinates.length > 1 && (
+          <button
+            type="button"
+            onClick={() => setRouteCenterTrigger(prev => prev + 1)}
+            className="riskmap-btn btn-route-focus"
+            title="Arahkan kamera ke seluruh garis rute evakuasi"
+          >
+            <span>🗺️</span> <span className="riskmap-btn-text">Lihat Rute</span>
           </button>
         )}
         <button
@@ -427,7 +504,7 @@ export default function RiskMap({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        <MapController bounds={mapBounds} recenterTrigger={recenterTrigger} targetCenter={targetVillageCenter} userCenterTrigger={userCenterTrigger} userLocation={userLocation} />
+        <MapController bounds={mapBounds} recenterTrigger={recenterTrigger} targetCenter={targetVillageCenter} userCenterTrigger={userCenterTrigger} routeCenterTrigger={routeCenterTrigger} userLocation={userCoords} />
 
         {/* 1. Village Risk Polygons */}
         {villages.map(v => {
@@ -519,9 +596,9 @@ export default function RiskMap({
         )}
 
         {/* 3. User GPS Marker (Titik Awal Navigasi Rute) */}
-        {userLocation && userLocation[0] && userLocation[1] && (
+        {userCoords && (
           <Marker 
-            position={[userLocation[0], userLocation[1]]} 
+            position={userCoords} 
             icon={userLocationIcon}
             zIndexOffset={1000}
           >
@@ -537,9 +614,9 @@ export default function RiskMap({
             </Tooltip>
             <Popup>
               <div style={{ fontSize: '12px', textAlign: 'center', minWidth: '130px', padding: '2px' }}>
-                <strong style={{ color: '#1d4ed8', fontSize: '13px' }}>📍 Posisi Anda Saat Ini</strong>
+                <strong style={{ color: '#1d4ed8', fontSize: '13px' }}>📍 {userLocation?.label || 'Posisi Anda Saat Ini'}</strong>
                 <p style={{ margin: '4px 0', color: '#475569', fontSize: '11px' }}>
-                  {userLocation[0].toFixed(5)}, {userLocation[1].toFixed(5)}
+                  {userCoords[0].toFixed(5)}, {userCoords[1].toFixed(5)}
                 </p>
                 <div style={{ display: 'inline-block', background: '#dcfce7', color: '#15803d', padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }}>
                   Titik Awal Rute Evakuasi

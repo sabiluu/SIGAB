@@ -940,6 +940,17 @@ export default function MobileWargaView() {
                 />
               </div>
 
+              {/* Legend Navigasi & Indikator Titik Lokasi */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '-4px 0 10px', padding: '7px 10px', background: '#f0fdfa', borderRadius: '10px', fontSize: '0.72rem', color: '#334155', border: '1px solid #99f6e4' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#2563eb', display: 'inline-block', boxShadow: '0 0 0 2px white, 0 0 4px #2563eb' }} />
+                  <strong>Titik Biru:</strong> Posisi Anda ({activeVillage.cleanName})
+                </span>
+                <span style={{ color: '#0f766e', fontWeight: 700 }}>
+                  Gunakan tombol 📍 & 🗺️ di peta
+                </span>
+              </div>
+
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
                   type="button"
