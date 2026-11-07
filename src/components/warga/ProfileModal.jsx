@@ -218,40 +218,14 @@ export default function ProfileModal({
             <span>👤</span>
             {isEditing ? 'Edit Profil & Data Warga' : 'Profil Warga & Rumah Tangga'}
           </h3>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {!isEditing && (
-              <button
-                type="button"
-                className="profile-quick-edit-btn"
-                onClick={() => setIsEditing(true)}
-                title="Buka form untuk mengedit profil"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  background: '#0284c7',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '6px 12px',
-                  fontSize: '0.8rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  boxShadow: '0 1px 3px rgba(2, 132, 199, 0.25)',
-                }}
-              >
-                <span>✏️</span> Edit Profil
-              </button>
-            )}
-            <button
-              type="button"
-              className="profile-modal-close-btn"
-              onClick={onClose}
-              title="Tutup"
-            >
-              ✕
-            </button>
-          </div>
+          <button
+            type="button"
+            className="profile-modal-close-btn"
+            onClick={onClose}
+            title="Tutup"
+          >
+            ✕
+          </button>
         </div>
 
         {/* Body Modal */}
