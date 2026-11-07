@@ -128,6 +128,8 @@ const userLocationIcon = L.divIcon({
 function MapController({ bounds, recenterTrigger, targetCenter, userCenterTrigger, userLocation }) {
   const map = useMap();
   const initialFitDone = useRef(false);
+  const prevBoundsStrRef = useRef('');
+  const prevTargetCenterStrRef = useRef('');
 
   // Initial fit to Baureno bounds on mount so all 25 villages are nicely visible
   useEffect(() => {
@@ -146,32 +148,44 @@ function MapController({ bounds, recenterTrigger, targetCenter, userCenterTrigge
     }
   }, [map]);
 
-  // Route bounds fit (highest priority when route is active)
+  // Route bounds fit (highest priority when route is active, stabil tanpa jitter berulang)
   useEffect(() => {
-    if (bounds && bounds.length > 0) {
+    if (bounds && bounds.length > 1) {
+      const boundsStr = `${bounds[0]?.[0]?.toFixed(4)}_${bounds[bounds.length - 1]?.[0]?.toFixed(4)}_${bounds.length}`;
+      if (prevBoundsStrRef.current === boundsStr) return;
+      prevBoundsStrRef.current = boundsStr;
+
       try {
         map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
       } catch (e) {
         console.error("Route fitBounds error:", e);
       }
+    } else {
+      prevBoundsStrRef.current = '';
     }
   }, [bounds, map]);
 
-  // Target village center selection - pan gently without overzooming
+  // Target village center selection - pan gently HANYA jika TIDAK ADA rute aktif dan desa benar-benar berganti
   useEffect(() => {
-    if (targetCenter && targetCenter[0] && targetCenter[1]) {
-      try {
-        // Keep overview zoom so all 25 villages remain visible in context
-        map.panTo(targetCenter, { duration: 0.8 });
-      } catch (e) {
-        console.error("PanTo error:", e);
-      }
+    if (bounds && bounds.length > 1) return; // Prioritas rute, jangan tabrakan kamera
+    if (!targetCenter || !targetCenter[0] || !targetCenter[1]) return;
+    if (!initialFitDone.current) return;
+
+    const centerStr = `${targetCenter[0].toFixed(4)}_${targetCenter[1].toFixed(4)}`;
+    if (prevTargetCenterStrRef.current === centerStr) return;
+    prevTargetCenterStrRef.current = centerStr;
+
+    try {
+      map.panTo(targetCenter, { duration: 0.6 });
+    } catch (e) {
+      console.error("PanTo error:", e);
     }
-  }, [targetCenter, map]);
+  }, [targetCenter, bounds, map]);
 
   // Recenter trigger (button "Tampilkan Seluruh Baureno")
   useEffect(() => {
     if (recenterTrigger) {
+      prevBoundsStrRef.current = '';
       try {
         map.fitBounds(baurenoBounds, { padding: [15, 15] });
       } catch (e) {
@@ -180,7 +194,7 @@ function MapController({ bounds, recenterTrigger, targetCenter, userCenterTrigge
     }
   }, [recenterTrigger, map]);
 
-  // User location focus trigger
+  // User location focus trigger (HANYA saat user klik tombol "Lokasi Saya")
   useEffect(() => {
     if (userCenterTrigger && userLocation && userLocation[0] && userLocation[1]) {
       try {

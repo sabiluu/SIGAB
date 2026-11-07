@@ -324,76 +324,69 @@ export default function MobileWargaView() {
       const s = shelters.find((sh) => Number(sh.id) === Number(selectedShelterId))
       if (s) return s
     }
-    return shelters[0]
+    return null
   }, [shelters, selectedShelterId])
 
-  // Fetch OSRM Road Route whenever shelter or GPS changes
-  useEffect(() => {
-    if (!selectedShelter) return
-    let active = true
+  // Hitung rute OSRM hanya saat user meminta / klik tombol posko (TIDAK otomatis saat awal buka)
+  const handleCalculateRoute = useCallback(async (targetShelter) => {
+    const sh = targetShelter || (selectedShelterId ? shelters.find(s => Number(s.id) === Number(selectedShelterId)) : shelters[0])
+    if (!sh) return
+    setSelectedShelterId(sh.id)
+    setLoadingRoute(true)
+
     const uLat = geo.latitude || -7.1155
     const uLon = geo.longitude || 112.0835
 
-    const loadRoute = async () => {
-      setLoadingRoute(true)
-      try {
-        const res = await apiFetch(`/shelters/${selectedShelter.id}/route?user_lat=${uLat}&user_lon=${uLon}`)
-        if (active && res && Array.isArray(res.coordinates) && res.coordinates.length >= 2) {
-          setRouteData({
-            coordinates: res.coordinates.map((c) => [c[1], c[0]]),
-            distance_km: Number(res.distance_km || 2.1).toFixed(2),
-            duration_minutes: Math.max(1, Math.round(Number(res.duration_minutes || 6))),
-            shelterName: selectedShelter.name,
-            destLat: selectedShelter.latitude,
-            destLon: selectedShelter.longitude,
-          })
-          setLoadingRoute(false)
-          return
-        }
-      } catch (_) {}
-
-      // Fallback OSRM direct
-      try {
-        const r = await fetch(
-          `https://router.project-osrm.org/route/v1/driving/${uLon},${uLat};${selectedShelter.longitude},${selectedShelter.latitude}?overview=full&geometries=geojson`
-        )
-        const d = await r.json()
-        if (active && d?.routes?.[0]?.geometry?.coordinates) {
-          const coords = d.routes[0].geometry.coordinates.map((c) => [c[1], c[0]])
-          setRouteData({
-            coordinates: coords,
-            distance_km: ((d.routes[0].distance || 2100) / 1000).toFixed(2),
-            duration_minutes: Math.max(1, Math.round((d.routes[0].duration || 300) / 60)),
-            shelterName: selectedShelter.name,
-            destLat: selectedShelter.latitude,
-            destLon: selectedShelter.longitude,
-          })
-          setLoadingRoute(false)
-          return
-        }
-      } catch (_) {}
-
-      if (active) {
+    try {
+      const res = await apiFetch(`/shelters/${sh.id}/route?user_lat=${uLat}&user_lon=${uLon}`)
+      if (res && Array.isArray(res.coordinates) && res.coordinates.length >= 2) {
         setRouteData({
-          coordinates: [
-            [uLat, uLon],
-            [selectedShelter.latitude || -7.129, selectedShelter.longitude || 112.105],
-          ],
-          distance_km: '2.10',
-          duration_minutes: 6,
-          shelterName: selectedShelter.name,
-          destLat: selectedShelter.latitude || -7.129,
-          destLon: selectedShelter.longitude || 112.105,
+          coordinates: res.coordinates.map((c) => [c[1], c[0]]),
+          distance_km: Number(res.distance_km || 2.1).toFixed(2),
+          duration_minutes: Math.max(1, Math.round(Number(res.duration_minutes || 6))),
+          shelterName: sh.name,
+          destLat: sh.latitude,
+          destLon: sh.longitude,
         })
         setLoadingRoute(false)
+        return
       }
-    }
+    } catch (_) {}
 
-    loadRoute()
-    return () => {
-      active = false
-    }
-  }, [selectedShelter, geo.latitude, geo.longitude])
+    // Fallback OSRM direct
+    try {
+      const r = await fetch(
+        `https://router.project-osrm.org/route/v1/driving/${uLon},${uLat};${sh.longitude},${sh.latitude}?overview=full&geometries=geojson`
+      )
+      const d = await r.json()
+      if (d?.routes?.[0]?.geometry?.coordinates) {
+        const coords = d.routes[0].geometry.coordinates.map((c) => [c[1], c[0]])
+        setRouteData({
+          coordinates: coords,
+          distance_km: ((d.routes[0].distance || 2100) / 1000).toFixed(2),
+          duration_minutes: Math.max(1, Math.round((d.routes[0].duration || 300) / 60)),
+          shelterName: sh.name,
+          destLat: sh.latitude,
+          destLon: sh.longitude,
+        })
+        setLoadingRoute(false)
+        return
+      }
+    } catch (_) {}
+
+    setRouteData({
+      coordinates: [
+        [uLat, uLon],
+        [sh.latitude || -7.129, sh.longitude || 112.105],
+      ],
+      distance_km: '2.10',
+      duration_minutes: 6,
+      shelterName: sh.name,
+      destLat: sh.latitude || -7.129,
+      destLon: sh.longitude || 112.105,
+    })
+    setLoadingRoute(false)
+  }, [shelters, selectedShelterId, geo.latitude, geo.longitude])
 
   const handleSendSOS = async (e) => {
     e.preventDefault()
@@ -475,46 +468,6 @@ export default function MobileWargaView() {
         </div>
 
         <div className="m-header-actions">
-          {/* Simulasi Akun Warga Pill Toggle (Sinkron dengan Sistem Desktop) */}
-          {(() => {
-            const simInfo = getSimPhaseInfo(simStatus)
-            return (
-              <button
-                type="button"
-                onClick={() => {
-                  if (personalSim.isRunning) {
-                    personalSim.stopSimulation()
-                  } else {
-                    personalSim.startSimulation(0)
-                    playSosAlertTone()
-                  }
-                }}
-                style={{
-                  background: personalSim.isRunning ? simInfo.bgColor : '#f1f5f9',
-                  color: personalSim.isRunning ? (simInfo.textColor || simInfo.themeColor) : '#475569',
-                  border: `1.5px solid ${personalSim.isRunning ? simInfo.borderColor : '#cbd5e1'}`,
-                  borderRadius: '999px',
-                  padding: '5px 10px',
-                  fontSize: '0.68rem',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  maxWidth: '145px',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  transition: 'all 0.25s ease',
-                }}
-                title={personalSim.isRunning ? 'Hentikan simulasi banjir akun ini' : 'Mulai simulasi banjir bertahap (Aman → Waspada → Siaga → Awas → Aman)'}
-              >
-                <span>{simInfo.icon}</span>
-                <span>{personalSim.isRunning ? simInfo.shortDesc : 'Simulasi'}</span>
-              </button>
-            )
-          })()}
-
           {/* Village Switcher Button */}
           <button
             type="button"
@@ -613,31 +566,236 @@ export default function MobileWargaView() {
            ============================================================== */}
         {activeTab === 'beranda' && (
           <>
-            {/* Card Simulasi Akun Warga (Sinkron dengan Sistem Simulasi Desktop) */}
+            {/* Status Card Desa */}
+            <section
+              className="m-card"
+              style={{
+                background: activeVillage.risk_level === 'awas'
+                  ? 'linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%)'
+                  : 'linear-gradient(135deg, #0c1a24 0%, #132c3d 100%)',
+                color: '#ffffff',
+                border: 'none',
+                padding: '18px',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <span style={{ fontSize: '0.66rem', fontWeight: 800, letterSpacing: '0.06em', color: '#94a3b8' }}>
+                  STATUS WILAYAH ANDA
+                </span>
+                <span className={`m-badge ${activeVillage.risk_level}`}>
+                  {riskLabelMap[activeVillage.risk_level] || 'AMAN'}
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '14px' }}>
+                <div>
+                  <h2 style={{ fontSize: '1.35rem', fontWeight: 800, margin: '0 0 4px', color: '#ffffff' }}>
+                    Desa {activeVillage.cleanName}
+                  </h2>
+                  <div style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>
+                    Kecamatan Baureno
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '1.85rem', fontWeight: 900, lineHeight: 1 }}>
+                    {Math.round(activeVillage.probability)}%
+                  </div>
+                  <div style={{ fontSize: '0.66rem', color: '#cbd5e1', marginTop: '3px' }}>
+                    Indeks Risiko
+                  </div>
+                </div>
+              </div>
+
+              {/* 3 Compact Telemetry Boxes */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.12)' }}>
+                <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: '10px', padding: '8px 10px' }}>
+                  <div style={{ fontSize: '0.62rem', color: '#cbd5e1' }}>Debit Sungai</div>
+                  <div style={{ fontSize: '0.86rem', fontWeight: 800, marginTop: '2px' }}>{dischargeVal} m³/s</div>
+                </div>
+                <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: '10px', padding: '8px 10px' }}>
+                  <div style={{ fontSize: '0.62rem', color: '#cbd5e1' }}>Curah Hujan</div>
+                  <div style={{ fontSize: '0.86rem', fontWeight: 800, marginTop: '2px' }}>{rainVal} mm/j</div>
+                </div>
+                <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: '10px', padding: '8px 10px' }}>
+                  <div style={{ fontSize: '0.62rem', color: '#cbd5e1' }}>Posko Siap</div>
+                  <div style={{ fontSize: '0.86rem', fontWeight: 800, marginTop: '2px' }}>{shelters.length} Lokasi</div>
+                </div>
+              </div>
+            </section>
+
+            {/* Emergency Action Banner (Recommended Sequence: 1. Cek Rute -> 2. Kirim SOS) */}
+            <section
+              className="m-card"
+              style={{
+                background: activeVillage.risk_level === 'awas' ? '#fef2f2' : '#f0fdfa',
+                borderColor: activeVillage.risk_level === 'awas' ? '#fecaca' : '#99f6e4',
+              }}
+            >
+              <div style={{ fontSize: '0.72rem', fontWeight: 800, color: activeVillage.risk_level === 'awas' ? '#dc2626' : '#0f766e', marginBottom: '6px' }}>
+                {activeVillage.risk_level === 'awas'
+                  ? '⚠️ PERINGATAN DARURAT BANJIR (LEVEL AWAS)'
+                  : '🧭 LANGKAH KESIAPSIAGAAN WARGA'}
+              </div>
+              <p style={{ fontSize: '0.78rem', color: '#334155', lineHeight: 1.45, margin: '0 0 12px' }}>
+                {activeVillage.risk_level === 'awas'
+                  ? 'Air sungai meningkat tajam! Cek rute evakuasi jalan raya menuju posko terdekat terlebih dahulu, atau kirim sinyal SOS jika butuh jemputan perahu karet.'
+                  : 'Kenali jalur evakuasi terdekat dari posisi GPS Anda menuju Posko BPBD sebelum kondisi darurat.'}
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <button
+                  type="button"
+                  className="m-btn m-btn-teal"
+                  onClick={() => {
+                    setActiveTab('peta')
+                    if (!routeData && shelters.length > 0) {
+                      handleCalculateRoute(shelters[0])
+                    }
+                  }}
+                >
+                  <span>1. Cek Rute Evakuasi Terdekat {routeData ? `(${routeData.distance_km} km)` : ''}</span>
+                  <span>→</span>
+                </button>
+                <button
+                  type="button"
+                  className="m-btn m-btn-danger"
+                  onClick={handleSOSClick}
+                >
+                  <span>2. Kirim Sinyal SOS Darurat ke BPBD</span>
+                  <span>🚨</span>
+                </button>
+              </div>
+            </section>
+
+            {/* Posko Terdekat Card */}
             {(() => {
-              const simInfo = getSimPhaseInfo(simStatus)
+              const recommendedShelter = selectedShelter || shelters[0]
+              if (!recommendedShelter) return null
+
+              const occ = Number(recommendedShelter.capacity_occupied || 0)
+              const tot = Number(recommendedShelter.capacity_total || 200)
+              const pct = Math.min(100, Math.round((occ / tot) * 100))
+
+              return (
+                <section className="m-card">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#009aa6' }}>
+                      🏕️ POSKO REKOMENDASI TERDEKAT
+                    </span>
+                    <span className="m-badge aman">Buka 24 Jam</span>
+                  </div>
+                  <div style={{ fontSize: '0.96rem', fontWeight: 800, color: '#0c1a24', marginBottom: '4px' }}>
+                    {recommendedShelter.name}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '10px' }}>
+                    {recommendedShelter.address} •{' '}
+                    {routeData ? (
+                      <span>
+                        Jarak <strong>{routeData.distance_km} km</strong> (~{routeData.duration_minutes} mnt)
+                      </span>
+                    ) : (
+                      <span>Ketuk tombol di bawah untuk menghitung jarak</span>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.73rem', marginBottom: '5px' }}>
+                    <span>Terisi: <strong>{occ}</strong> / {tot} jiwa</span>
+                    <span style={{ color: '#059669', fontWeight: 700 }}>
+                      Sisa {tot - occ} tempat
+                    </span>
+                  </div>
+                  <div style={{ height: '6px', background: '#e2e8f0', borderRadius: '999px', overflow: 'hidden', marginBottom: '12px' }}>
+                    <div
+                      style={{
+                        height: '100%',
+                        width: `${pct}%`,
+                        background: '#10b981',
+                      }}
+                    />
+                  </div>
+                  {routeData ? (
+                    <button
+                      type="button"
+                      className="m-btn m-btn-outline"
+                      onClick={() => setActiveTab('peta')}
+                    >
+                      Tampilkan Garis Rute di Peta 🗺️
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="m-btn m-btn-outline"
+                      disabled={loadingRoute}
+                      onClick={() => handleCalculateRoute(recommendedShelter)}
+                    >
+                      {loadingRoute ? '⏳ Menghitung Jarak & Rute...' : 'Lihat Jarak & Rute ke Posko 🗺️'}
+                    </button>
+                  )}
+                </section>
+              )
+            })()}
+
+            {/* Status Desa Sekitar */}
+            <section className="m-card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <h3 style={{ margin: 0, fontSize: '0.92rem', fontWeight: 800 }}>Status Desa di Kec. Baureno</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowVillageSheet(true)}
+                  style={{ background: 'none', border: 'none', color: '#009aa6', fontSize: '0.74rem', fontWeight: 700, cursor: 'pointer' }}
+                >
+                  Pilih Desa ({villages.length}) →
+                </button>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {villages.slice(0, 6).map((v) => (
+                  <div
+                    key={v.id}
+                    onClick={() => setSelectedVillageId(v.id)}
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: '11px',
+                      border: Number(v.id) === Number(activeVillage.id) ? '1.5px solid #009aa6' : '1px solid #edf2f7',
+                      background: Number(v.id) === Number(activeVillage.id) ? '#f0fdfa' : '#ffffff',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: '0.84rem', fontWeight: 700 }}>Desa {v.cleanName}</div>
+                      <div style={{ fontSize: '0.7rem', color: '#64748b' }}>Probabilitas {Number(v.probability).toFixed(1)}%</div>
+                    </div>
+                    <span className={`m-badge ${v.risk_level}`}>{v.risk_level.toUpperCase()}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* Card Simulasi Akun Warga (Diletakkan di bagian bawah halaman Beranda) */}
+            {(() => {
+              const simInfo = PERSONAL_SIM_PHASES.find((p) => p.phase === simStatus.current_phase) || PERSONAL_SIM_PHASES[0]
               return (
                 <section
                   className="m-card"
                   style={{
                     background: personalSim.isRunning ? simInfo.bgColor : '#f8fafc',
-                    borderColor: personalSim.isRunning ? simInfo.borderColor : '#e2e8f0',
-                    padding: '14px',
+                    border: `1.5px solid ${personalSim.isRunning ? simInfo.borderColor : '#cbd5e1'}`,
                     transition: 'all 0.3s ease',
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '1.25rem' }}>{simInfo.icon}</span>
+                      <span style={{ fontSize: '1.2rem' }}>{personalSim.isRunning ? simInfo.icon : '🎮'}</span>
                       <div>
-                        <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#0f172a' }}>
+                        <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0f172a' }}>
                           Simulasi Akun Warga
                         </div>
-                        <div style={{ fontSize: '0.7rem', color: simInfo.textColor, fontWeight: personalSim.isRunning ? 700 : 500 }}>
-                          {simInfo.desc}
+                        <div style={{ fontSize: '0.7rem', color: personalSim.isRunning ? simInfo.themeColor : '#64748b', fontWeight: personalSim.isRunning ? 700 : 500 }}>
+                          {personalSim.isRunning ? `Status: ${simInfo.name.toUpperCase()} (Fase ${simStatus.current_phase}/7)` : 'Mode Normal (Live Sensor)'}
                         </div>
                       </div>
                     </div>
+
                     <button
                       type="button"
                       onClick={() => {
@@ -738,175 +896,6 @@ export default function MobileWargaView() {
                 </section>
               )
             })()}
-
-            {/* Status Card Desa */}
-            <section
-              className="m-card"
-              style={{
-                background: activeVillage.risk_level === 'awas'
-                  ? 'linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%)'
-                  : 'linear-gradient(135deg, #0c1a24 0%, #132c3d 100%)',
-                color: '#ffffff',
-                border: 'none',
-                padding: '18px',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <span style={{ fontSize: '0.66rem', fontWeight: 800, letterSpacing: '0.06em', color: '#94a3b8' }}>
-                  STATUS WILAYAH ANDA
-                </span>
-                <span className={`m-badge ${activeVillage.risk_level}`}>
-                  {riskLabelMap[activeVillage.risk_level] || 'AMAN'}
-                </span>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '14px' }}>
-                <div>
-                  <h2 style={{ fontSize: '1.35rem', fontWeight: 800, margin: '0 0 4px', color: '#ffffff' }}>
-                    Desa {activeVillage.cleanName}
-                  </h2>
-                  <div style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>
-                    Kecamatan Baureno
-                  </div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '1.85rem', fontWeight: 900, lineHeight: 1 }}>
-                    {Math.round(activeVillage.probability)}%
-                  </div>
-                  <div style={{ fontSize: '0.66rem', color: '#cbd5e1', marginTop: '3px' }}>
-                    Indeks Risiko
-                  </div>
-                </div>
-              </div>
-
-              {/* 3 Compact Telemetry Boxes */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.12)' }}>
-                <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: '10px', padding: '8px 10px' }}>
-                  <div style={{ fontSize: '0.62rem', color: '#cbd5e1' }}>Debit Sungai</div>
-                  <div style={{ fontSize: '0.86rem', fontWeight: 800, marginTop: '2px' }}>{dischargeVal} m³/s</div>
-                </div>
-                <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: '10px', padding: '8px 10px' }}>
-                  <div style={{ fontSize: '0.62rem', color: '#cbd5e1' }}>Curah Hujan</div>
-                  <div style={{ fontSize: '0.86rem', fontWeight: 800, marginTop: '2px' }}>{rainVal} mm/j</div>
-                </div>
-                <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: '10px', padding: '8px 10px' }}>
-                  <div style={{ fontSize: '0.62rem', color: '#cbd5e1' }}>Posko Siap</div>
-                  <div style={{ fontSize: '0.86rem', fontWeight: 800, marginTop: '2px' }}>{shelters.length} Lokasi</div>
-                </div>
-              </div>
-            </section>
-
-            {/* Emergency Action Banner (Recommended Sequence: 1. Cek Rute -> 2. Kirim SOS) */}
-            <section
-              className="m-card"
-              style={{
-                background: activeVillage.risk_level === 'awas' ? '#fef2f2' : '#f0fdfa',
-                borderColor: activeVillage.risk_level === 'awas' ? '#fecaca' : '#99f6e4',
-              }}
-            >
-              <div style={{ fontSize: '0.72rem', fontWeight: 800, color: activeVillage.risk_level === 'awas' ? '#dc2626' : '#0f766e', marginBottom: '6px' }}>
-                {activeVillage.risk_level === 'awas'
-                  ? '⚠️ PERINGATAN DARURAT BANJIR (LEVEL AWAS)'
-                  : '🧭 LANGKAH KESIAPSIAGAAN WARGA'}
-              </div>
-              <p style={{ fontSize: '0.78rem', color: '#334155', lineHeight: 1.45, margin: '0 0 12px' }}>
-                {activeVillage.risk_level === 'awas'
-                  ? 'Air sungai meningkat tajam! Cek rute evakuasi jalan raya menuju posko terdekat terlebih dahulu, atau kirim sinyal SOS jika butuh jemputan perahu karet.'
-                  : 'Kenali jalur evakuasi terdekat dari posisi GPS Anda menuju Posko BPBD sebelum kondisi darurat.'}
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <button
-                  type="button"
-                  className="m-btn m-btn-teal"
-                  onClick={() => setActiveTab('peta')}
-                >
-                  <span>1. Cek Rute Evakuasi Terdekat ({routeData ? `${routeData.distance_km} km` : 'OSRM'})</span>
-                  <span>→</span>
-                </button>
-                <button
-                  type="button"
-                  className="m-btn m-btn-danger"
-                  onClick={handleSOSClick}
-                >
-                  <span>2. Kirim Sinyal SOS Darurat ke BPBD</span>
-                  <span>🚨</span>
-                </button>
-              </div>
-            </section>
-
-            {/* Posko Terdekat Card */}
-            {selectedShelter && (
-              <section className="m-card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#009aa6' }}>
-                    🏕️ POSKO REKOMENDASI TERDEKAT
-                  </span>
-                  <span className="m-badge aman">Buka 24 Jam</span>
-                </div>
-                <div style={{ fontSize: '0.96rem', fontWeight: 800, color: '#0c1a24', marginBottom: '4px' }}>
-                  {selectedShelter.name}
-                </div>
-                <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '10px' }}>
-                  {selectedShelter.address} • Jarak <strong>{routeData?.distance_km || '2.1'} km</strong> (~{routeData?.duration_minutes || 6} mnt)
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.73rem', marginBottom: '5px' }}>
-                  <span>Terisi: <strong>{selectedShelter.capacity_occupied || 0}</strong> / {selectedShelter.capacity_total || 200} jiwa</span>
-                  <span style={{ color: '#059669', fontWeight: 700 }}>
-                    Sisa {(selectedShelter.capacity_total || 200) - (selectedShelter.capacity_occupied || 0)} tempat
-                  </span>
-                </div>
-                <div style={{ height: '6px', background: '#e2e8f0', borderRadius: '999px', overflow: 'hidden', marginBottom: '12px' }}>
-                  <div
-                    style={{
-                      height: '100%',
-                      width: `${Math.min(100, Math.round(((selectedShelter.capacity_occupied || 0) / (selectedShelter.capacity_total || 200)) * 100))}%`,
-                      background: '#10b981',
-                    }}
-                  />
-                </div>
-                <button type="button" className="m-btn m-btn-outline" onClick={() => setActiveTab('peta')}>
-                  Tampilkan Garis Rute di Peta 🗺️
-                </button>
-              </section>
-            )}
-
-            {/* Status Desa Sekitar */}
-            <section className="m-card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <h3 style={{ margin: 0, fontSize: '0.92rem', fontWeight: 800 }}>Status Desa di Kec. Baureno</h3>
-                <button
-                  type="button"
-                  onClick={() => setShowVillageSheet(true)}
-                  style={{ background: 'none', border: 'none', color: '#009aa6', fontSize: '0.74rem', fontWeight: 700, cursor: 'pointer' }}
-                >
-                  Pilih Desa ({villages.length}) →
-                </button>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {villages.slice(0, 6).map((v) => (
-                  <div
-                    key={v.id}
-                    onClick={() => setSelectedVillageId(v.id)}
-                    style={{
-                      padding: '10px 12px',
-                      borderRadius: '11px',
-                      border: Number(v.id) === Number(activeVillage.id) ? '1.5px solid #009aa6' : '1px solid #edf2f7',
-                      background: Number(v.id) === Number(activeVillage.id) ? '#f0fdfa' : '#ffffff',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontSize: '0.84rem', fontWeight: 700 }}>Desa {v.cleanName}</div>
-                      <div style={{ fontSize: '0.7rem', color: '#64748b' }}>Probabilitas {Number(v.probability).toFixed(1)}%</div>
-                    </div>
-                    <span className={`m-badge ${v.risk_level}`}>{v.risk_level.toUpperCase()}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
           </>
         )}
 
@@ -920,7 +909,7 @@ export default function MobileWargaView() {
                 <div>
                   <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 800 }}>Peta Risiko & Rute Evakuasi</h2>
                   <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
-                    📍 Dari Desa {activeVillage.cleanName} ➔ 🎯 {selectedShelter?.name}
+                    📍 Dari Desa {activeVillage.cleanName} {selectedShelter ? `➔ 🎯 ${selectedShelter.name}` : '• Ketuk posko untuk cek rute'}
                   </div>
                 </div>
                 {routeData && (
@@ -942,7 +931,7 @@ export default function MobileWargaView() {
                   activeRoute={routeData}
                   routeCoordinates={routeData?.coordinates}
                   selectedShelterId={selectedShelter?.id}
-                  onSelectShelter={(sh) => setSelectedShelterId(sh.id)}
+                  onSelectShelter={(sh) => handleCalculateRoute(sh)}
                   userLocation={{
                     latitude: geo.latitude || -7.1155,
                     longitude: geo.longitude || 112.0835,
@@ -976,7 +965,7 @@ export default function MobileWargaView() {
                   return (
                     <div
                       key={sh.id}
-                      onClick={() => setSelectedShelterId(sh.id)}
+                      onClick={() => handleCalculateRoute(sh)}
                       style={{
                         padding: '12px 14px',
                         borderRadius: '12px',
@@ -988,7 +977,7 @@ export default function MobileWargaView() {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                         <strong style={{ fontSize: '0.86rem', color: '#0c1a24' }}>{sh.name}</strong>
                         <span className={`m-badge ${pct >= 90 ? 'awas' : 'aman'}`}>
-                          {isSelected ? '🎯 Rute Aktif' : `${tot - occ} Kosong`}
+                          {isSelected && routeData ? '🎯 Rute Aktif' : `${tot - occ} Kosong`}
                         </span>
                       </div>
                       <div style={{ fontSize: '0.72rem', color: '#64748b', marginBottom: '8px' }}>
@@ -997,10 +986,14 @@ export default function MobileWargaView() {
                       <div style={{ height: '5px', background: '#e2e8f0', borderRadius: '999px', overflow: 'hidden' }}>
                         <div style={{ height: '100%', width: `${pct}%`, background: pct >= 90 ? '#dc2626' : '#009aa6' }} />
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', color: '#64748b', marginTop: '4px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', color: '#64748b', marginTop: '6px' }}>
                         <span>Terisi {occ}/{tot} jiwa ({pct}%)</span>
                         <span style={{ color: '#009aa6', fontWeight: 700 }}>
-                          {loadingRoute && isSelected ? 'Menghitung rute...' : 'Ketuk untuk lihat rute'}
+                          {loadingRoute && isSelected
+                            ? '⏳ Menghitung rute...'
+                            : isSelected && routeData
+                            ? `📍 ${routeData.distance_km} km (~${routeData.duration_minutes} mnt)`
+                            : 'Ketuk untuk lihat jarak & rute →'}
                         </span>
                       </div>
                     </div>
