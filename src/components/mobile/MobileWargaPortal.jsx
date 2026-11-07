@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from 'react'
 import { logout, getProfile } from '../../services/authService'
 import { apiFetch } from '../../services/api'
 import { getSOSTickets, createSOSTicket } from '../../services/sosService'
+import { getShelters } from '../../services/shelterService'
+import wsService from '../../services/wsService'
 import useDashboardRealtime from '../../hooks/useDashboardRealtime'
 import useGeolocation, { BAURENO_VILLAGES } from '../../hooks/useGeolocation'
 import usePersonalSimulation from '../../hooks/usePersonalSimulation'
@@ -107,6 +109,8 @@ export default function MobileWargaView() {
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [showRejectModal, setShowRejectModal] = useState(false)
+  const [realEmergencyActive, setRealEmergencyActive] = useState(false)
+  const [directShelters, setDirectShelters] = useState([])
 
   // Real-time API data & GPS hook
   const { data: realtimeData } = useDashboardRealtime()
@@ -129,21 +133,71 @@ export default function MobileWargaView() {
   const [sosSuccessMsg, setSosSuccessMsg] = useState('')
   const [sosErrorMsg, setSosErrorMsg] = useState('')
 
-  // Load user profile & SOS tickets
+  // Load user profile & SOS tickets & live shelters
   useEffect(() => {
+    let mounted = true
+
     getProfile()
       .then((p) => {
-        if (p) {
+        if (mounted && p) {
           setUserProfile(p)
-          if (p.village_id) setSelectedVillageId(Number(p.village_id))
+          if (p.village_id) {
+            setSelectedVillageId(Number(p.village_id))
+            wsService.updateVillage(Number(p.village_id), 'alerts')
+          }
         }
       })
       .catch(() => {})
 
     loadTickets()
-    const t = setInterval(loadTickets, 12000)
-    return () => clearInterval(t)
-  }, [])
+    const t = setInterval(loadTickets, 10000)
+
+    // Fetch direct shelters from backend
+    getShelters()
+      .then((res) => {
+        if (mounted && Array.isArray(res) && res.length > 0) {
+          setDirectShelters(res)
+        }
+      })
+      .catch(() => {})
+
+    // Fetch backend emergency status
+    const targetVillage = selectedVillageId || userProfile?.village_id || 1
+    apiFetch(`/emergency/${targetVillage}`)
+      .then((res) => {
+        if (mounted) setRealEmergencyActive(res?.is_emergency_active || false)
+      })
+      .catch(() => {})
+
+    // Connect to WebSocket channel 'alerts'
+    wsService.connect('alerts', {
+      villageId: targetVillage,
+      userId: userProfile?.id,
+      role: 'user',
+    })
+
+    const unsubEmergency = wsService.on('emergency_status', (data) => {
+      setRealEmergencyActive(data?.is_active || false)
+      if (data?.is_active) playSosAlertTone()
+    })
+
+    const unsubSosNew = wsService.on('sos_new', () => {
+      playSosAlertTone()
+      loadTickets()
+    })
+
+    const unsubSosUpd = wsService.on('sos_updated', () => {
+      loadTickets()
+    })
+
+    return () => {
+      mounted = false
+      clearInterval(t)
+      unsubEmergency()
+      unsubSosNew()
+      unsubSosUpd()
+    }
+  }, [selectedVillageId, userProfile?.id])
 
   const loadTickets = async () => {
     try {
@@ -179,7 +233,9 @@ export default function MobileWargaView() {
   }, [realtimeData])
 
   const shelters = useMemo(() => {
-    const raw = realtimeData?.shelters || []
+    const raw = (directShelters && directShelters.length > 0)
+      ? directShelters
+      : (realtimeData?.shelters || [])
     if (raw.length > 0) return raw
     return [
       {
@@ -207,7 +263,7 @@ export default function MobileWargaView() {
         contact_phone: '08123456789',
       },
     ]
-  }, [realtimeData])
+  }, [directShelters, realtimeData?.shelters])
 
   const activeVillage = useMemo(() => {
     const found = villages.find((v) => Number(v.id) === Number(selectedVillageId)) || villages[0]
@@ -242,16 +298,17 @@ export default function MobileWargaView() {
     })
   }, [villages, personalSim.isRunning, simStatus, activeVillage.id])
 
-  // Validasi Darurat: Pengiriman SOS HANYA aktif jika status desa AWAS (prob >= 76%) ATAU Simulasi Akun Warga di fase AWAS
+  // Validasi Darurat: Pengiriman SOS HANYA aktif jika status desa AWAS (prob >= 76%), status darurat backend aktif, ATAU Simulasi Akun Warga di fase AWAS
   const isEmergency = useMemo(() => {
     if (personalSim.isRunning) {
       return Boolean(personalSim.isEmergency || simStatus?.risk_level === 'awas' || Number(simStatus?.probability) >= 76)
     }
     return Boolean(
+      realEmergencyActive ||
       activeVillage.risk_level === 'awas' ||
       Number(activeVillage.probability) >= 76
     )
-  }, [personalSim.isRunning, personalSim.isEmergency, simStatus, activeVillage])
+  }, [personalSim.isRunning, personalSim.isEmergency, simStatus, realEmergencyActive, activeVillage])
 
   // Handler klik tombol SOS: jika belum darurat & simulasi off, tampilkan modal tolak otomatis
   const handleSOSClick = () => {
@@ -1415,6 +1472,15 @@ export default function MobileWargaView() {
                   type="button"
                   onClick={() => {
                     setSelectedVillageId(v.id)
+                    const updated = { ...userProfile, village_id: v.id }
+                    setUserProfile(updated)
+                    try {
+                      localStorage.setItem('sigab_user_profile', JSON.stringify(updated))
+                    } catch (_) {}
+                    wsService.updateVillage(v.id, 'alerts')
+                    apiFetch(`/emergency/${v.id}`)
+                      .then((res) => setRealEmergencyActive(res?.is_emergency_active || false))
+                      .catch(() => {})
                     setShowVillageSheet(false)
                   }}
                   style={{
@@ -1443,7 +1509,23 @@ export default function MobileWargaView() {
         isOpen={showProfileModal}
         onClose={() => setShowProfileModal(false)}
         userProfile={userProfile}
-        onProfileUpdated={(updated) => setUserProfile((prev) => ({ ...prev, ...updated }))}
+        onProfileUpdated={(updated) => {
+          setUserProfile((prev) => {
+            const next = { ...prev, ...updated }
+            if (updated.village_id) {
+              const vId = Number(updated.village_id)
+              setSelectedVillageId(vId)
+              wsService.updateVillage(vId, 'alerts')
+              apiFetch(`/emergency/${vId}`)
+                .then((res) => setRealEmergencyActive(res?.is_emergency_active || false))
+                .catch(() => {})
+            }
+            try {
+              localStorage.setItem('sigab_user_profile', JSON.stringify(next))
+            } catch (_) {}
+            return next
+          })
+        }}
       />
       <LogoutModal
         isOpen={showLogoutModal}

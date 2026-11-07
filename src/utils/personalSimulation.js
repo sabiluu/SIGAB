@@ -121,6 +121,9 @@ export function saveUserSimState(userId, state) {
     } else {
       localStorage.setItem(key, JSON.stringify(state));
     }
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('sigab_sim_state_changed', { detail: { userId, state } }));
+    }
   } catch (e) {}
 }
 
