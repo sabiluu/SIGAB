@@ -4,16 +4,105 @@ import { apiFetch } from '../../services/api'
 import { getSOSTickets, createSOSTicket } from '../../services/sosService'
 import useDashboardRealtime from '../../hooks/useDashboardRealtime'
 import useGeolocation, { BAURENO_VILLAGES } from '../../hooks/useGeolocation'
+import usePersonalSimulation from '../../hooks/usePersonalSimulation'
+import { playSosAlertTone } from '../../utils/audioAlarm'
+import { PERSONAL_SIM_PHASES } from '../../utils/personalSimulation'
 import RiskMap from '../../components/RiskMap'
 import LogoutModal from '../../components/common/LogoutModal'
 import ProfileModal from '../../components/warga/ProfileModal'
 import '../../styles/mobile.css'
 
+function getSimPhaseInfo(status) {
+  if (!status?.is_running) {
+    return {
+      themeColor: '#334155',
+      bgColor: '#11222f',
+      borderColor: '#1a3245',
+      textColor: '#7d93a4',
+      icon: '🧪',
+      phaseName: 'Normal (OFF)',
+      desc: 'Simulasi Akun: Normal (OFF)',
+      shortDesc: 'Simulasi',
+    }
+  }
+
+  const phase = (status.phase_name || '').toUpperCase()
+  const risk = (status.risk_level || '').toLowerCase()
+  const current = status.current_phase || 1
+  const rem = status.remaining_seconds || 0
+  const countdown = `${Math.floor(rem / 60)}:${String(rem % 60).padStart(2, '0')}`
+
+  if (risk === 'awas' || phase.includes('AWAS')) {
+    return {
+      themeColor: '#ef4444',
+      bgColor: 'rgba(239, 68, 68, 0.16)',
+      borderColor: 'rgba(239, 68, 68, 0.6)',
+      textColor: '#f87171',
+      icon: '🚨',
+      phaseName: 'AWAS',
+      desc: `Fase ${current}/7: AWAS (${countdown})`,
+      shortDesc: `Fase ${current}: AWAS (${countdown})`,
+    }
+  }
+
+  if (risk === 'tinggi' || phase.includes('SIAGA')) {
+    return {
+      themeColor: '#f97316',
+      bgColor: 'rgba(249, 115, 22, 0.16)',
+      borderColor: 'rgba(249, 115, 22, 0.6)',
+      textColor: '#fb923c',
+      icon: '🟠',
+      phaseName: 'SIAGA',
+      desc: `Fase ${current}/7: SIAGA (${countdown})`,
+      shortDesc: `Fase ${current}: SIAGA (${countdown})`,
+    }
+  }
+
+  if (risk === 'sedang' || phase.includes('WASPADA')) {
+    return {
+      themeColor: '#f59e0b',
+      bgColor: 'rgba(245, 158, 11, 0.16)',
+      borderColor: 'rgba(245, 158, 11, 0.6)',
+      textColor: '#fbbf24',
+      icon: '🟡',
+      phaseName: 'WASPADA',
+      desc: `Fase ${current}/7: WASPADA (${countdown})`,
+      shortDesc: `Fase ${current}: WASPADA (${countdown})`,
+    }
+  }
+
+  // Default: AMAN (Hijau)
+  return {
+    themeColor: '#10b981',
+    bgColor: 'rgba(16, 185, 129, 0.16)',
+    borderColor: 'rgba(16, 185, 129, 0.6)',
+    textColor: '#34d399',
+    icon: '🟢',
+    phaseName: 'AMAN',
+    desc: `Fase ${current}/7: AMAN (${countdown})`,
+    shortDesc: `Fase ${current}: AMAN (${countdown})`,
+  }
+}
+
 export default function MobileWargaView() {
   const [activeTab, setActiveTab] = useState('beranda') // 'beranda' | 'peta' | 'sos' | 'panduan' | 'kontak'
-  const [userProfile, setUserProfile] = useState({ full_name: 'Warga Baureno', email: '', phone: '081234567890', village_id: 3 })
-  const [selectedVillageId, setSelectedVillageId] = useState(3)
-  const [isSimulatedDanger, setIsSimulatedDanger] = useState(false)
+  const savedProfile = useMemo(() => {
+    try {
+      return JSON.parse(localStorage.getItem('sigab_user_profile') || '{}')
+    } catch {
+      return {}
+    }
+  }, [])
+  const [userProfile, setUserProfile] = useState(() => ({
+    full_name: 'Warga Baureno',
+    email: '',
+    phone: '081234567890',
+    village_id: 3,
+    ...savedProfile,
+  }))
+  const [selectedVillageId, setSelectedVillageId] = useState(savedProfile?.village_id || 3)
+  const personalSim = usePersonalSimulation(userProfile?.id || savedProfile?.id || 'warga_default')
+  const simStatus = personalSim.simStatus
   const [showVillageSheet, setShowVillageSheet] = useState(false)
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
@@ -125,20 +214,44 @@ export default function MobileWargaView() {
     if (!found) {
       return { id: 3, cleanName: 'Baureno', probability: 18.0, risk_level: 'aman', latitude: -7.1282, longitude: 112.1039 }
     }
-    if (isSimulatedDanger) {
-      return { ...found, probability: 94.0, risk_level: 'awas' }
+    if (personalSim.isRunning && simStatus) {
+      const prob = Number(simStatus.probability != null ? simStatus.probability : found.probability)
+      const risk = simStatus.risk_level || (prob >= 76 ? 'awas' : prob >= 51 ? 'siaga' : prob >= 25 ? 'waspada' : 'aman')
+      return {
+        ...found,
+        probability: prob,
+        risk_level: risk,
+      }
     }
     return found
-  }, [villages, selectedVillageId, isSimulatedDanger])
+  }, [villages, selectedVillageId, personalSim.isRunning, simStatus])
 
-  // Validasi Darurat: Pengiriman SOS HANYA aktif jika status desa AWAS (prob >= 76%) ATAU tombol Simulasi Bahaya ON
+  const displayedVillages = useMemo(() => {
+    if (!personalSim.isRunning || !simStatus) return villages
+    return villages.map((v) => {
+      if (Number(v.id) === Number(activeVillage.id)) {
+        const prob = Number(simStatus.probability != null ? simStatus.probability : v.probability)
+        const risk = simStatus.risk_level || (prob >= 76 ? 'awas' : prob >= 51 ? 'siaga' : prob >= 25 ? 'waspada' : 'aman')
+        return {
+          ...v,
+          probability: prob,
+          risk_level: risk,
+        }
+      }
+      return v
+    })
+  }, [villages, personalSim.isRunning, simStatus, activeVillage.id])
+
+  // Validasi Darurat: Pengiriman SOS HANYA aktif jika status desa AWAS (prob >= 76%) ATAU Simulasi Akun Warga di fase AWAS
   const isEmergency = useMemo(() => {
+    if (personalSim.isRunning) {
+      return Boolean(personalSim.isEmergency || simStatus?.risk_level === 'awas' || Number(simStatus?.probability) >= 76)
+    }
     return Boolean(
-      isSimulatedDanger ||
       activeVillage.risk_level === 'awas' ||
       Number(activeVillage.probability) >= 76
     )
-  }, [isSimulatedDanger, activeVillage])
+  }, [personalSim.isRunning, personalSim.isEmergency, simStatus, activeVillage])
 
   // Handler klik tombol SOS: jika belum darurat & simulasi off, tampilkan modal tolak otomatis
   const handleSOSClick = () => {
@@ -228,7 +341,7 @@ export default function MobileWargaView() {
   const handleSendSOS = async (e) => {
     e.preventDefault()
     if (!isEmergency) {
-      setSosErrorMsg('Pengiriman SOS ditolak otomatis. Fitur panggilan darurat hanya aktif saat status wilayah DARURAT / AWAS atau saat mode Simulasi Bahaya dinyalakan.')
+      setSosErrorMsg('Pengiriman SOS ditolak otomatis. Fitur panggilan darurat hanya aktif saat status wilayah DARURAT / AWAS atau saat mode Simulasi Akun Warga mencapai status AWAS.')
       setShowRejectModal(true)
       return
     }
@@ -245,16 +358,16 @@ export default function MobileWargaView() {
         gps_latitude: uLat,
         gps_longitude: uLon,
         gps_address: `Desa ${activeVillage.cleanName}, Kec. Baureno`,
-        patokan: sosPatokan || `Dekat Balai Desa ${activeVillage.cleanName}`,
+        patokan: sosPatokan || `Dekat Balai Desa ${activeVillage.cleanName} (Simulasi)`,
         family_count: Number(sosFamilyCount) || 1,
         has_elderly: sosElderly,
         has_toddler: sosToddler,
         has_pregnant: sosPregnant,
         has_disability: sosDisability,
-        is_simulation: Boolean(isSimulatedDanger),
+        is_simulation: Boolean(personalSim.isRunning),
       })
       setSosSuccessMsg(
-        isSimulatedDanger
+        personalSim.isRunning
           ? '🚨 [MODE SIMULASI] Sinyal SOS simulasi berhasil dikirim ke Pusdalops BPBD Baureno!'
           : 'Sinyal SOS darurat berhasil dikirim ke Pusdalops BPBD Baureno! Tim sedang memverifikasi lokasi Anda.'
       )
@@ -267,12 +380,17 @@ export default function MobileWargaView() {
     }
   }
 
-  const dischargeVal = realtimeData?.discharge?.discharge_m3s
-    ? Number(realtimeData.discharge.discharge_m3s).toFixed(2)
-    : '1.28'
-  const rainVal = realtimeData?.weather?.precipitation_mm
-    ? Number(realtimeData.weather.precipitation_mm).toFixed(1)
-    : '0.0'
+  const dischargeVal = personalSim.isRunning && simStatus?.discharge_m3s != null
+    ? Math.round(simStatus.discharge_m3s).toLocaleString('id-ID')
+    : (realtimeData?.discharge?.discharge_m3s
+        ? Number(realtimeData.discharge.discharge_m3s).toFixed(2)
+        : '1.28')
+
+  const rainVal = personalSim.isRunning && simStatus?.rainfall_mm != null
+    ? Number(simStatus.rainfall_mm).toFixed(1)
+    : (realtimeData?.weather?.precipitation_mm
+        ? Number(realtimeData.weather.precipitation_mm).toFixed(1)
+        : '0.0')
 
   const riskLabelMap = {
     aman: 'AMAN',
@@ -300,23 +418,45 @@ export default function MobileWargaView() {
         </div>
 
         <div className="m-header-actions">
-          {/* Simulasi Bahaya Pill Toggle */}
-          <button
-            type="button"
-            onClick={() => setIsSimulatedDanger(!isSimulatedDanger)}
-            style={{
-              background: isSimulatedDanger ? '#dc2626' : '#f1f5f9',
-              color: isSimulatedDanger ? '#ffffff' : '#475569',
-              border: isSimulatedDanger ? 'none' : '1px solid #cbd5e1',
-              borderRadius: '999px',
-              padding: '5px 10px',
-              fontSize: '0.68rem',
-              fontWeight: 800,
-              cursor: 'pointer',
-            }}
-          >
-            {isSimulatedDanger ? '🚨 Simulasi AWAS ON' : '🧪 Simulasi Bahaya'}
-          </button>
+          {/* Simulasi Akun Warga Pill Toggle (Sinkron dengan Sistem Desktop) */}
+          {(() => {
+            const simInfo = getSimPhaseInfo(simStatus)
+            return (
+              <button
+                type="button"
+                onClick={() => {
+                  if (personalSim.isRunning) {
+                    personalSim.stopSimulation()
+                  } else {
+                    personalSim.startSimulation(0)
+                    playSosAlertTone()
+                  }
+                }}
+                style={{
+                  background: personalSim.isRunning ? simInfo.bgColor : '#f1f5f9',
+                  color: personalSim.isRunning ? (simInfo.textColor || simInfo.themeColor) : '#475569',
+                  border: `1.5px solid ${personalSim.isRunning ? simInfo.borderColor : '#cbd5e1'}`,
+                  borderRadius: '999px',
+                  padding: '5px 10px',
+                  fontSize: '0.68rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  maxWidth: '145px',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  transition: 'all 0.25s ease',
+                }}
+                title={personalSim.isRunning ? 'Hentikan simulasi banjir akun ini' : 'Mulai simulasi banjir bertahap (Aman → Waspada → Siaga → Awas → Aman)'}
+              >
+                <span>{simInfo.icon}</span>
+                <span>{personalSim.isRunning ? simInfo.shortDesc : 'Simulasi'}</span>
+              </button>
+            )
+          })()}
 
           {/* Village Switcher Button */}
           <button
@@ -357,6 +497,58 @@ export default function MobileWargaView() {
         </div>
       </header>
 
+      {/* STICKY EMERGENCY TOP BANNER (JIKA STATUS AWAS / DARURAT AKTIF) */}
+      {isEmergency && (
+        <div
+          style={{
+            position: 'sticky',
+            top: '58px',
+            zIndex: 89,
+            background: '#dc2626',
+            color: '#ffffff',
+            padding: '8px 14px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            boxShadow: '0 4px 12px rgba(220, 38, 38, 0.35)',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '1.05rem' }}>📢</span>
+            <div style={{ lineHeight: 1.2 }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: 900, letterSpacing: '0.02em' }}>
+                STATUS AWAS: EVAKUASI SEGERA
+              </div>
+              <div style={{ fontSize: '0.65rem', color: '#fecaca' }}>
+                Desa {activeVillage.cleanName} • Indeks {Math.round(activeVillage.probability)}% {personalSim.isRunning ? '(Mode Simulasi)' : ''}
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setActiveTab('sos')}
+            style={{
+              background: '#ffffff',
+              color: '#dc2626',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '6px 10px',
+              fontSize: '0.72rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              flexShrink: 0,
+            }}
+          >
+            <span>🚨</span>
+            <span>Kirim SOS</span>
+          </button>
+        </div>
+      )}
+
       {/* MAIN CONTENT AREA */}
       <main style={{ padding: '14px 14px 20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
         {/* ==============================================================
@@ -364,6 +556,132 @@ export default function MobileWargaView() {
            ============================================================== */}
         {activeTab === 'beranda' && (
           <>
+            {/* Card Simulasi Akun Warga (Sinkron dengan Sistem Simulasi Desktop) */}
+            {(() => {
+              const simInfo = getSimPhaseInfo(simStatus)
+              return (
+                <section
+                  className="m-card"
+                  style={{
+                    background: personalSim.isRunning ? simInfo.bgColor : '#f8fafc',
+                    borderColor: personalSim.isRunning ? simInfo.borderColor : '#e2e8f0',
+                    padding: '14px',
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '1.25rem' }}>{simInfo.icon}</span>
+                      <div>
+                        <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#0f172a' }}>
+                          Simulasi Akun Warga
+                        </div>
+                        <div style={{ fontSize: '0.7rem', color: simInfo.textColor, fontWeight: personalSim.isRunning ? 700 : 500 }}>
+                          {simInfo.desc}
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (personalSim.isRunning) {
+                          personalSim.stopSimulation()
+                        } else {
+                          personalSim.startSimulation(0)
+                          playSosAlertTone()
+                        }
+                      }}
+                      style={{
+                        background: personalSim.isRunning ? simInfo.themeColor : '#0f766e',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: '999px',
+                        padding: '6px 14px',
+                        fontSize: '0.74rem',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        boxShadow: personalSim.isRunning ? `0 2px 8px ${simInfo.borderColor}` : '0 2px 6px rgba(15, 118, 110, 0.25)',
+                      }}
+                    >
+                      {personalSim.isRunning ? '⏹ Hentikan' : '▶ Mulai Simulasi'}
+                    </button>
+                  </div>
+
+                  {personalSim.isRunning ? (
+                    <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+                      {/* Visual progress tracker for all 7 phases */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', marginBottom: '6px' }}>
+                        {PERSONAL_SIM_PHASES.map((p) => {
+                          const isCurrent = simStatus.current_phase === p.phase
+                          const isPast = simStatus.current_phase > p.phase
+                          return (
+                            <div
+                              key={p.phase}
+                              style={{
+                                height: '5px',
+                                borderRadius: '3px',
+                                background: isCurrent ? p.themeColor : isPast ? '#059669' : 'rgba(148, 163, 184, 0.3)',
+                                transition: 'all 0.3s ease',
+                              }}
+                              title={`Fase ${p.phase}: ${p.name}`}
+                            />
+                          )
+                        })}
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.68rem', color: '#475569' }}>
+                        <span style={{ flex: 1, paddingRight: '8px' }}>{simStatus.description}</span>
+                        {simStatus.current_phase !== 4 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              personalSim.startSimulation(3) // Jump to AWAS (index 3)
+                              playSosAlertTone()
+                            }}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: '#dc2626',
+                              fontWeight: 800,
+                              fontSize: '0.68rem',
+                              cursor: 'pointer',
+                              padding: 0,
+                              textDecoration: 'underline',
+                              flexShrink: 0,
+                            }}
+                          >
+                            ⚡ Loncat ke AWAS
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>Alur bertahap: Aman → Waspada → Siaga → Awas → Aman</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          personalSim.startSimulation(3)
+                          playSosAlertTone()
+                        }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#dc2626',
+                          fontWeight: 700,
+                          fontSize: '0.68rem',
+                          cursor: 'pointer',
+                          padding: 0,
+                          textDecoration: 'underline',
+                        }}
+                      >
+                        ⚡ Uji Coba AWAS (SOS)
+                      </button>
+                    </div>
+                  )}
+                </section>
+              )
+            })()}
+
             {/* Status Card Desa */}
             <section
               className="m-card"
@@ -559,9 +877,15 @@ export default function MobileWargaView() {
                 <RiskMap
                   height="300px"
                   selectedVillageName={activeVillage.cleanName}
-                  villagesData={villages}
+                  userVillageName={activeVillage.cleanName}
+                  userVillageId={Number(activeVillage.id || selectedVillageId)}
+                  villagesData={displayedVillages}
                   shelters={shelters}
+                  simStatus={simStatus}
                   activeRoute={routeData}
+                  routeCoordinates={routeData?.coordinates}
+                  selectedShelterId={selectedShelter?.id}
+                  onSelectShelter={(sh) => setSelectedShelterId(sh.id)}
                   userLocation={{
                     latitude: geo.latitude || -7.1155,
                     longitude: geo.longitude || 112.0835,
@@ -645,7 +969,7 @@ export default function MobileWargaView() {
               <p style={{ margin: '0 0 14px', fontSize: '0.78rem', color: '#64748b', lineHeight: 1.45 }}>
                 {isEmergency
                   ? 'Koordinat GPS dan jumlah anggota keluarga rentan akan langsung masuk ke layar utama Pusdalops BPBD Baureno.'
-                  : 'Pengiriman SOS hanya diizinkan saat status wilayah DARURAT / AWAS atau saat mode Simulasi Bahaya dinyalakan.'}
+                  : 'Pengiriman SOS hanya diizinkan saat status wilayah DARURAT / AWAS atau saat mode Simulasi Akun Warga mencapai status AWAS.'}
               </p>
 
               {/* Locked Notice if Not in Emergency */}
@@ -669,26 +993,53 @@ export default function MobileWargaView() {
                     <strong>{riskLabelMap[activeVillage.risk_level] || 'AMAN'} ({Math.round(activeVillage.probability)}%)</strong>.
                     Pusdalops BPBD hanya menerima panggilan SOS saat kondisi <strong>DARURAT / AWAS</strong> (probabilitas ≥ 76%).
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setIsSimulatedDanger(true)}
-                    style={{
-                      background: '#dc2626',
-                      color: '#ffffff',
-                      border: 'none',
-                      borderRadius: '10px',
-                      padding: '10px 14px',
-                      fontSize: '0.8rem',
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      boxShadow: '0 4px 12px rgba(220, 38, 38, 0.25)',
-                    }}
-                  >
-                    <span>🧪</span> Nyalakan Simulasi Bahaya untuk Uji Coba SOS
-                  </button>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        personalSim.startSimulation(3) // Jump to AWAS (index 3)
+                        playSosAlertTone()
+                      }}
+                      style={{
+                        background: '#dc2626',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: '10px',
+                        padding: '10px 14px',
+                        fontSize: '0.8rem',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        boxShadow: '0 4px 12px rgba(220, 38, 38, 0.25)',
+                      }}
+                    >
+                      <span>🚨</span> Aktifkan Fase AWAS (94%) untuk Uji SOS
+                    </button>
+                    {!personalSim.isRunning && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          personalSim.startSimulation(0)
+                          playSosAlertTone()
+                        }}
+                        style={{
+                          background: '#ffffff',
+                          color: '#0f766e',
+                          border: '1.5px solid #0f766e',
+                          borderRadius: '10px',
+                          padding: '8px 12px',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        🧪 Mulai Simulasi Bertahap dari Awal
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -809,7 +1160,7 @@ export default function MobileWargaView() {
                   }}
                 >
                   {!isEmergency
-                    ? '🔒 Pengiriman Ditolak (Nyalakan Simulasi Bahaya)'
+                    ? '🔒 Pengiriman Ditolak (Status Belum AWAS)'
                     : sosSubmitting
                     ? 'Mengirim Sinyal SOS...'
                     : '🚨 KIRIM SINYAL SOS SEKARANG'}
@@ -1138,7 +1489,7 @@ export default function MobileWargaView() {
             </h3>
 
             <p style={{ margin: '0 0 16px', fontSize: '0.82rem', color: '#475569', lineHeight: 1.55 }}>
-              Mohon maaf, pengiriman tiket evakuasi SOS ke Pusdalops BPBD <strong>hanya aktif</strong> jika status wilayah berada pada level <strong>DARURAT / AWAS</strong> (probabilitas ≥ 76%), atau saat tombol <strong>Simulasi Bahaya</strong> dinyalakan.
+              Mohon maaf, pengiriman tiket evakuasi SOS ke Pusdalops BPBD <strong>hanya aktif</strong> jika status wilayah berada pada level <strong>DARURAT / AWAS</strong> (probabilitas ≥ 76%), atau saat <strong>Simulasi Akun Warga</strong> mencapai status AWAS.
             </p>
 
             <div
@@ -1156,7 +1507,7 @@ export default function MobileWargaView() {
             >
               🧪 <strong>Ingin mencoba fitur pengiriman SOS?</strong>
               <br />
-              Nyalakan mode <strong>Simulasi Bahaya</strong> untuk mengaktifkan status darurat simulasi (AWAS 94%) sehingga tombol pengiriman SOS dapat digunakan.
+              Nyalakan <strong>Simulasi Akun Warga</strong> untuk menguji alur banjir bertahap, atau langsung aktifkan <strong>Fase AWAS (94%)</strong> agar tombol pengiriman SOS dapat langsung digunakan.
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -1165,12 +1516,27 @@ export default function MobileWargaView() {
                 className="m-btn m-btn-danger"
                 style={{ width: '100%', padding: '13px', fontSize: '0.85rem', fontWeight: 800 }}
                 onClick={() => {
-                  setIsSimulatedDanger(true)
+                  personalSim.startSimulation(3) // Jump to AWAS (index 3)
+                  playSosAlertTone()
                   setShowRejectModal(false)
                   setActiveTab('sos')
                 }}
               >
-                🧪 Nyalakan Simulasi Bahaya & Buka SOS
+                🚨 Aktifkan Fase AWAS (94%) & Buka SOS
+              </button>
+
+              <button
+                type="button"
+                className="m-btn m-btn-teal"
+                style={{ width: '100%', padding: '11px', fontSize: '0.82rem', fontWeight: 700 }}
+                onClick={() => {
+                  personalSim.startSimulation(0) // Start from Phase 1: Aman
+                  playSosAlertTone()
+                  setShowRejectModal(false)
+                  setActiveTab('beranda')
+                }}
+              >
+                ▶ Mulai Simulasi Bertahap (Fase 1: Aman)
               </button>
 
               <button
