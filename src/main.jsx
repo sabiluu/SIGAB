@@ -8,12 +8,15 @@ import './styles/warga-portal.css'
 import './styles/admin-custom.css'
 import './styles/landing.css'
 import { AuthProvider } from './context/AuthContext'
+import ErrorBoundary from './components/common/ErrorBoundary'
 import App from './App.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <AuthProvider>
-      <App />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </ErrorBoundary>
   </StrictMode>,
 )

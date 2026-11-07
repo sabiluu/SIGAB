@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { logout, getProfile } from '../../services/authService'
 import { apiFetch } from '../../services/api'
 import { getSOSTickets, createSOSTicket } from '../../services/sosService'
@@ -771,7 +771,7 @@ export default function MobileWargaView() {
               </div>
             </section>
 
-            {/* Card Simulasi Akun Warga (Diletakkan di bagian bawah halaman Beranda) */}
+            {/* Card Simulasi Akun Warga (Diletakkan di bagian paling bawah halaman Beranda) */}
             {(() => {
               const simInfo = PERSONAL_SIM_PHASES.find((p) => p.phase === simStatus.current_phase) || PERSONAL_SIM_PHASES[0]
               return (
