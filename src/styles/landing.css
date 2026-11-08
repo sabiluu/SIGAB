@@ -211,7 +211,7 @@
    3. HERO SECTION
    ========================================================================== */
 .hero-section {
-  background: linear-gradient(180deg, #f0f7f8 0%, #f9fcfe 65%, #ffffff 100%);
+  background: linear-gradient(180deg, #ecf7f8 0%, #eff8f9 100%);
   padding: 68px max(32px, calc((100% - 1200px) / 2)) 80px;
   position: relative;
   overflow: visible;
@@ -360,7 +360,7 @@
 
 .avatar-stack .avatar-af { background-color: #e0f2fe; color: #0284c7; }
 .avatar-stack .avatar-si { background-color: #fef3c7; color: #d97706; }
-.avatar-stack .avatar-rh { background-color: #e2e8f0; color: #475569; }
+.avatar-stack .avatar-rh { background-color: #e0e7ff; color: #4338ca; }
 .avatar-stack .avatar-plus { background-color: #0c1a24; color: #ffffff; font-size: 0.72rem; }
 
 .social-proof-col {
@@ -487,10 +487,14 @@
   flex-direction: column;
 }
 
+.landing-page .status-badge-wrap .status-badge,
 .status-badge-wrap .status-badge {
   font-size: 1.45rem;
   font-weight: 800;
   line-height: 1.1;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
 }
 
 .status-badge-wrap .status-badge.aman {
@@ -604,9 +608,8 @@
    ========================================================================== */
 .stats-strip {
   background-color: #ffffff;
-  padding: 38px max(32px, calc((100% - 1200px) / 2));
+  padding: 0 max(32px, calc((100% - 1200px) / 2));
   border-top: 1px solid #edf2f5;
-  border-bottom: 1px solid #edf2f5;
   width: 100%;
 }
 
@@ -616,13 +619,22 @@
   align-items: center;
   max-width: 1200px;
   margin: 0 auto;
+  padding: 38px 0;
+  border-bottom: 1px solid #e2e8f0;
 }
 
-.stat-box {
+.landing-page .stat-box,
+.stats-strip .stat-box {
   display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
   gap: 15px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  margin: 0;
 }
 
 .stat-divider {
@@ -643,7 +655,7 @@
 
 .stat-number .stat-unit-sub,
 .stat-number small {
-  font-size: 0.82rem;
+  font-size: 1.25rem;
   font-weight: 800;
   color: #0c1a24;
   margin-left: 2px;
@@ -1474,7 +1486,8 @@
     row-gap: 20px;
   }
 
-  .stat-box {
+  .landing-page .stat-box,
+  .stats-strip .stat-box {
     justify-content: flex-start;
   }
 

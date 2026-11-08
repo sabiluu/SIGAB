@@ -5,6 +5,8 @@ SiagaBencana — FastAPI Application Entry Point.
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import os
+import logging
 from .core.scheduler import start_scheduler, stop_scheduler
 from .core.config import settings
 from .core.demo_accounts import seed_demo_accounts
@@ -27,9 +29,17 @@ from .routers import (
     simulation_router,
 )
 
+logger = logging.getLogger("sigab.main")
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup event
+    # Startup event: Inisialisasi data awal database jika masih kosong
+    try:
+        from seed_db import seed
+        seed()
+    except Exception as e:
+        logger.warning(f"Startup seeding error: {e}")
+
     seed_demo_accounts()
     start_scheduler()
     yield
@@ -84,14 +94,9 @@ app.include_router(config_router, prefix="/api")
 app.include_router(users_router, prefix="/api")
 app.include_router(simulation_router, prefix="/api")
 
-
-import os
-import logging
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-
-logger = logging.getLogger("sigab.main")
 
 # Ensure upload directories exist using project root path
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

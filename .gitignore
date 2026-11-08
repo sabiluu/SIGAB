@@ -58,7 +58,6 @@ paper/
 *.sql
 
 # ===== Local Assets, Media & Reports =====
-public/hero-river.jpg
 uploads/
 test-results/
 playwright-report/
@@ -66,8 +65,6 @@ playwright-report/
 # ===== Raw Data, Dumps & Scratch Scripts =====
 *.zip
 *.cjs
-data_cuaca_*.json
-app/data_cuaca_*.json
 src/data/idn_admin/
 src/data/border-desa/
 check_schema.py

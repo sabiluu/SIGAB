@@ -1,5 +1,5 @@
 const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/+$/, '');
-const DEFAULT_TIMEOUT = 10000;
+const DEFAULT_TIMEOUT = 8000;
 
 export function resolveMediaUrl(url) {
   if (!url) return '';
@@ -18,7 +18,30 @@ export class ApiError extends Error {
   }
 }
 
+function isLocalhost(url) {
+  if (!url) return false;
+  return (
+    url.includes('localhost') ||
+    url.includes('127.0.0.1') ||
+    url.includes('0.0.0.0') ||
+    url.includes('::1')
+  );
+}
+
+function isRemoteClient() {
+  if (typeof window === 'undefined') return false;
+  const h = window.location.hostname;
+  return h !== 'localhost' && h !== '127.0.0.1' && h !== '0.0.0.0';
+}
+
 export async function apiFetch(endpoint, options = {}) {
+  // Jika frontend diakses dari internet/HP (bukan localhost) tapi API_BASE_URL masih localhost:8000:
+  // Browser di HP tidak mungkin menjangkau localhost laptop developer dan fetch HTTP akan di-block (mixed content).
+  // Langsung tolak tanpa menunggu timeout 8-10 detik agar fallback demo berjalan instan!
+  if (isRemoteClient() && isLocalhost(API_BASE_URL)) {
+    throw new ApiError('Server backend lokal tidak dapat dihubungi dari perangkat eksternal.', 0);
+  }
+
   const url = `${API_BASE_URL}${endpoint}`;
 
   const token = localStorage.getItem('access_token');
@@ -39,15 +62,19 @@ export async function apiFetch(endpoint, options = {}) {
 
     if (!response.ok) {
       if (response.status === 401) {
-        localStorage.removeItem('access_token');
-        if (typeof window !== 'undefined') {
-          const currentHash = (window.location.hash || '').toLowerCase();
-          const isAdminRoute = ['#petugas', '#admin', '#portal-petugas', '#portal-admin', '#dashboard-petugas', '#dashboard-admin', '#radar', '#radar-admin', '#sos', '#sos-admin', '#posko', '#posko-admin'].includes(currentHash);
-          const isWargaRoute = ['#warga', '#portal', '#portal-warga', '#dashboard-warga'].includes(currentHash);
-          if (isAdminRoute) {
-            window.location.hash = '#masuk-petugas';
-          } else if (isWargaRoute) {
-            window.location.hash = '#masuk-warga';
+        // Jangan auto-logout jika menggunakan demo / mock session offline
+        const currentToken = localStorage.getItem('access_token') || '';
+        if (!currentToken.startsWith('demo-') && !currentToken.startsWith('sigab-')) {
+          localStorage.removeItem('access_token');
+          if (typeof window !== 'undefined') {
+            const currentHash = (window.location.hash || '').toLowerCase();
+            const isAdminRoute = ['#petugas', '#admin', '#portal-petugas', '#portal-admin', '#dashboard-petugas', '#dashboard-admin', '#radar', '#radar-admin', '#sos', '#sos-admin', '#posko', '#posko-admin'].includes(currentHash);
+            const isWargaRoute = ['#warga', '#portal', '#portal-warga', '#dashboard-warga'].includes(currentHash);
+            if (isAdminRoute) {
+              window.location.hash = '#masuk-petugas';
+            } else if (isWargaRoute) {
+              window.location.hash = '#masuk-warga';
+            }
           }
         }
       }

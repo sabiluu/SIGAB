@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-// Bounding & Pusat Kecamatan Baureno, Kabupaten Bojonegoro (Fallback jika GPS belum diizinkan)
+// Bounding & Pusat Kecamatan Baureno (Fallback jika GPS belum diizinkan)
 export const DEFAULT_BAURENO_COORDS = {
   latitude: -7.1282,
   longitude: 112.1039,
@@ -15,7 +15,7 @@ export const DEFAULT_BAURENO_COORDS = {
 export const DEFAULT_BAURENO_LABEL = 'Desa Baureno, Baureno';
 export const DEFAULT_BAURENO_FULL = 'Kecamatan Baureno, Jawa Timur';
 
-// Daftar 25 Desa Resmi Kecamatan Baureno, Bojonegoro
+// Daftar 25 Desa Resmi Kecamatan Baureno
 export const BAURENO_VILLAGES = [
   { id: 3, name: 'Baureno (Pusat)', latitude: -7.1282, longitude: 112.1039 },
   { id: 8, name: 'Gunungsari', latitude: -7.1269, longitude: 112.1405 },
@@ -194,6 +194,7 @@ export function useGeolocation() {
   const [isRealDevice, setIsRealDevice] = useState(Boolean(cachedDevice && !initialCustom));
 
   const hasIpFallbackRunRef = useRef(false);
+  const lastCoordsRef = useRef(null);
 
   // Fungsi reverse geocoding cepat dengan cache
   const reverseGeocode = useCallback(async (lat, lon) => {
@@ -214,11 +215,22 @@ export function useGeolocation() {
     }
   }, []);
 
-  // Handler sukses GPS Device nyata (selalu gunakan koordinat real perangkat)
+  // Handler sukses GPS Device nyata (selalu gunakan koordinat real perangkat dengan proteksi jitter)
   const handleSuccess = useCallback(async (pos) => {
     const lat = pos.coords.latitude;
     const lon = pos.coords.longitude;
     const accuracy = pos.coords.accuracy || 10;
+
+    // Filter jitter: jika posisi baru berjarak kurang dari 20 meter dari posisi sebelumnya, abaikan agar peta tidak goyang sendiri
+    if (lastCoordsRef.current) {
+      const dLat = (lat - lastCoordsRef.current.latitude) * 111320;
+      const dLon = (lon - lastCoordsRef.current.longitude) * 111320 * Math.cos(lat * (Math.PI / 180));
+      const distMeters = Math.sqrt(dLat * dLat + dLon * dLon);
+      if (distMeters < 20) {
+        return;
+      }
+    }
+    lastCoordsRef.current = { latitude: lat, longitude: lon };
 
     const newPos = { latitude: lat, longitude: lon, accuracy };
     setPosition(newPos);

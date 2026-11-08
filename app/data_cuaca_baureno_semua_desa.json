@@ -1,0 +1,1277 @@
+[
+    {
+        "desa": "Banjaran",
+        "suhu": 35.56,
+        "kondisi": "langit cerah",
+        "kelembapan": 38,
+        "angin": 4.96,
+        "raw_data": {
+            "coord": {
+                "lon": 112.1038,
+                "lat": -7.1282
+            },
+            "weather": [
+                {
+                    "id": 800,
+                    "main": "Clear",
+                    "description": "langit cerah",
+                    "icon": "01d"
+                }
+            ],
+            "base": "stations",
+            "main": {
+                "temp": 35.56,
+                "feels_like": 37.64,
+                "temp_min": 35.56,
+                "temp_max": 35.56,
+                "pressure": 1009,
+                "humidity": 38,
+                "sea_level": 1009,
+                "grnd_level": 1000
+            },
+            "visibility": 10000,
+            "wind": {
+                "speed": 4.96,
+                "deg": 28,
+                "gust": 4.03
+            },
+            "clouds": {
+                "all": 6
+            },
+            "dt": 1790147543,
+            "sys": {
+                "country": "ID",
+                "sunrise": 1790115651,
+                "sunset": 1790159248
+            },
+            "timezone": 25200,
+            "id": 1650888,
+            "name": "Babat",
+            "cod": 200
+        }
+    },
+    {
+        "desa": "Banjaranyar",
+        "suhu": 35.56,
+        "kondisi": "langit cerah",
+        "kelembapan": 38,
+        "angin": 4.96,
+        "raw_data": {
+            "coord": {
+                "lon": 112.1038,
+                "lat": -7.1282
+            },
+            "weather": [
+                {
+                    "id": 800,
+                    "main": "Clear",
+                    "description": "langit cerah",
+                    "icon": "01d"
+                }
+            ],
+            "base": "stations",
+            "main": {
+                "temp": 35.56,
+                "feels_like": 37.64,
+                "temp_min": 35.56,
+                "temp_max": 35.56,
+                "pressure": 1009,
+                "humidity": 38,
+                "sea_level": 1009,
+                "grnd_level": 1000
+            },
+            "visibility": 10000,
+            "wind": {
+                "speed": 4.96,
+                "deg": 28,
+                "gust": 4.03
+            },
+            "clouds": {
+                "all": 6
+            },
+            "dt": 1790147543,
+            "sys": {
+                "country": "ID",
+                "sunrise": 1790115651,
+                "sunset": 1790159248
+            },
+            "timezone": 25200,
+            "id": 1650888,
+            "name": "Babat",
+            "cod": 200
+        }
+    },
+    {
+        "desa": "Baureno",
+        "suhu": 35.56,
+        "kondisi": "langit cerah",
+        "kelembapan": 38,
+        "angin": 4.96,
+        "raw_data": {
+            "coord": {
+                "lon": 112.105,
+                "lat": -7.1286
+            },
+            "weather": [
+                {
+                    "id": 800,
+                    "main": "Clear",
+                    "description": "langit cerah",
+                    "icon": "01d"
+                }
+            ],
+            "base": "stations",
+            "main": {
+                "temp": 35.56,
+                "feels_like": 37.64,
+                "temp_min": 35.56,
+                "temp_max": 35.56,
+                "pressure": 1009,
+                "humidity": 38,
+                "sea_level": 1009,
+                "grnd_level": 1000
+            },
+            "visibility": 10000,
+            "wind": {
+                "speed": 4.96,
+                "deg": 28,
+                "gust": 4.03
+            },
+            "clouds": {
+                "all": 6
+            },
+            "dt": 1790147545,
+            "sys": {
+                "country": "ID",
+                "sunrise": 1790115651,
+                "sunset": 1790159248
+            },
+            "timezone": 25200,
+            "id": 1650888,
+            "name": "Babat",
+            "cod": 200
+        }
+    },
+    {
+        "desa": "Blongsong",
+        "suhu": 35.56,
+        "kondisi": "langit cerah",
+        "kelembapan": 38,
+        "angin": 4.96,
+        "raw_data": {
+            "coord": {
+                "lon": 112.1038,
+                "lat": -7.1282
+            },
+            "weather": [
+                {
+                    "id": 800,
+                    "main": "Clear",
+                    "description": "langit cerah",
+                    "icon": "01d"
+                }
+            ],
+            "base": "stations",
+            "main": {
+                "temp": 35.56,
+                "feels_like": 37.64,
+                "temp_min": 35.56,
+                "temp_max": 35.56,
+                "pressure": 1009,
+                "humidity": 38,
+                "sea_level": 1009,
+                "grnd_level": 1000
+            },
+            "visibility": 10000,
+            "wind": {
+                "speed": 4.96,
+                "deg": 28,
+                "gust": 4.03
+            },
+            "clouds": {
+                "all": 6
+            },
+            "dt": 1790147543,
+            "sys": {
+                "country": "ID",
+                "sunrise": 1790115651,
+                "sunset": 1790159248
+            },
+            "timezone": 25200,
+            "id": 1650888,
+            "name": "Babat",
+            "cod": 200
+        }
+    },
+    {
+        "desa": "Bumiayu",
+        "suhu": 35.56,
+        "kondisi": "langit cerah",
+        "kelembapan": 38,
+        "angin": 4.96,
+        "raw_data": {
+            "coord": {
+                "lon": 112.1038,
+                "lat": -7.1282
+            },
+            "weather": [
+                {
+                    "id": 800,
+                    "main": "Clear",
+                    "description": "langit cerah",
+                    "icon": "01d"
+                }
+            ],
+            "base": "stations",
+            "main": {
+                "temp": 35.56,
+                "feels_like": 37.64,
+                "temp_min": 35.56,
+                "temp_max": 35.56,
+                "pressure": 1009,
+                "humidity": 38,
+                "sea_level": 1009,
+                "grnd_level": 1000
+            },
+            "visibility": 10000,
+            "wind": {
+                "speed": 4.96,
+                "deg": 28,
+                "gust": 4.03
+            },
+            "clouds": {
+                "all": 6
+            },
+            "dt": 1790147543,
+            "sys": {
+                "country": "ID",
+                "sunrise": 1790115651,
+                "sunset": 1790159248
+            },
+            "timezone": 25200,
+            "id": 1650888,
+            "name": "Babat",
+            "cod": 200
+        }
+    },
+    {
+        "desa": "Drajat",
+        "suhu": 35.56,
+        "kondisi": "langit cerah",
+        "kelembapan": 38,
+        "angin": 4.96,
+        "raw_data": {
+            "coord": {
+                "lon": 112.1038,
+                "lat": -7.1282
+            },
+            "weather": [
+                {
+                    "id": 800,
+                    "main": "Clear",
+                    "description": "langit cerah",
+                    "icon": "01d"
+                }
+            ],
+            "base": "stations",
+            "main": {
+                "temp": 35.56,
+                "feels_like": 37.64,
+                "temp_min": 35.56,
+                "temp_max": 35.56,
+                "pressure": 1009,
+                "humidity": 38,
+                "sea_level": 1009,
+                "grnd_level": 1000
+            },
+            "visibility": 10000,
+            "wind": {
+                "speed": 4.96,
+                "deg": 28,
+                "gust": 4.03
+            },
+            "clouds": {
+                "all": 6
+            },
+            "dt": 1790147543,
+            "sys": {
+                "country": "ID",
+                "sunrise": 1790115651,
+                "sunset": 1790159248
+            },
+            "timezone": 25200,
+            "id": 1650888,
+            "name": "Babat",
+            "cod": 200
+        }
+    },
+    {
+        "desa": "Gajah",
+        "suhu": 35.56,
+        "kondisi": "langit cerah",
+        "kelembapan": 38,
+        "angin": 4.96,
+        "raw_data": {
+            "coord": {
+                "lon": 112.1038,
+                "lat": -7.1282
+            },
+            "weather": [
+                {
+                    "id": 800,
+                    "main": "Clear",
+                    "description": "langit cerah",
+                    "icon": "01d"
+                }
+            ],
+            "base": "stations",
+            "main": {
+                "temp": 35.56,
+                "feels_like": 37.64,
+                "temp_min": 35.56,
+                "temp_max": 35.56,
+                "pressure": 1009,
+                "humidity": 38,
+                "sea_level": 1009,
+                "grnd_level": 1000
+            },
+            "visibility": 10000,
+            "wind": {
+                "speed": 4.96,
+                "deg": 28,
+                "gust": 4.03
+            },
+            "clouds": {
+                "all": 6
+            },
+            "dt": 1790147543,
+            "sys": {
+                "country": "ID",
+                "sunrise": 1790115651,
+                "sunset": 1790159248
+            },
+            "timezone": 25200,
+            "id": 1650888,
+            "name": "Babat",
+            "cod": 200
+        }
+    },
+    {
+        "desa": "Gunungsari",
+        "suhu": 35.56,
+        "kondisi": "langit cerah",
+        "kelembapan": 38,
+        "angin": 4.96,
+        "raw_data": {
+            "coord": {
+                "lon": 112.1038,
+                "lat": -7.1282
+            },
+            "weather": [
+                {
+                    "id": 800,
+                    "main": "Clear",
+                    "description": "langit cerah",
+                    "icon": "01d"
+                }
+            ],
+            "base": "stations",
+            "main": {
+                "temp": 35.56,
+                "feels_like": 37.64,
+                "temp_min": 35.56,
+                "temp_max": 35.56,
+                "pressure": 1009,
+                "humidity": 38,
+                "sea_level": 1009,
+                "grnd_level": 1000
+            },
+            "visibility": 10000,
+            "wind": {
+                "speed": 4.96,
+                "deg": 28,
+                "gust": 4.03
+            },
+            "clouds": {
+                "all": 6
+            },
+            "dt": 1790147543,
+            "sys": {
+                "country": "ID",
+                "sunrise": 1790115651,
+                "sunset": 1790159248
+            },
+            "timezone": 25200,
+            "id": 1650888,
+            "name": "Babat",
+            "cod": 200
+        }
+    },
+    {
+        "desa": "Kalisari",
+        "suhu": 35.56,
+        "kondisi": "langit cerah",
+        "kelembapan": 38,
+        "angin": 4.96,
+        "raw_data": {
+            "coord": {
+                "lon": 112.1038,
+                "lat": -7.1282
+            },
+            "weather": [
+                {
+                    "id": 800,
+                    "main": "Clear",
+                    "description": "langit cerah",
+                    "icon": "01d"
+                }
+            ],
+            "base": "stations",
+            "main": {
+                "temp": 35.56,
+                "feels_like": 37.64,
+                "temp_min": 35.56,
+                "temp_max": 35.56,
+                "pressure": 1009,
+                "humidity": 38,
+                "sea_level": 1009,
+                "grnd_level": 1000
+            },
+            "visibility": 10000,
+            "wind": {
+                "speed": 4.96,
+                "deg": 28,
+                "gust": 4.03
+            },
+            "clouds": {
+                "all": 6
+            },
+            "dt": 1790147543,
+            "sys": {
+                "country": "ID",
+                "sunrise": 1790115651,
+                "sunset": 1790159248
+            },
+            "timezone": 25200,
+            "id": 1650888,
+            "name": "Babat",
+            "cod": 200
+        }
+    },
+    {
+        "desa": "Karangdayu",
+        "suhu": 35.56,
+        "kondisi": "langit cerah",
+        "kelembapan": 38,
+        "angin": 4.96,
+        "raw_data": {
+            "coord": {
+                "lon": 112.1038,
+                "lat": -7.1282
+            },
+            "weather": [
+                {
+                    "id": 800,
+                    "main": "Clear",
+                    "description": "langit cerah",
+                    "icon": "01d"
+                }
+            ],
+            "base": "stations",
+            "main": {
+                "temp": 35.56,
+                "feels_like": 37.64,
+                "temp_min": 35.56,
+                "temp_max": 35.56,
+                "pressure": 1009,
+                "humidity": 38,
+                "sea_level": 1009,
+                "grnd_level": 1000
+            },
+            "visibility": 10000,
+            "wind": {
+                "speed": 4.96,
+                "deg": 28,
+                "gust": 4.03
+            },
+            "clouds": {
+                "all": 6
+            },
+            "dt": 1790147543,
+            "sys": {
+                "country": "ID",
+                "sunrise": 1790115651,
+                "sunset": 1790159248
+            },
+            "timezone": 25200,
+            "id": 1650888,
+            "name": "Babat",
+            "cod": 200
+        }
+    },
+    {
+        "desa": "Kauman",
+        "suhu": 35.56,
+        "kondisi": "langit cerah",
+        "kelembapan": 38,
+        "angin": 4.96,
+        "raw_data": {
+            "coord": {
+                "lon": 112.1038,
+                "lat": -7.1282
+            },
+            "weather": [
+                {
+                    "id": 800,
+                    "main": "Clear",
+                    "description": "langit cerah",
+                    "icon": "01d"
+                }
+            ],
+            "base": "stations",
+            "main": {
+                "temp": 35.56,
+                "feels_like": 37.64,
+                "temp_min": 35.56,
+                "temp_max": 35.56,
+                "pressure": 1009,
+                "humidity": 38,
+                "sea_level": 1009,
+                "grnd_level": 1000
+            },
+            "visibility": 10000,
+            "wind": {
+                "speed": 4.96,
+                "deg": 28,
+                "gust": 4.03
+            },
+            "clouds": {
+                "all": 6
+            },
+            "dt": 1790147543,
+            "sys": {
+                "country": "ID",
+                "sunrise": 1790115651,
+                "sunset": 1790159248
+            },
+            "timezone": 25200,
+            "id": 1650888,
+            "name": "Babat",
+            "cod": 200
+        }
+    },
+    {
+        "desa": "Kedungrejo",
+        "suhu": 35.56,
+        "kondisi": "langit cerah",
+        "kelembapan": 38,
+        "angin": 4.96,
+        "raw_data": {
+            "coord": {
+                "lon": 112.1038,
+                "lat": -7.1282
+            },
+            "weather": [
+                {
+                    "id": 800,
+                    "main": "Clear",
+                    "description": "langit cerah",
+                    "icon": "01d"
+                }
+            ],
+            "base": "stations",
+            "main": {
+                "temp": 35.56,
+                "feels_like": 37.64,
+                "temp_min": 35.56,
+                "temp_max": 35.56,
+                "pressure": 1009,
+                "humidity": 38,
+                "sea_level": 1009,
+                "grnd_level": 1000
+            },
+            "visibility": 10000,
+            "wind": {
+                "speed": 4.96,
+                "deg": 28,
+                "gust": 4.03
+            },
+            "clouds": {
+                "all": 6
+            },
+            "dt": 1790147543,
+            "sys": {
+                "country": "ID",
+                "sunrise": 1790115651,
+                "sunset": 1790159248
+            },
+            "timezone": 25200,
+            "id": 1650888,
+            "name": "Babat",
+            "cod": 200
+        }
+    },
+    {
+        "desa": "Lebaksari",
+        "suhu": 35.56,
+        "kondisi": "langit cerah",
+        "kelembapan": 38,
+        "angin": 4.96,
+        "raw_data": {
+            "coord": {
+                "lon": 112.1038,
+                "lat": -7.1282
+            },
+            "weather": [
+                {
+                    "id": 800,
+                    "main": "Clear",
+                    "description": "langit cerah",
+                    "icon": "01d"
+                }
+            ],
+            "base": "stations",
+            "main": {
+                "temp": 35.56,
+                "feels_like": 37.64,
+                "temp_min": 35.56,
+                "temp_max": 35.56,
+                "pressure": 1009,
+                "humidity": 38,
+                "sea_level": 1009,
+                "grnd_level": 1000
+            },
+            "visibility": 10000,
+            "wind": {
+                "speed": 4.96,
+                "deg": 28,
+                "gust": 4.03
+            },
+            "clouds": {
+                "all": 6
+            },
+            "dt": 1790147543,
+            "sys": {
+                "country": "ID",
+                "sunrise": 1790115651,
+                "sunset": 1790159248
+            },
+            "timezone": 25200,
+            "id": 1650888,
+            "name": "Babat",
+            "cod": 200
+        }
+    },
+    {
+        "desa": "Ngemplak",
+        "suhu": 35.56,
+        "kondisi": "langit cerah",
+        "kelembapan": 38,
+        "angin": 4.96,
+        "raw_data": {
+            "coord": {
+                "lon": 112.1038,
+                "lat": -7.1282
+            },
+            "weather": [
+                {
+                    "id": 800,
+                    "main": "Clear",
+                    "description": "langit cerah",
+                    "icon": "01d"
+                }
+            ],
+            "base": "stations",
+            "main": {
+                "temp": 35.56,
+                "feels_like": 37.64,
+                "temp_min": 35.56,
+                "temp_max": 35.56,
+                "pressure": 1009,
+                "humidity": 38,
+                "sea_level": 1009,
+                "grnd_level": 1000
+            },
+            "visibility": 10000,
+            "wind": {
+                "speed": 4.96,
+                "deg": 28,
+                "gust": 4.03
+            },
+            "clouds": {
+                "all": 6
+            },
+            "dt": 1790147543,
+            "sys": {
+                "country": "ID",
+                "sunrise": 1790115651,
+                "sunset": 1790159248
+            },
+            "timezone": 25200,
+            "id": 1650888,
+            "name": "Babat",
+            "cod": 200
+        }
+    },
+    {
+        "desa": "Pasinan",
+        "suhu": 35.56,
+        "kondisi": "langit cerah",
+        "kelembapan": 38,
+        "angin": 4.96,
+        "raw_data": {
+            "coord": {
+                "lon": 112.1038,
+                "lat": -7.1282
+            },
+            "weather": [
+                {
+                    "id": 800,
+                    "main": "Clear",
+                    "description": "langit cerah",
+                    "icon": "01d"
+                }
+            ],
+            "base": "stations",
+            "main": {
+                "temp": 35.56,
+                "feels_like": 37.64,
+                "temp_min": 35.56,
+                "temp_max": 35.56,
+                "pressure": 1009,
+                "humidity": 38,
+                "sea_level": 1009,
+                "grnd_level": 1000
+            },
+            "visibility": 10000,
+            "wind": {
+                "speed": 4.96,
+                "deg": 28,
+                "gust": 4.03
+            },
+            "clouds": {
+                "all": 6
+            },
+            "dt": 1790147543,
+            "sys": {
+                "country": "ID",
+                "sunrise": 1790115651,
+                "sunset": 1790159248
+            },
+            "timezone": 25200,
+            "id": 1650888,
+            "name": "Babat",
+            "cod": 200
+        }
+    },
+    {
+        "desa": "Pomahan",
+        "suhu": 35.56,
+        "kondisi": "langit cerah",
+        "kelembapan": 38,
+        "angin": 4.96,
+        "raw_data": {
+            "coord": {
+                "lon": 112.1038,
+                "lat": -7.1282
+            },
+            "weather": [
+                {
+                    "id": 800,
+                    "main": "Clear",
+                    "description": "langit cerah",
+                    "icon": "01d"
+                }
+            ],
+            "base": "stations",
+            "main": {
+                "temp": 35.56,
+                "feels_like": 37.64,
+                "temp_min": 35.56,
+                "temp_max": 35.56,
+                "pressure": 1009,
+                "humidity": 38,
+                "sea_level": 1009,
+                "grnd_level": 1000
+            },
+            "visibility": 10000,
+            "wind": {
+                "speed": 4.96,
+                "deg": 28,
+                "gust": 4.03
+            },
+            "clouds": {
+                "all": 6
+            },
+            "dt": 1790147543,
+            "sys": {
+                "country": "ID",
+                "sunrise": 1790115651,
+                "sunset": 1790159248
+            },
+            "timezone": 25200,
+            "id": 1650888,
+            "name": "Babat",
+            "cod": 200
+        }
+    },
+    {
+        "desa": "Pucangarum",
+        "suhu": 35.56,
+        "kondisi": "langit cerah",
+        "kelembapan": 38,
+        "angin": 4.96,
+        "raw_data": {
+            "coord": {
+                "lon": 112.1038,
+                "lat": -7.1282
+            },
+            "weather": [
+                {
+                    "id": 800,
+                    "main": "Clear",
+                    "description": "langit cerah",
+                    "icon": "01d"
+                }
+            ],
+            "base": "stations",
+            "main": {
+                "temp": 35.56,
+                "feels_like": 37.64,
+                "temp_min": 35.56,
+                "temp_max": 35.56,
+                "pressure": 1009,
+                "humidity": 38,
+                "sea_level": 1009,
+                "grnd_level": 1000
+            },
+            "visibility": 10000,
+            "wind": {
+                "speed": 4.96,
+                "deg": 28,
+                "gust": 4.03
+            },
+            "clouds": {
+                "all": 6
+            },
+            "dt": 1790147543,
+            "sys": {
+                "country": "ID",
+                "sunrise": 1790115651,
+                "sunset": 1790159248
+            },
+            "timezone": 25200,
+            "id": 1650888,
+            "name": "Babat",
+            "cod": 200
+        }
+    },
+    {
+        "desa": "Selorejo",
+        "suhu": 35.56,
+        "kondisi": "langit cerah",
+        "kelembapan": 38,
+        "angin": 4.96,
+        "raw_data": {
+            "coord": {
+                "lon": 112.1038,
+                "lat": -7.1282
+            },
+            "weather": [
+                {
+                    "id": 800,
+                    "main": "Clear",
+                    "description": "langit cerah",
+                    "icon": "01d"
+                }
+            ],
+            "base": "stations",
+            "main": {
+                "temp": 35.56,
+                "feels_like": 37.64,
+                "temp_min": 35.56,
+                "temp_max": 35.56,
+                "pressure": 1009,
+                "humidity": 38,
+                "sea_level": 1009,
+                "grnd_level": 1000
+            },
+            "visibility": 10000,
+            "wind": {
+                "speed": 4.96,
+                "deg": 28,
+                "gust": 4.03
+            },
+            "clouds": {
+                "all": 6
+            },
+            "dt": 1790147543,
+            "sys": {
+                "country": "ID",
+                "sunrise": 1790115651,
+                "sunset": 1790159248
+            },
+            "timezone": 25200,
+            "id": 1650888,
+            "name": "Babat",
+            "cod": 200
+        }
+    },
+    {
+        "desa": "Sembunglor",
+        "suhu": 35.56,
+        "kondisi": "langit cerah",
+        "kelembapan": 38,
+        "angin": 4.96,
+        "raw_data": {
+            "coord": {
+                "lon": 112.1038,
+                "lat": -7.1282
+            },
+            "weather": [
+                {
+                    "id": 800,
+                    "main": "Clear",
+                    "description": "langit cerah",
+                    "icon": "01d"
+                }
+            ],
+            "base": "stations",
+            "main": {
+                "temp": 35.56,
+                "feels_like": 37.64,
+                "temp_min": 35.56,
+                "temp_max": 35.56,
+                "pressure": 1009,
+                "humidity": 38,
+                "sea_level": 1009,
+                "grnd_level": 1000
+            },
+            "visibility": 10000,
+            "wind": {
+                "speed": 4.96,
+                "deg": 28,
+                "gust": 4.03
+            },
+            "clouds": {
+                "all": 6
+            },
+            "dt": 1790147543,
+            "sys": {
+                "country": "ID",
+                "sunrise": 1790115651,
+                "sunset": 1790159248
+            },
+            "timezone": 25200,
+            "id": 1650888,
+            "name": "Babat",
+            "cod": 200
+        }
+    },
+    {
+        "desa": "Sraturejo",
+        "suhu": 35.56,
+        "kondisi": "langit cerah",
+        "kelembapan": 38,
+        "angin": 4.96,
+        "raw_data": {
+            "coord": {
+                "lon": 112.1038,
+                "lat": -7.1282
+            },
+            "weather": [
+                {
+                    "id": 800,
+                    "main": "Clear",
+                    "description": "langit cerah",
+                    "icon": "01d"
+                }
+            ],
+            "base": "stations",
+            "main": {
+                "temp": 35.56,
+                "feels_like": 37.64,
+                "temp_min": 35.56,
+                "temp_max": 35.56,
+                "pressure": 1009,
+                "humidity": 38,
+                "sea_level": 1009,
+                "grnd_level": 1000
+            },
+            "visibility": 10000,
+            "wind": {
+                "speed": 4.96,
+                "deg": 28,
+                "gust": 4.03
+            },
+            "clouds": {
+                "all": 6
+            },
+            "dt": 1790147543,
+            "sys": {
+                "country": "ID",
+                "sunrise": 1790115651,
+                "sunset": 1790159248
+            },
+            "timezone": 25200,
+            "id": 1650888,
+            "name": "Babat",
+            "cod": 200
+        }
+    },
+    {
+        "desa": "Sumuragung",
+        "suhu": 35.61,
+        "kondisi": "langit cerah",
+        "kelembapan": 38,
+        "angin": 5.06,
+        "raw_data": {
+            "coord": {
+                "lon": 112.1525,
+                "lat": -7.1425
+            },
+            "weather": [
+                {
+                    "id": 800,
+                    "main": "Clear",
+                    "description": "langit cerah",
+                    "icon": "01d"
+                }
+            ],
+            "base": "stations",
+            "main": {
+                "temp": 35.61,
+                "feels_like": 37.74,
+                "temp_min": 35.61,
+                "temp_max": 35.61,
+                "pressure": 1009,
+                "humidity": 38,
+                "sea_level": 1009,
+                "grnd_level": 1001
+            },
+            "visibility": 10000,
+            "wind": {
+                "speed": 5.06,
+                "deg": 24,
+                "gust": 4.1
+            },
+            "clouds": {
+                "all": 7
+            },
+            "dt": 1790147564,
+            "sys": {
+                "country": "ID",
+                "sunrise": 1790115640,
+                "sunset": 1790159237
+            },
+            "timezone": 25200,
+            "id": 1650888,
+            "name": "Babat",
+            "cod": 200
+        }
+    },
+    {
+        "desa": "Tanggungan",
+        "suhu": 35.56,
+        "kondisi": "langit cerah",
+        "kelembapan": 38,
+        "angin": 4.96,
+        "raw_data": {
+            "coord": {
+                "lon": 112.1038,
+                "lat": -7.1282
+            },
+            "weather": [
+                {
+                    "id": 800,
+                    "main": "Clear",
+                    "description": "langit cerah",
+                    "icon": "01d"
+                }
+            ],
+            "base": "stations",
+            "main": {
+                "temp": 35.56,
+                "feels_like": 37.64,
+                "temp_min": 35.56,
+                "temp_max": 35.56,
+                "pressure": 1009,
+                "humidity": 38,
+                "sea_level": 1009,
+                "grnd_level": 1000
+            },
+            "visibility": 10000,
+            "wind": {
+                "speed": 4.96,
+                "deg": 28,
+                "gust": 4.03
+            },
+            "clouds": {
+                "all": 6
+            },
+            "dt": 1790147543,
+            "sys": {
+                "country": "ID",
+                "sunrise": 1790115651,
+                "sunset": 1790159248
+            },
+            "timezone": 25200,
+            "id": 1650888,
+            "name": "Babat",
+            "cod": 200
+        }
+    },
+    {
+        "desa": "Tlogoagung",
+        "suhu": 35.56,
+        "kondisi": "langit cerah",
+        "kelembapan": 38,
+        "angin": 4.96,
+        "raw_data": {
+            "coord": {
+                "lon": 112.1038,
+                "lat": -7.1282
+            },
+            "weather": [
+                {
+                    "id": 800,
+                    "main": "Clear",
+                    "description": "langit cerah",
+                    "icon": "01d"
+                }
+            ],
+            "base": "stations",
+            "main": {
+                "temp": 35.56,
+                "feels_like": 37.64,
+                "temp_min": 35.56,
+                "temp_max": 35.56,
+                "pressure": 1009,
+                "humidity": 38,
+                "sea_level": 1009,
+                "grnd_level": 1000
+            },
+            "visibility": 10000,
+            "wind": {
+                "speed": 4.96,
+                "deg": 28,
+                "gust": 4.03
+            },
+            "clouds": {
+                "all": 6
+            },
+            "dt": 1790147543,
+            "sys": {
+                "country": "ID",
+                "sunrise": 1790115651,
+                "sunset": 1790159248
+            },
+            "timezone": 25200,
+            "id": 1650888,
+            "name": "Babat",
+            "cod": 200
+        }
+    },
+    {
+        "desa": "Trojalu",
+        "suhu": 35.56,
+        "kondisi": "langit cerah",
+        "kelembapan": 38,
+        "angin": 4.96,
+        "raw_data": {
+            "coord": {
+                "lon": 112.1038,
+                "lat": -7.1282
+            },
+            "weather": [
+                {
+                    "id": 800,
+                    "main": "Clear",
+                    "description": "langit cerah",
+                    "icon": "01d"
+                }
+            ],
+            "base": "stations",
+            "main": {
+                "temp": 35.56,
+                "feels_like": 37.64,
+                "temp_min": 35.56,
+                "temp_max": 35.56,
+                "pressure": 1009,
+                "humidity": 38,
+                "sea_level": 1009,
+                "grnd_level": 1000
+            },
+            "visibility": 10000,
+            "wind": {
+                "speed": 4.96,
+                "deg": 28,
+                "gust": 4.03
+            },
+            "clouds": {
+                "all": 6
+            },
+            "dt": 1790147543,
+            "sys": {
+                "country": "ID",
+                "sunrise": 1790115651,
+                "sunset": 1790159248
+            },
+            "timezone": 25200,
+            "id": 1650888,
+            "name": "Babat",
+            "cod": 200
+        }
+    },
+    {
+        "desa": "Tulungagung",
+        "suhu": 35.56,
+        "kondisi": "langit cerah",
+        "kelembapan": 38,
+        "angin": 4.96,
+        "raw_data": {
+            "coord": {
+                "lon": 112.1038,
+                "lat": -7.1282
+            },
+            "weather": [
+                {
+                    "id": 800,
+                    "main": "Clear",
+                    "description": "langit cerah",
+                    "icon": "01d"
+                }
+            ],
+            "base": "stations",
+            "main": {
+                "temp": 35.56,
+                "feels_like": 37.64,
+                "temp_min": 35.56,
+                "temp_max": 35.56,
+                "pressure": 1009,
+                "humidity": 38,
+                "sea_level": 1009,
+                "grnd_level": 1000
+            },
+            "visibility": 10000,
+            "wind": {
+                "speed": 4.96,
+                "deg": 28,
+                "gust": 4.03
+            },
+            "clouds": {
+                "all": 6
+            },
+            "dt": 1790147543,
+            "sys": {
+                "country": "ID",
+                "sunrise": 1790115651,
+                "sunset": 1790159248
+            },
+            "timezone": 25200,
+            "id": 1650888,
+            "name": "Babat",
+            "cod": 200
+        }
+    }
+]

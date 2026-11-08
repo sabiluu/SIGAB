@@ -7,6 +7,11 @@ import PoskoManager from './pages/admin/PoskoManager'
 import RiskMap from './components/RiskMap'
 import { LoadingState, ErrorState, EmptyState } from './components/common/AsyncState'
 import { fetchDashboardSnapshot } from './services/dashboardService'
+import useIsMobile from './hooks/useIsMobile'
+import MobileAuthPage from './components/mobile/MobileAuthPage'
+import MobileLanding from './components/mobile/MobileLanding'
+import MobileWargaPortal from './components/mobile/MobileWargaPortal'
+import MobileAdminPortal from './components/mobile/MobileAdminPortal'
 import './styles/landing.css'
 
 // Formula ambang batas risiko banjir SIGAB (PRD v3.0 §3.2)
@@ -143,6 +148,7 @@ function getActiveRoute() {
 
 function App() {
   const [hash, setHash] = useState(getActiveRoute)
+  const isMobile = useIsMobile()
 
   // Real-time API state from Open-Meteo & Flood Calculation Engine
   const [realtimeData, setRealtimeData] = useState(null)
@@ -185,10 +191,17 @@ function App() {
     }
   }, [])
 
+  const renderAuthPage = (initialMode, initialRole) => (
+    isMobile
+      ? <MobileAuthPage initialMode={initialMode} initialRole={initialRole} />
+      : <AuthPage initialMode={initialMode} initialRole={initialRole} />
+  )
+
   // Routing Handler
-  const authMatch = hash.match(/^#(masuk|daftar)(?:-(warga|petugas))?$/)
+  const authMatch = hash.match(/^#(masuk|daftar|login)(?:-(warga|petugas|admin))?$/)
   if (authMatch) {
-    return <AuthPage initialMode={authMatch[1] === 'daftar' ? 'register' : 'login'} initialRole={authMatch[2] || 'warga'} />
+    const rawRole = authMatch[2] === 'admin' ? 'petugas' : (authMatch[2] || 'warga')
+    return renderAuthPage(authMatch[1] === 'daftar' ? 'register' : 'login', rawRole)
   }
 
   if (hash === '#demo') {
@@ -214,7 +227,11 @@ function App() {
     const token = localStorage.getItem('access_token')
     if (!token) {
       window.history.replaceState(null, '', '#masuk-petugas')
-      return <AuthPage initialMode="login" initialRole="petugas" />
+      return renderAuthPage('login', 'petugas')
+    }
+    if (isMobile) {
+      const tab = hash.includes('sos') ? 'sos' : hash.includes('posko') ? 'posko' : 'radar'
+      return <MobileAdminPortal initialTab={tab} />
     }
     const Component = adminRoutes[hash]
     return <Component />
@@ -241,7 +258,10 @@ function App() {
     const token = localStorage.getItem('access_token')
     if (!token) {
       window.history.replaceState(null, '', `#masuk-${role}`)
-      return <AuthPage initialMode="login" initialRole={role} />
+      return renderAuthPage('login', role)
+    }
+    if (isMobile) {
+      return role === 'petugas' ? <MobileAdminPortal initialTab="dashboard" /> : <MobileWargaPortal />
     }
     return <RoleHome role={role} />
   }
@@ -309,6 +329,22 @@ function App() {
   const realtimeRainfall = realtimeData?.weather?.precipitation_mm != null
     ? Number(realtimeData.weather.precipitation_mm).toFixed(1)
     : '0.0'
+
+  if (isMobile) {
+    return (
+      <MobileLanding
+        averageProbability={avgProbability}
+        discharge={realtimeDischarge}
+        rainfall={realtimeRainfall}
+        overallRisk={heroOverallRisk}
+        isKecamatanSafe={isKecamatanSafe}
+        villages={villagesData}
+        displayedVillages={displayVillages}
+        selectedVillage={selectedLandingVillage}
+        onSelectVillage={setSelectedLandingVillage}
+      />
+    )
+  }
 
   return (
     <div className="landing-page">
@@ -402,8 +438,8 @@ function App() {
               <div className="hero-social-proof">
                 <div className="avatar-stack">
                   <div className="avatar-circle avatar-af">AF</div>
-                  <div className="avatar-circle avatar-si">SI</div>
-                  <div className="avatar-circle avatar-rh">RH</div>
+                  <div className="avatar-circle avatar-si">SR</div>
+                  <div className="avatar-circle avatar-rh">DN</div>
                   <div className="avatar-circle avatar-plus">+</div>
                 </div>
                 <div className="social-proof-col">

@@ -378,6 +378,19 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
       alert('Lokasi GPS belum terkunci. Mohon tunggu atau refresh GPS.');
       return;
     }
+
+    const isEmergency = Boolean(
+      isEmergencyActive || 
+      user?.risk_level === 'awas' ||
+      (detailPatokan && detailPatokan.toLowerCase().includes('simulasi')) || 
+      (address && address.toLowerCase().includes('simulasi'))
+    );
+
+    if (!isEmergency) {
+      alert('⚠️ Pengiriman SOS Ditolak Otomatis!\n\nLayanan panggilan SOS darurat ke BPBD hanya aktif saat status wilayah DARURAT / AWAS atau saat tombol "Simulasi Bahaya" dinyalakan.');
+      return;
+    }
+
     setLoading(true);
     try {
       let finalPhotoUrl = null;

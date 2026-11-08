@@ -2,18 +2,21 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import 'leaflet/dist/leaflet.css'
 import './styles/global.css'
-import './styles/landing.css'
 import './styles/auth.css'
 import './styles/role-home.css'
 import './styles/warga-portal.css'
 import './styles/admin-custom.css'
+import './styles/landing.css'
 import { AuthProvider } from './context/AuthContext'
+import ErrorBoundary from './components/common/ErrorBoundary'
 import App from './App.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <AuthProvider>
-      <App />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </ErrorBoundary>
   </StrictMode>,
 )

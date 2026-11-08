@@ -151,7 +151,11 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
         : await login(formData.email, formData.password, role)
       
       const target = response?.user?.role || role
-      window.location.hash = target === 'admin' || target === 'petugas' ? '#petugas' : '#warga'
+      const destHash = target === 'admin' || target === 'petugas' ? '#petugas' : '#warga'
+      window.location.hash = destHash
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new HashChangeEvent('hashchange'))
+      }
     } catch (requestError) {
       setError(requestError.message || 'Terjadi kesalahan saat memproses permintaan.')
     } finally {
@@ -436,10 +440,10 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
                 <input 
                   id="login-email" 
                   name="email" 
-                  type="email" 
+                  type="text" 
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
-                  placeholder={role === 'petugas' ? 'nama@bpbd.go.id' : 'nama@email.com'} 
+                  placeholder={role === 'petugas' ? 'admin@bpbd.go.id' : 'nama@email.com'} 
                   required 
                   autoComplete="username" 
                 />
@@ -481,8 +485,8 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
                 </label>
                 <button
                   type="button"
-                  className="auth-forgot-link"
-                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit' }}
+                  className="auth-link-teal auth-forgot-link"
+                  
                   onClick={() => setShowForgotHelp(!showForgotHelp)}
                 >
                   Lupa kata sandi?
