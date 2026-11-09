@@ -27,7 +27,7 @@ dist-ssr/
 logs
 *.log
 
-# ===== IDE =====
+# ===== IDE & Tool Environments =====
 .vscode/
 !.vscode/extensions.json
 .idea/
@@ -41,18 +41,21 @@ Thumbs.db
 *.ntvs*
 *.njsproj
 *.sln
+.codex/
 
 # ===== Environment =====
 .env
 .env.local
 .env.*.local
 
-# ===== Private Documents & Local Database Dumps =====
+# ===== Private Documents, Diagrams & Local Database Dumps =====
 02_prd_v3.md
 PANDUAN_KOLABORASI.md
 TIMELINE_*.md
 *TIMELINE*.md
 LAPORAN_*.md
+Flowchart_*.drawio
+*.drawio
 paper/
 *.tex
 *.sql
@@ -61,6 +64,7 @@ paper/
 uploads/
 test-results/
 playwright-report/
+demo-videos/
 
 # ===== Raw Data, Dumps & Scratch Scripts =====
 *.zip
@@ -70,3 +74,6 @@ src/data/border-desa/
 check_schema.py
 check_api.py
 test_*.py
+app/test_*.py
+app/simpan_cuaca.py
+app/save_api_snapshots.py
