@@ -707,7 +707,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                   border: '1px solid rgba(255, 255, 255, 0.15)'
                 }}>
                   <span style={{ color: '#4ade80' }}>🔒</span>
-                  <span>Lokasi Terkunci Real GPS (Anti-Pemalsuan)</span>
+                  <span>Lokasi Terkunci Real GPS</span>
                 </div>
               </div>
 
