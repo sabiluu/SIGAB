@@ -119,6 +119,30 @@ export default function VillageStatsTable({ onSelectVillage }) {
     return val <= 1 && val > 0 ? Math.round(val * 100) : Math.round(val)
   }
 
+  const formatLastCalculated = (dateStr) => {
+    if (!dateStr) return 'Realtime'
+    try {
+      let str = String(dateStr).trim()
+      if (!str.includes('T') && str.includes(' ')) {
+        str = str.replace(' ', 'T')
+      }
+      if (!str.endsWith('Z') && !str.includes('+')) {
+        str += 'Z'
+      }
+      const d = new Date(str)
+      if (isNaN(d.getTime())) return 'Realtime'
+      return (
+        d.toLocaleTimeString('id-ID', {
+          hour: '2-digit',
+          minute: '2-digit',
+          timeZone: 'Asia/Jakarta'
+        }).replace(':', '.') + ' WIB'
+      )
+    } catch {
+      return 'Realtime'
+    }
+  }
+
   return (
     <article className="village-stats-table-card">
       <style>{`
@@ -501,9 +525,7 @@ export default function VillageStatsTable({ onSelectVillage }) {
                 const rowIndex = (page - 1) * pageSize + idx + 1
                 const prob = formatProb(village.current_probability)
                 const probColor = getProbColor(prob)
-                const lastCalc = village.last_calculated_at
-                  ? new Date(village.last_calculated_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB'
-                  : 'Realtime'
+                const lastCalc = formatLastCalculated(village.last_calculated_at)
 
                 return (
                   <tr key={village.id || village.displayName || idx}>
