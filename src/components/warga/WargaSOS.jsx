@@ -65,15 +65,17 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
   const filteredMyTickets = useMemo(() => {
     return myTickets.filter((t) => {
       const q = ticketSearch.trim().toLowerCase();
-      const matchQuery = !q || 
-        (t.ticket_number && t.ticket_number.toLowerCase().includes(q)) || 
-        (t.gps_address && t.gps_address.toLowerCase().includes(q));
+      const ticketNum = String(t.ticket_number || t.id || '').toLowerCase();
+      const addr = String(t.gps_address || '').toLowerCase();
+      const matchQuery = !q || ticketNum.includes(q) || addr.includes(q);
       if (!matchQuery) return false;
 
+      const st = (t.status || '').toLowerCase();
       if (ticketFilterStatus === 'all') return true;
-      if (ticketFilterStatus === 'waiting') return t.status === 'submitted';
-      if (ticketFilterStatus === 'process') return ['verified', 'dispatched', 'arrived'].includes(t.status);
-      if (ticketFilterStatus === 'completed') return t.status === 'completed';
+      if (ticketFilterStatus === 'simulation') return Boolean(t.is_simulation);
+      if (ticketFilterStatus === 'waiting') return st === 'submitted' || st === 'menunggu';
+      if (ticketFilterStatus === 'process') return ['verified', 'dispatched', 'arrived', 'diproses'].includes(st);
+      if (ticketFilterStatus === 'completed') return st === 'completed' || st === 'selesai';
       return true;
     });
   }, [myTickets, ticketSearch, ticketFilterStatus]);
@@ -183,6 +185,11 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
       setLoadingTickets(false);
     }
   };
+
+  // Muat riwayat tiket pada saat komponen dimuat (mount) & saat tab riwayat dibuka
+  useEffect(() => {
+    loadMyTickets();
+  }, []);
 
   useEffect(() => {
     if (activeTab === 'history') {
@@ -471,21 +478,28 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
   };
 
   const getStatusBadge = (status) => {
-    switch (status) {
+    const s = (status || '').toLowerCase();
+    switch (s) {
       case 'submitted':
+      case 'menunggu':
         return <span className="status-badge-pill status-waspada">Menunggu Verifikasi</span>;
       case 'verified':
+      case 'terverifikasi':
         return <span className="status-badge-pill status-siaga">Terverifikasi</span>;
       case 'dispatched':
+      case 'armada meluncur':
         return <span className="status-badge-pill status-awas">Armada Meluncur</span>;
       case 'arrived':
+      case 'tiba':
         return <span className="status-badge-pill" style={{ background: '#f3e8ff', color: '#7e22ce' }}>Tiba di Lokasi</span>;
       case 'completed':
+      case 'selesai':
         return <span className="status-badge-pill status-aman">Selesai</span>;
       case 'rejected':
+      case 'dibatalkan':
         return <span className="status-badge-pill" style={{ background: '#fee2e2', color: '#b91c1c' }}>Dibatalkan</span>;
       default:
-        return <span className="status-badge-pill">{status}</span>;
+        return <span className="status-badge-pill">{status || '—'}</span>;
     }
   };
 
@@ -1140,14 +1154,32 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
               <div className="sos-ticket-summary-card">
                 <div className="sos-ticket-summary-row">
                   <span style={{ color: 'var(--warga-text-muted)' }}>Nomor Tiket:</span>
-                  <span style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--warga-navy)' }}>
-                    {ticket.ticket_number}
-                  </span>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--warga-navy)' }}>
+                      {ticket.ticket_number || ticket.id}
+                    </span>
+                    {ticket.is_simulation && (
+                      <span style={{
+                        background: '#8b5cf6',
+                        color: '#ffffff',
+                        fontSize: '0.68rem',
+                        fontWeight: 800,
+                        padding: '2px 8px',
+                        borderRadius: '6px',
+                        letterSpacing: '0.04em',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '3px'
+                      }}>
+                        <span>🎮</span> SIMULASI
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="sos-ticket-summary-row">
                   <span style={{ color: 'var(--warga-text-muted)' }}>Waktu Terkirim:</span>
                   <span style={{ fontWeight: 700, color: 'var(--warga-navy)' }}>
-                    {formatWIBDateTime(ticket.submitted_at || new Date())}
+                    {formatWIBDateTime(ticket.submitted_at || ticket.created_at || new Date())}
                   </span>
                 </div>
                 <div className="sos-ticket-summary-row">
@@ -1240,6 +1272,25 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
             </button>
           </div>
 
+          {/* Permanent Archive Callout */}
+          <div style={{
+            background: '#f0fdf4',
+            border: '1px solid #bbf7d0',
+            borderRadius: '10px',
+            padding: '10px 14px',
+            marginBottom: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            fontSize: '0.8rem',
+            color: '#166534'
+          }}>
+            <span style={{ fontSize: '1.2rem' }}>🛡️</span>
+            <span>
+              <strong>Arsip Riwayat Permanen:</strong> Seluruh laporan SOS (kejadian darurat riil maupun sesi latihan simulasi) tersimpan secara permanen di riwayat akun Anda dan tidak akan terhapus meskipun simulasi telah selesai.
+            </span>
+          </div>
+
           {/* Search bar & Filter Pills for My Tickets */}
           {myTickets.length > 0 && (
             <div style={{
@@ -1289,10 +1340,17 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                 </button>
                 <button
                   type="button"
+                  onClick={() => setTicketFilterStatus('simulation')}
+                  className={`sos-preset-chip ${ticketFilterStatus === 'simulation' ? 'active' : ''}`}
+                >
+                  🎮 Simulasi ({myTickets.filter(t => t.is_simulation).length})
+                </button>
+                <button
+                  type="button"
                   onClick={() => setTicketFilterStatus('waiting')}
                   className={`sos-preset-chip ${ticketFilterStatus === 'waiting' ? 'active' : ''}`}
                 >
-                  Menunggu ({myTickets.filter(t => t.status === 'submitted').length})
+                  Menunggu ({myTickets.filter(t => (t.status === 'submitted' || t.status === 'MENUNGGU')).length})
                 </button>
                 <button
                   type="button"
@@ -1354,12 +1412,28 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
-                    <div>
-                      <span style={{ fontWeight: 800, fontSize: '0.98rem', color: 'var(--warga-navy)', marginRight: '10px' }}>
-                        {t.ticket_number}
+                    <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                      <span style={{ fontWeight: 800, fontSize: '0.98rem', color: 'var(--warga-navy)' }}>
+                        {t.ticket_number || t.id}
                       </span>
+                      {t.is_simulation && (
+                        <span style={{
+                          background: '#8b5cf6',
+                          color: '#ffffff',
+                          fontSize: '0.66rem',
+                          fontWeight: 800,
+                          padding: '2px 8px',
+                          borderRadius: '6px',
+                          letterSpacing: '0.04em',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '3px'
+                        }}>
+                          <span>🎮</span> SIMULASI
+                        </span>
+                      )}
                       <span style={{ fontSize: '0.78rem', color: 'var(--warga-text-muted)' }}>
-                        {formatWIBDateTime(t.submitted_at)}
+                        {formatWIBDateTime(t.submitted_at || t.created_at)}
                       </span>
                     </div>
                     {getStatusBadge(t.status)}
