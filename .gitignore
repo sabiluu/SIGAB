@@ -65,6 +65,7 @@ uploads/
 test-results/
 playwright-report/
 demo-videos/
+avatar-*.jpg
 
 # ===== Raw Data, Dumps & Scratch Scripts =====
 *.zip
