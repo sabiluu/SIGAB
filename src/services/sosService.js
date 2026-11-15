@@ -21,11 +21,16 @@ export async function createSOSTicket(data) {
 
     if (isNetworkOrTimeout) {
       console.warn('Backend server offline saat kirim SOS, menyimpan tiket lokal.');
+      const generatedId = 'TKT-' + Math.floor(1000 + Math.random() * 9000);
+      const nowIso = new Date().toISOString();
       const localTicket = {
-        id: 'TKT-' + Math.floor(1000 + Math.random() * 9000),
+        id: generatedId,
+        ticket_number: generatedId,
         ...data,
-        status: 'MENUNGGU',
-        created_at: new Date().toISOString(),
+        status: 'submitted',
+        submitted_at: nowIso,
+        created_at: nowIso,
+        is_simulation: Boolean(data.is_simulation),
       };
       try {
         const tickets = JSON.parse(localStorage.getItem('sigab_local_sos_tickets') || '[]');
@@ -49,7 +54,9 @@ export async function getSOSTickets(params = {}) {
     const remote = await apiFetch(`/sos${qs}`);
     const localTickets = JSON.parse(localStorage.getItem('sigab_local_sos_tickets') || '[]');
     if (Array.isArray(remote)) {
-      return [...localTickets, ...remote];
+      const remoteIds = new Set(remote.map((t) => String(t.ticket_number || t.id)));
+      const uniqueLocals = localTickets.filter((t) => !remoteIds.has(String(t.ticket_number || t.id)));
+      return [...uniqueLocals, ...remote];
     }
     return remote;
   } catch {
@@ -63,7 +70,9 @@ export async function getMyTickets() {
     const remote = await apiFetch('/sos/my');
     const localTickets = JSON.parse(localStorage.getItem('sigab_local_sos_tickets') || '[]');
     if (Array.isArray(remote)) {
-      return [...localTickets, ...remote];
+      const remoteIds = new Set(remote.map((t) => String(t.ticket_number || t.id)));
+      const uniqueLocals = localTickets.filter((t) => !remoteIds.has(String(t.ticket_number || t.id)));
+      return [...uniqueLocals, ...remote];
     }
     return remote;
   } catch {

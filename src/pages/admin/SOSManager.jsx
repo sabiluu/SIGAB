@@ -110,6 +110,7 @@ export default function SOSManager() {
 
   const filteredTickets = useMemo(() => {
     const result = tickets.filter(t => {
+      if (filterStatus === 'simulation' && !t.is_simulation) return false
       if (filterStatus === 'submitted' && t.status !== 'submitted') return false
       if (filterStatus === 'verified' && t.status !== 'verified') return false
       if (filterStatus === 'dispatched' && t.status !== 'dispatched' && t.status !== 'arrived') return false
@@ -168,8 +169,9 @@ export default function SOSManager() {
       <div className="admin-main-grid">
         <div className="portal-card" style={{ padding: '24px' }}>
           <div className="table-filters" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '12px', flexWrap: 'wrap' }}>
-            <div className="tab-pills" style={{ display: 'flex', gap: '6px' }}>
+            <div className="tab-pills" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               <button className={filterStatus === 'all' ? 'active' : ''} onClick={() => setFilterStatus('all')}>Semua ({tickets.length})</button>
+              <button className={filterStatus === 'simulation' ? 'active' : ''} onClick={() => setFilterStatus('simulation')}>🧪 Simulasi ({tickets.filter(t => t.is_simulation).length})</button>
               <button className={filterStatus === 'submitted' ? 'active' : ''} onClick={() => setFilterStatus('submitted')}>Menunggu ({tickets.filter(t => t.status === 'submitted').length})</button>
               <button className={filterStatus === 'verified' ? 'active' : ''} onClick={() => setFilterStatus('verified')}>Terverifikasi ({tickets.filter(t => t.status === 'verified').length})</button>
               <button className={filterStatus === 'dispatched' ? 'active' : ''} onClick={() => setFilterStatus('dispatched')}>Meluncur ({tickets.filter(t => t.status === 'dispatched' || t.status === 'arrived').length})</button>
