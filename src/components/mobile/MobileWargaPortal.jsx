@@ -577,27 +577,34 @@ export default function MobileWargaView() {
     try {
       const uLat = geo.latitude || -7.1155
       const uLon = geo.longitude || 112.0835
-      await createSOSTicket({
+      const isSimMode = Boolean(personalSim.isRunning || simStatus?.is_running)
+      const createdTicket = await createSOSTicket({
+        reporter_id: userProfile?.id || 1,
         name: userProfile.full_name || 'Warga Baureno',
         phone: userProfile.phone || '081234567890',
         village_id: Number(activeVillage.id || 3),
         gps_latitude: uLat,
         gps_longitude: uLon,
-        gps_address: `Desa ${activeVillage.cleanName}, Kec. Baureno`,
+        gps_address: sosPatokan
+          ? `Desa ${activeVillage.cleanName}, Kec. Baureno (Patokan: ${sosPatokan})`
+          : `Desa ${activeVillage.cleanName}, Kec. Baureno`,
         patokan: sosPatokan || `Dekat Balai Desa ${activeVillage.cleanName} (Simulasi)`,
         family_count: Number(sosFamilyCount) || 1,
         has_elderly: sosElderly,
         has_toddler: sosToddler,
         has_pregnant: sosPregnant,
         has_disability: sosDisability,
-        is_simulation: Boolean(personalSim.isRunning),
+        is_simulation: isSimMode,
       })
       setSosSuccessMsg(
-        personalSim.isRunning
+        isSimMode
           ? '🚨 [MODE SIMULASI] Sinyal SOS simulasi berhasil dikirim ke Pusdalops BPBD Baureno!'
           : 'Sinyal SOS darurat berhasil dikirim ke Pusdalops BPBD Baureno! Tim sedang memverifikasi lokasi Anda.'
       )
       setSosPatokan('')
+      if (createdTicket) {
+        setMyTickets((prev) => [createdTicket, ...prev.filter((t) => String(t.id) !== String(createdTicket.id))])
+      }
       loadTickets()
     } catch (err) {
       setSosErrorMsg(err.message || 'Gagal mengirim tiket SOS.')

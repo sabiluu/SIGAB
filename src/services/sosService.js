@@ -5,6 +5,28 @@
 import { apiFetch } from './api';
 
 export async function createSOSTicket(data) {
+  const saveLocalFallback = () => {
+    const generatedId = 'TKT-' + Math.floor(1000 + Math.random() * 9000);
+    const nowIso = new Date().toISOString();
+    const localTicket = {
+      id: generatedId,
+      ticket_number: generatedId,
+      ...data,
+      status: 'submitted',
+      submitted_at: nowIso,
+      created_at: nowIso,
+      is_simulation: Boolean(data.is_simulation),
+    };
+    try {
+      const tickets = JSON.parse(localStorage.getItem('sigab_local_sos_tickets') || '[]');
+      tickets.unshift(localTicket);
+      localStorage.setItem('sigab_local_sos_tickets', JSON.stringify(tickets));
+    } catch {
+      // abaikan
+    }
+    return localTicket;
+  };
+
   try {
     return await apiFetch('/sos', {
       method: 'POST',
@@ -19,28 +41,20 @@ export async function createSOSTicket(data) {
       err.message?.includes('Failed to fetch') ||
       err.name === 'AbortError';
 
-    if (isNetworkOrTimeout) {
-      console.warn('Backend server offline saat kirim SOS, menyimpan tiket lokal.');
-      const generatedId = 'TKT-' + Math.floor(1000 + Math.random() * 9000);
-      const nowIso = new Date().toISOString();
-      const localTicket = {
-        id: generatedId,
-        ticket_number: generatedId,
-        ...data,
-        status: 'submitted',
-        submitted_at: nowIso,
-        created_at: nowIso,
-        is_simulation: Boolean(data.is_simulation),
-      };
-      try {
-        const tickets = JSON.parse(localStorage.getItem('sigab_local_sos_tickets') || '[]');
-        tickets.unshift(localTicket);
-        localStorage.setItem('sigab_local_sos_tickets', JSON.stringify(tickets));
-      } catch {
-        // abaikan
-      }
-      return localTicket;
+    const currentToken = typeof localStorage !== 'undefined' ? (localStorage.getItem('access_token') || '') : '';
+    const isDemoSession = !currentToken || currentToken.startsWith('demo-') || currentToken.startsWith('sigab-');
+    const isAuthError = err.status === 401 || (err.message || '').toLowerCase().includes('validate credentials');
+    const isNotEmergencyError = (err.status === 400 || err.status === 403) && (err.message || '').toLowerCase().includes('darurat');
+
+    if (isNetworkOrTimeout || (isAuthError && (isDemoSession || data.is_simulation)) || (isNotEmergencyError && data.is_simulation)) {
+      console.warn('Menggunakan penyimpanan tiket SOS lokal (mode simulasi / offline / demo session).');
+      return saveLocalFallback();
     }
+
+    if (isAuthError) {
+      throw new Error('Sesi login Anda telah berakhir. Silakan keluar dan masuk kembali untuk mengirim SOS ke server.');
+    }
+
     throw err;
   }
 }
