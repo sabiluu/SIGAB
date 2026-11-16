@@ -80,10 +80,56 @@ export default function AdminLayout({ children, activeMenu }) {
   const dateStr = currentTime.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })
 
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: '▦', href: '#petugas' },
-    { id: 'radar', label: 'Radar Peta', icon: '◉', href: '#radar' },
-    { id: 'sos', label: 'Tiket SOS', icon: '▣', href: '#sos', badge: sosCount > 0 ? sosCount : null },
-    { id: 'posko', label: 'Manajemen Posko', icon: '♙', href: '#posko' }
+    {
+      id: 'dashboard',
+      label: 'Dashboard',
+      href: '#petugas',
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="3" width="7" height="7" rx="1.5" />
+          <rect x="14" y="3" width="7" height="7" rx="1.5" />
+          <rect x="14" y="14" width="7" height="7" rx="1.5" />
+          <rect x="3" y="14" width="7" height="7" rx="1.5" />
+        </svg>
+      ),
+    },
+    {
+      id: 'radar',
+      label: 'Radar Peta',
+      href: '#radar',
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" />
+          <line x1="9" y1="3" x2="9" y2="18" />
+          <line x1="15" y1="6" x2="15" y2="21" />
+        </svg>
+      ),
+    },
+    {
+      id: 'sos',
+      label: 'Tiket SOS',
+      href: '#sos',
+      badge: sosCount > 0 ? sosCount : null,
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+          <line x1="12" y1="9" x2="12" y2="13" />
+          <line x1="12" y1="17" x2="12.01" y2="17" />
+        </svg>
+      ),
+    },
+    {
+      id: 'posko',
+      label: 'Manajemen Posko',
+      href: '#posko',
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 10.5L12 3l9 7.5" />
+          <path d="M5 9.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5" />
+          <path d="M10 21v-6a2 2 0 0 1 4 0v6" />
+        </svg>
+      ),
+    },
   ]
 
   const handleNavClick = () => {

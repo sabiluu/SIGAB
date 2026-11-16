@@ -21,3 +21,102 @@
     box-sizing: border-box !important;
   }
 }
+
+/* ==========================================================================
+   ADMIN CLEAN UI POLISH (DESKTOP & TABLET)
+   ========================================================================== */
+.summary-mini-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 10px 16px;
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+}
+
+.summary-mini-card strong {
+  display: block;
+  color: #0f172a;
+  font-size: 1.15rem;
+  margin-top: 2px;
+}
+
+.search-box-mini {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  padding: 0;
+  min-width: 220px;
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.search-box-mini:focus-within {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.search-box-mini input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 9px 14px;
+  font-size: 0.84rem;
+  color: #0f172a;
+  font-family: inherit;
+}
+
+.sos-table th {
+  background: #f8fafc;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 13px 12px;
+}
+
+.sos-table tbody tr {
+  transition: background-color 0.12s ease;
+}
+
+.sos-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.sos-table tbody tr.selected {
+  background: #eff6ff;
+}
+
+.sos-table td {
+  padding: 14px 12px;
+  font-size: 0.83rem;
+}
+
+.posko-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.posko-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+}
+
+.stepper button {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  font-weight: 700;
+  transition: background 0.15s ease;
+}
+
+.stepper button:hover {
+  background: #f1f5f9;
+}
+
+.kpi-card {
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 16px;
+}

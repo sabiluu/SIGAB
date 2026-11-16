@@ -185,7 +185,6 @@ export default function SOSManager() {
                   placeholder="⌕ Cari tiket, desa, alamat..." 
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
                 />
               </div>
             </div>

@@ -1279,17 +1279,46 @@ function AdminHome() {
         </div>
         <nav>
           <a className="active" href="#petugas" onClick={() => { if (typeof window !== 'undefined' && window.innerWidth <= 1024) setSidebarOpen(false) }}>
-            <i>▦</i> <span>Dashboard</span>
+            <i>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                <rect x="14" y="14" width="7" height="7" rx="1.5" />
+                <rect x="3" y="14" width="7" height="7" rx="1.5" />
+              </svg>
+            </i>
+            <span>Dashboard</span>
           </a>
           <a href="#radar" onClick={() => { if (typeof window !== 'undefined' && window.innerWidth <= 1024) setSidebarOpen(false) }}>
-            <i>◉</i> <span>Radar Peta</span>
+            <i>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" />
+                <line x1="9" y1="3" x2="9" y2="18" />
+                <line x1="15" y1="6" x2="15" y2="21" />
+              </svg>
+            </i>
+            <span>Radar Peta</span>
           </a>
           <a href="#sos" onClick={() => { if (typeof window !== 'undefined' && window.innerWidth <= 1024) setSidebarOpen(false) }}>
-            <i>▣</i> <span>Tiket SOS</span>
+            <i>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+            </i>
+            <span>Tiket SOS</span>
             {activeTickets.length > 0 && <b>{activeTickets.length}</b>}
           </a>
           <a href="#posko" onClick={() => { if (typeof window !== 'undefined' && window.innerWidth <= 1024) setSidebarOpen(false) }}>
-            <i>♙</i> <span>Manajemen Posko</span>
+            <i>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 10.5L12 3l9 7.5" />
+                <path d="M5 9.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5" />
+                <path d="M10 21v-6a2 2 0 0 1 4 0v6" />
+              </svg>
+            </i>
+            <span>Manajemen Posko</span>
           </a>
         </nav>
         <div className="operator">
@@ -1393,10 +1422,60 @@ function AdminHome() {
             </div>
           )}
           <div className="kpi-grid">
-            <Kpi icon="♜" label="RERATA DEBIT SUNGAI" value={dischargeVal} unit="m³/s" change={isEmergency ? 'Simulasi Banjir Parah' : 'Live GloFAS'} danger={isEmergency} />
-            <Kpi icon="☁" label="RERATA CURAH HUJAN" value={rainVal} unit="mm" change={isEmergency ? 'Simulasi Hujan Ekstrem' : 'Live Open-Meteo'} danger={isEmergency} />
-            <Kpi icon="⚠" label="TIKET SOS AKTIF" value={activeTickets.length} unit="tiket" change={`${activeTickets.length} butuh evakuasi`} danger={activeTickets.length > 0} />
-            <Kpi icon="♧" label="TOTAL KAPASITAS POSKO" value={occupiedShelterCap} unit={`/${totalShelterCap || 1200}`} change={`${shelterOccPct}% terisi`} />
+            <Kpi
+              icon={
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                  <path d="M2 12c2-2 4-2 6 0s4 2 6 0 4-2 6 0" />
+                  <path d="M2 17c2-2 4-2 6 0s4 2 6 0 4-2 6 0" />
+                </svg>
+              }
+              label="RERATA DEBIT SUNGAI"
+              value={dischargeVal}
+              unit="m³/s"
+              change={isEmergency ? 'Simulasi Banjir Parah' : 'Live GloFAS'}
+              danger={isEmergency}
+            />
+            <Kpi
+              icon={
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25" />
+                  <line x1="8" y1="19" x2="8" y2="21" />
+                  <line x1="12" y1="17" x2="12" y2="21" />
+                  <line x1="16" y1="19" x2="16" y2="21" />
+                </svg>
+              }
+              label="RERATA CURAH HUJAN"
+              value={rainVal}
+              unit="mm"
+              change={isEmergency ? 'Simulasi Hujan Ekstrem' : 'Live Open-Meteo'}
+              danger={isEmergency}
+            />
+            <Kpi
+              icon={
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+              }
+              label="TIKET SOS AKTIF"
+              value={activeTickets.length}
+              unit="tiket"
+              change={`${activeTickets.length} butuh evakuasi`}
+              danger={activeTickets.length > 0}
+            />
+            <Kpi
+              icon={
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 10.5L12 3l9 7.5" />
+                  <path d="M5 9.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5" />
+                </svg>
+              }
+              label="TOTAL KAPASITAS POSKO"
+              value={occupiedShelterCap}
+              unit={`/${totalShelterCap || 1200}`}
+              change={`${shelterOccPct}% terisi`}
+            />
           </div>
           <div className="admin-main-grid">
             <article className="risk-map portal-card">
