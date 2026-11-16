@@ -202,6 +202,7 @@ export default function SOSManager() {
             </div>
           </div>
 
+          <div style={{ overflowX: 'auto', width: '100%' }}>
           <table className="sos-table">
             <thead>
               <tr>
@@ -217,12 +218,12 @@ export default function SOSManager() {
                   style={{ cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}
                   title="Klik untuk mengubah urutan skor prioritas (Tertinggi / Terendah)"
                 >
-                  SKOR PRIORITAS {sortBy === 'priority_desc' ? '▼ (Tertinggi)' : sortBy === 'priority_asc' ? '▲ (Terendah)' : '⇅'}
+                  PRIORITAS {sortBy === 'priority_desc' ? '▼' : sortBy === 'priority_asc' ? '▲' : '⇅'}
                 </th>
-                <th>LOKASI / DESA</th>
-                <th>JIWA</th>
-                <th>STATUS</th>
-                <th>AKSI CEPAT</th>
+                <th style={{ minWidth: '180px' }}>LOKASI / DESA</th>
+                <th style={{ whiteSpace: 'nowrap' }}>JIWA</th>
+                <th style={{ whiteSpace: 'nowrap' }}>STATUS</th>
+                <th style={{ whiteSpace: 'nowrap' }}>AKSI CEPAT</th>
               </tr>
             </thead>
             <tbody>
@@ -232,56 +233,76 @@ export default function SOSManager() {
                 <tr><td colSpan="6" style={{textAlign: 'center', padding: '30px'}}>Tidak ada tiket yang sesuai kriteria.</td></tr>
               ) : filteredTickets.map(ticket => {
                 const prio = getPriorityBadge(ticket.priority_score);
+                const fullLocation = ticket.gps_address || (ticket.village_name ? `Desa ${ticket.village_name}` : `Desa ID ${ticket.village_id}`);
                 return (
                 <tr key={ticket.id} className={selectedTicketId === ticket.id ? 'selected' : ''} onClick={() => setSelectedTicketId(ticket.id)} style={{ cursor: 'pointer' }}>
-                  <td className="ticket-id">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                      <strong>{ticket.ticket_number}</strong>
+                  <td className="ticket-id" style={{ whiteSpace: 'nowrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <strong style={{ whiteSpace: 'nowrap' }}>{ticket.ticket_number}</strong>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
                       {ticket.is_simulation ? (
                         <span style={{
                           background: '#8b5cf6',
                           color: '#ffffff',
-                          fontSize: '0.66rem',
+                          fontSize: '0.62rem',
                           fontWeight: 800,
-                          padding: '1px 6px',
+                          padding: '1px 5px',
                           borderRadius: '4px',
                           letterSpacing: '0.04em'
                         }}>
                           SIMULASI
                         </span>
                       ) : null}
+                      <small style={{ color: '#0284c7', fontWeight: 600, margin: 0 }}>◷ {formatWIBTime(ticket.submitted_at)}</small>
                     </div>
-                    <small style={{ color: '#0284c7', fontWeight: 600 }}>◷ {formatWIBTime(ticket.submitted_at)}</small>
                   </td>
-                  <td>
+                  <td style={{ whiteSpace: 'nowrap' }}>
                     <div style={{
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: '6px',
+                      gap: '5px',
                       background: prio.bg,
                       color: prio.color,
                       border: `1px solid ${prio.border}`,
                       padding: '4px 9px',
                       borderRadius: '6px',
                       fontWeight: 800,
-                      fontSize: '0.84rem'
+                      fontSize: '0.78rem',
+                      whiteSpace: 'nowrap'
                     }}>
                       <span>{ticket.priority_score || 0}</span>
-                      <span style={{ fontSize: '0.72rem', fontWeight: 700 }}>• {prio.label}</span>
+                      <span style={{ fontSize: '0.7rem', fontWeight: 700 }}>• {prio.label}</span>
                     </div>
                   </td>
-                  <td>
-                    <strong>{ticket.gps_address || (ticket.village_name ? `Desa ${ticket.village_name}` : `Desa ID ${ticket.village_id}`)}</strong>
-                    <br/><small style={{ color: '#64748b' }}>GPS: {Number(ticket.gps_latitude).toFixed(4)}, {Number(ticket.gps_longitude).toFixed(4)}</small>
+                  <td style={{ minWidth: '180px', maxWidth: '250px' }}>
+                    <strong
+                      title={fullLocation}
+                      style={{
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        lineHeight: '1.35',
+                        fontSize: '0.8rem',
+                        color: '#0f172a'
+                      }}
+                    >
+                      {fullLocation}
+                    </strong>
+                    <small style={{ color: '#64748b', display: 'block', marginTop: '4px', whiteSpace: 'nowrap', fontSize: '0.7rem' }}>
+                      GPS: {Number(ticket.gps_latitude).toFixed(4)}, {Number(ticket.gps_longitude).toFixed(4)}
+                    </small>
                   </td>
-                  <td>
-                    <strong>{ticket.family_count} jiwa</strong>
+                  <td style={{ whiteSpace: 'nowrap' }}>
+                    <strong style={{ whiteSpace: 'nowrap' }}>{ticket.family_count} jiwa</strong>
                     {ticket.has_elderly || ticket.has_toddler || ticket.has_pregnant || ticket.has_disability ? (
-                      <span style={{ display: 'block', fontSize: '0.75rem', color: '#e11d48' }}>⚠️ Rentan</span>
+                      <span style={{ display: 'block', fontSize: '0.72rem', color: '#e11d48', marginTop: '2px', whiteSpace: 'nowrap' }}>⚠️ Rentan</span>
                     ) : null}
                   </td>
-                  <td>
-                    <span className={`badge-baru ${ticket.status}`}>
+                  <td style={{ whiteSpace: 'nowrap' }}>
+                    <span className={`badge-baru ${ticket.status}`} style={{ whiteSpace: 'nowrap', display: 'inline-block' }}>
                       {ticket.status === 'submitted' ? 'Menunggu' :
                        ticket.status === 'verified' ? 'Terverifikasi' :
                        ticket.status === 'dispatched' ? 'Tim Meluncur' :
@@ -289,30 +310,50 @@ export default function SOSManager() {
                        ticket.status === 'completed' ? 'Selesai' : ticket.status}
                     </span>
                   </td>
-                  <td>
-                    <div className="table-actions" style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  <td style={{ whiteSpace: 'nowrap' }}>
+                    <div className="table-actions" style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'nowrap' }}>
                       {ticket.status === 'completed' ? (
-                        <span style={{ color: '#059669', fontWeight: 800, fontSize: '0.82rem' }}>
-                          Selesai
+                        <span style={{ color: '#059669', fontWeight: 800, fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
+                          ✓ Selesai
                         </span>
                       ) : (
                         <>
                           {ticket.status === 'submitted' && (
-                            <button className="dispatch-btn" onClick={(e) => { e.stopPropagation(); handleUpdateStatus(ticket.id, 'verified'); }} title="Verifikasi">
+                            <button
+                              className="dispatch-btn"
+                              style={{ padding: '6px 10px', fontSize: '0.74rem', whiteSpace: 'nowrap', borderRadius: '7px' }}
+                              onClick={(e) => { e.stopPropagation(); handleUpdateStatus(ticket.id, 'verified'); }}
+                              title="Verifikasi"
+                            >
                               Verifikasi
                             </button>
                           )}
                           {(ticket.status === 'submitted' || ticket.status === 'verified') && (
-                            <button className="dispatch-btn" style={{ background: '#f59e0b' }} onClick={(e) => { e.stopPropagation(); handleUpdateStatus(ticket.id, 'dispatched', 'Perahu Karet Tim Alfa'); }} title="Kirim Perahu">
+                            <button
+                              className="dispatch-btn"
+                              style={{ background: '#f59e0b', padding: '6px 10px', fontSize: '0.74rem', whiteSpace: 'nowrap', borderRadius: '7px' }}
+                              onClick={(e) => { e.stopPropagation(); handleUpdateStatus(ticket.id, 'dispatched', 'Perahu Karet Tim Alfa'); }}
+                              title="Kirim Perahu"
+                            >
                               🚤 Kirim Tim
                             </button>
                           )}
                           {ticket.status === 'dispatched' && (
-                            <button className="dispatch-btn" style={{ background: '#3b82f6' }} onClick={(e) => { e.stopPropagation(); handleUpdateStatus(ticket.id, 'arrived'); }} title="Tiba di Lokasi">
+                            <button
+                              className="dispatch-btn"
+                              style={{ background: '#00a4b0', padding: '6px 10px', fontSize: '0.74rem', whiteSpace: 'nowrap', borderRadius: '7px' }}
+                              onClick={(e) => { e.stopPropagation(); handleUpdateStatus(ticket.id, 'arrived'); }}
+                              title="Tiba di Lokasi"
+                            >
                               ⚓ Tiba
                             </button>
                           )}
-                          <button className="icon-btn" onClick={(e) => { e.stopPropagation(); handleUpdateStatus(ticket.id, 'completed'); }} title="Selesai Evakuasi" style={{ background: '#10b981', color: '#fff', border: 'none', padding: '6px 12px', fontWeight: 'bold', borderRadius: '6px' }}>
+                          <button
+                            className="icon-btn"
+                            onClick={(e) => { e.stopPropagation(); handleUpdateStatus(ticket.id, 'completed'); }}
+                            title="Selesai Evakuasi"
+                            style={{ background: '#10b981', color: '#fff', border: 'none', padding: '6px 10px', fontSize: '0.74rem', fontWeight: '700', borderRadius: '7px', whiteSpace: 'nowrap' }}
+                          >
                             Selesai
                           </button>
                         </>
@@ -324,6 +365,7 @@ export default function SOSManager() {
             })}
             </tbody>
           </table>
+          </div>
         </div>
 
         {activeTicket && (
