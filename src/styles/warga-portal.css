@@ -1356,6 +1356,7 @@
 }
 
 .warga-greeting-wrap h1 {
+  font-family: var(--warga-font);
   font-size: 1.85rem;
   font-weight: 800;
   color: var(--warga-text-title);
@@ -1389,23 +1390,61 @@
 .warga-hero-card {
   background: #ffffff;
   border: 1px solid var(--warga-border);
+  border-left: 5px solid var(--warga-teal);
   border-radius: 20px;
-  padding: 32px 36px;
+  padding: 28px 32px;
   display: flex;
   align-items: center;
-  gap: 36px;
+  justify-content: space-between;
+  gap: 28px;
   margin-bottom: 24px;
-  box-shadow: 0 4px 18px rgba(12, 26, 36, 0.04);
+  box-shadow: 0 6px 24px rgba(12, 26, 36, 0.05);
+}
+
+.warga-hero-card.hero-aman {
+  background: linear-gradient(135deg, #ffffff 0%, #f0fdfa 100%);
+  border-color: #ccfbf1;
+  border-left: 5px solid #009aa6;
+}
+
+.warga-hero-card.hero-waspada {
+  background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%);
+  border-color: #fde68a;
+  border-left: 5px solid #f59e0b;
+}
+
+.warga-hero-card.hero-siaga {
+  background: linear-gradient(135deg, #ffffff 0%, #fff7ed 100%);
+  border-color: #fed7aa;
+  border-left: 5px solid #ea580c;
+}
+
+.warga-hero-card.hero-awas {
+  background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%);
+  border-color: #fecaca;
+  border-left: 5px solid #dc2626;
+  box-shadow: 0 8px 26px rgba(220, 38, 38, 0.08);
+}
+
+.warga-hero-main-left {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  flex: 1;
+  min-width: 0;
 }
 
 .warga-donut-gauge-box {
-  width: 130px;
-  height: 130px;
+  width: 140px;
+  height: 140px;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  background: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
 }
 
 .warga-donut-inner-text {
@@ -1418,7 +1457,7 @@
 }
 
 .warga-donut-inner-text strong {
-  font-size: 2.1rem;
+  font-size: 2.15rem;
   font-weight: 800;
   color: var(--warga-text-title);
   line-height: 1;
@@ -1429,16 +1468,95 @@
 }
 
 .warga-donut-inner-text small {
-  font-size: 0.62rem;
+  font-size: 0.65rem;
   color: var(--warga-text-muted);
   font-weight: 600;
-  margin-top: 3px;
+  margin-top: 4px;
 }
 
 .warga-hero-status-col {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  flex: 1;
+  min-width: 0;
+}
+
+.warga-hero-status-col h2 {
+  font-family: var(--warga-font);
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: var(--warga-text-title);
+  margin: 0 0 6px 0;
+  letter-spacing: -0.02em;
+}
+
+.warga-hero-side-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-left: 28px;
+  border-left: 1px solid rgba(15, 23, 42, 0.08);
+  min-width: 245px;
+  max-width: 270px;
+  flex-shrink: 0;
+}
+
+.warga-hero-info-item {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.warga-hero-info-item small {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.warga-hero-info-item strong {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.warga-hero-info-item span {
+  font-size: 0.78rem;
+  color: #475569;
+  font-weight: 600;
+}
+
+@media (max-width: 960px) {
+  .warga-hero-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .warga-hero-side-info {
+    padding-left: 0;
+    padding-top: 20px;
+    border-left: none;
+    border-top: 1px solid rgba(15, 23, 42, 0.08);
+    max-width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .warga-hero-info-item {
+    flex: 1 1 200px;
+  }
+}
+
+@media (max-width: 600px) {
+  .warga-hero-main-left {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 18px;
+  }
 }
 
 .status-badge-pill {

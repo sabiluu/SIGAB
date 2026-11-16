@@ -620,94 +620,110 @@ export default function WargaBeranda({
       </div>
 
       {/* Hero Overview Card with Donut Chart */}
-      <div className="warga-hero-card">
-        <div className="warga-donut-gauge-box">
-          <svg width="125" height="125" viewBox="0 0 120 120" style={{ transform: 'rotate(-90deg)' }}>
-            <circle
-              cx="60"
-              cy="60"
-              r={radius}
-              stroke="#edf2f7"
-              strokeWidth="11"
-              fill="none"
-            />
-            <circle
-              cx="60"
-              cy="60"
-              r={radius}
-              stroke={isAman ? '#009aa6' : isWaspada ? '#f59e0b' : isSiaga ? '#ea580c' : '#ef4444'}
-              strokeWidth="11"
-              fill="none"
-              strokeDasharray={circumference}
-              strokeDashoffset={strokeDashoffset}
-              strokeLinecap="round"
-              style={{ transition: 'stroke-dashoffset 0.8s ease' }}
-            />
-          </svg>
-          <div className="warga-donut-inner-text">
-            <strong>{probVal}<span>%</span></strong>
-            <small>peluang banjir</small>
+      <div className={`warga-hero-card hero-${isAman ? 'aman' : isWaspada ? 'waspada' : isSiaga ? 'siaga' : 'awas'}`}>
+        <div className="warga-hero-main-left">
+          <div className="warga-donut-gauge-box">
+            <svg width="132" height="132" viewBox="0 0 120 120" style={{ transform: 'rotate(-90deg)' }}>
+              <circle
+                cx="60"
+                cy="60"
+                r={radius}
+                stroke="#edf2f7"
+                strokeWidth="11"
+                fill="none"
+              />
+              <circle
+                cx="60"
+                cy="60"
+                r={radius}
+                stroke={isAman ? '#009aa6' : isWaspada ? '#f59e0b' : isSiaga ? '#ea580c' : '#ef4444'}
+                strokeWidth="11"
+                fill="none"
+                strokeDasharray={circumference}
+                strokeDashoffset={strokeDashoffset}
+                strokeLinecap="round"
+                style={{ transition: 'stroke-dashoffset 0.8s ease' }}
+              />
+            </svg>
+            <div className="warga-donut-inner-text">
+              <strong>{probVal}<span>%</span></strong>
+              <small>peluang banjir</small>
+            </div>
+          </div>
+
+          <div className="warga-hero-status-col">
+            <span className={`status-badge-pill status-${isAman ? 'aman' : isWaspada ? 'waspada' : isSiaga ? 'siaga' : 'awas'}`}>
+              {isAman ? 'STATUS AMAN' : isWaspada ? 'STATUS WASPADA' : isSiaga ? 'STATUS SIAGA' : 'STATUS AWAS'}
+            </span>
+            <h2>
+              {isAman ? 'Kondisi masih aman' : isWaspada ? 'Mulai Waspada' : isSiaga ? 'Siaga Banjir' : 'Awas Banjir Parah'}
+            </h2>
+            <p style={{ fontSize: '0.96rem', lineHeight: 1.55, color: '#334155', margin: '0 0 8px 0' }}>
+              {isAman 
+                ? 'Tidak ada tanda banjir dalam waktu dekat. Cukup pantau informasi seperti biasa.' 
+                : 'Terjadi peningkatan debit sungai. Pantau peringatan dan siapkan dokumen penting.'}
+            </p>
+            <span className="warga-hero-meta">{activeVillageDisplay} • Diperbarui {lastUpdatedStr}</span>
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '16px' }}>
+              <button
+                type="button"
+                onClick={() => onNavigate && onNavigate('peta')}
+                style={{
+                  background: '#009aa6',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '11px',
+                  padding: '11px 18px',
+                  fontSize: '0.9rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  boxShadow: '0 4px 12px rgba(0, 154, 166, 0.22)',
+                  fontFamily: 'inherit',
+                }}
+              >
+                <span>🗺️</span>
+                <span>Lihat Peta &amp; Posko Terdekat</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate && onNavigate('sos')}
+                style={{
+                  background: isAwas ? '#dc2626' : '#fef2f2',
+                  color: isAwas ? '#ffffff' : '#dc2626',
+                  border: '1.5px solid #fecaca',
+                  borderRadius: '11px',
+                  padding: '11px 18px',
+                  fontSize: '0.9rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontFamily: 'inherit',
+                }}
+              >
+                <span>🚨</span>
+                <span>Minta Bantuan Darurat (SOS)</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        <div className="warga-hero-status-col">
-          <span className={`status-badge-pill status-${isAman ? 'aman' : isWaspada ? 'waspada' : isSiaga ? 'siaga' : 'awas'}`}>
-            {isAman ? 'STATUS AMAN' : isWaspada ? 'STATUS WASPADA' : isSiaga ? 'STATUS SIAGA' : 'STATUS AWAS'}
-          </span>
-          <h2>
-            {isAman ? 'Kondisi masih aman' : isWaspada ? 'Mulai Waspada' : isSiaga ? 'Siaga Banjir' : 'Awas Banjir Parah'}
-          </h2>
-          <p style={{ fontSize: '0.96rem', lineHeight: 1.55, color: '#334155' }}>
-            {isAman 
-              ? 'Tidak ada tanda banjir dalam waktu dekat. Cukup pantau informasi seperti biasa.' 
-              : 'Terjadi peningkatan debit sungai. Pantau peringatan dan siapkan dokumen penting.'}
-          </p>
-          <span className="warga-hero-meta">{activeVillageDisplay} • Diperbarui {lastUpdatedStr}</span>
-
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '16px' }}>
-            <button
-              type="button"
-              onClick={() => onNavigate && onNavigate('peta')}
-              style={{
-                background: '#009aa6',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '11px',
-                padding: '11px 18px',
-                fontSize: '0.9rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                boxShadow: '0 4px 12px rgba(0, 154, 166, 0.22)',
-                fontFamily: 'inherit',
-              }}
-            >
-              <span>🗺️</span>
-              <span>Lihat Peta &amp; Posko Terdekat</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => onNavigate && onNavigate('sos')}
-              style={{
-                background: isAwas ? '#dc2626' : '#fef2f2',
-                color: isAwas ? '#ffffff' : '#dc2626',
-                border: '1.5px solid #fecaca',
-                borderRadius: '11px',
-                padding: '11px 18px',
-                fontSize: '0.9rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                fontFamily: 'inherit',
-              }}
-            >
-              <span>🚨</span>
-              <span>Minta Bantuan Darurat (SOS)</span>
-            </button>
+        {/* Right Quick Info Panel */}
+        <div className="warga-hero-side-info">
+          <div className="warga-hero-info-item">
+            <small>Posko Evakuasi Terdekat</small>
+            <strong>🏠 {nearest.name}</strong>
+            <span>{nearest.distanceStr} km • Sisa {nearest.avail} tempat</span>
+          </div>
+          <div className="warga-hero-info-item">
+            <small>Hotline Darurat BPBD 24 Jam</small>
+            <strong style={{ color: '#dc2626' }}>📞 112 / (0353) 881112</strong>
+            <span>Siaga Evakuasi Perahu Karet</span>
           </div>
         </div>
       </div>
