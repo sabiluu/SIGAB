@@ -639,10 +639,10 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
             <div className="sos-simulation-card">
               <div className="sos-sim-text">
                 <strong>
-                  <span>🧪</span> Mode Pengujian Skenario Banjir
+                  <span>🧪</span> Mode Simulasi Uji Coba
                 </strong>
                 <p>
-                  Isi otomatis formulir dengan data skenario luapan sungai untuk menguji alur penanganan darurat.
+                  Ingin mencoba alur darurat? Isi otomatis formulir dengan data contoh.
                 </p>
               </div>
               <button
@@ -658,7 +658,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                   }
                 }}
               >
-                <span>⚡ Isi Otomatis Simulasi</span>
+                <span>⚡ Isi Data Contoh</span>
               </button>
             </div>
           )}
@@ -666,9 +666,9 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
           {/* STEP 1: GPS & LOKASI */}
           {step === 1 && (
             <div className="sos-step">
-              <h3 className="sos-section-title">1. Konfirmasi Titik Lokasi Anda</h3>
+              <h3 className="sos-section-title">1. Pastikan Lokasi Anda di Peta</h3>
               <p className="sos-section-desc">
-                Sistem mengunci koordinat GPS perangkat Anda secara real time untuk mencegah pemalsuan lokasi evakuasi. Petugas SAR dan BPBD akan langsung diarahkan ke titik akurat perangkat ini.
+                Titik lokasi Anda terkunci otomatis menggunakan GPS perangkat agar tim penyelamat BPBD dapat langsung menuju ke posisi Anda.
               </p>
               
               {/* Mini Map */}
@@ -870,7 +870,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                         <span>Butuh bantuan mobilitas</span>
                       </div>
                     </div>
-                    <span className="sos-vuln-badge">+5 Poin</span>
+                    <span className="sos-vuln-check">{vulnerable.elderly ? '✓' : ''}</span>
                   </div>
 
                   {/* Balita */}
@@ -885,7 +885,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                         <span>Butuh rompi pelampung anak</span>
                       </div>
                     </div>
-                    <span className="sos-vuln-badge">+5 Poin</span>
+                    <span className="sos-vuln-check">{vulnerable.toddler ? '✓' : ''}</span>
                   </div>
 
                   {/* Ibu Hamil */}
@@ -900,7 +900,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                         <span>Prioritas medis & ambulans</span>
                       </div>
                     </div>
-                    <span className="sos-vuln-badge">+5 Poin</span>
+                    <span className="sos-vuln-check">{vulnerable.pregnant ? '✓' : ''}</span>
                   </div>
 
                   {/* Disabilitas */}
@@ -915,7 +915,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                         <span>Butuh tandu evakuasi</span>
                       </div>
                     </div>
-                    <span className="sos-vuln-badge" style={{ background: '#fee2e2', color: '#b91c1c' }}>+10 Poin</span>
+                    <span className="sos-vuln-check">{vulnerable.disability ? '✓' : ''}</span>
                   </div>
                 </div>
               </div>
@@ -1069,14 +1069,14 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                     </div>
                   </div>
                 ) : !photoPreview ? (
-                  <div>
+                  <div className="sos-photo-actions-grid">
                     <button
                       type="button"
                       onClick={() => startLiveCamera(cameraFacing)}
                       className="btn-open-camera"
                     >
-                      <span style={{ fontSize: '20px' }}>📸</span>
-                      <span>Ambil Foto Langsung dengan Kamera</span>
+                      <span style={{ fontSize: '18px' }}>📸</span>
+                      <span>Buka Kamera Langsung</span>
                     </button>
 
                     <button
@@ -1084,8 +1084,8 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                       onClick={() => galleryInputRef.current?.click()}
                       className="btn-open-gallery"
                     >
-                      <span>📁</span>
-                      <span>Pilih Foto dari Galeri / Dokumen</span>
+                      <span style={{ fontSize: '16px' }}>📁</span>
+                      <span>Pilih dari Galeri</span>
                     </button>
                   </div>
                 ) : (

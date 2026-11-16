@@ -3456,20 +3456,22 @@
 /* Stepper Progress Bar */
 .sos-stepper-wrap {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   margin-bottom: 24px;
+  padding: 0 12px;
   position: relative;
 }
 
 .sos-stepper-wrap::before {
   content: '';
   position: absolute;
-  top: 18px;
-  left: 40px;
-  right: 40px;
-  height: 2px;
+  top: 19px;
+  left: 56px;
+  right: 56px;
+  height: 3px;
   background: #e2e8f0;
+  border-radius: 99px;
   z-index: 1;
 }
 
@@ -3477,102 +3479,111 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   position: relative;
   z-index: 2;
   cursor: default;
+  min-width: 90px;
 }
 
 .sos-step-circle {
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   background: #ffffff;
   border: 2px solid #cbd5e1;
   color: #94a3b8;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
   box-shadow: 0 2px 6px rgba(0,0,0,0.04);
 }
 
 .sos-step-indicator.active .sos-step-circle {
-  background: #dc2626;
-  border-color: #dc2626;
+  background: var(--warga-teal);
+  border-color: var(--warga-teal);
   color: #ffffff;
-  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.2);
+  box-shadow: 0 0 0 4px rgba(0, 154, 166, 0.18);
 }
 
 .sos-step-indicator.completed .sos-step-circle {
   background: #10b981;
   border-color: #10b981;
   color: #ffffff;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
 }
 
 .sos-step-label {
-  font-size: 0.85rem;
-  font-weight: 700;
+  font-size: 0.82rem;
+  font-weight: 600;
   color: var(--warga-text-muted);
+  text-align: center;
 }
 
 .sos-step-indicator.active .sos-step-label {
-  color: var(--warga-navy);
+  color: var(--warga-teal-dark);
   font-weight: 800;
 }
 
-/* Simulation Test Banner */
+.sos-step-indicator.completed .sos-step-label {
+  color: #059669;
+  font-weight: 700;
+}
+
+/* Simulation Test Banner - Clean & Unobtrusive */
 .sos-simulation-card {
-  background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%);
-  border: 1px solid #fecaca;
-  border-radius: 14px;
-  padding: 16px 20px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 12px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: 14px;
+  margin-bottom: 22px;
   flex-wrap: wrap;
 }
 
 .sos-sim-text strong {
   display: flex;
   align-items: center;
-  gap: 8px;
-  color: #b91c1c;
-  font-size: 0.98rem;
-  font-weight: 800;
+  gap: 7px;
+  color: #334155;
+  font-size: 0.86rem;
+  font-weight: 700;
 }
 
 .sos-sim-text p {
-  margin: 4px 0 0;
-  color: #7f1d1d;
-  font-size: 0.875rem;
-  line-height: 1.5;
+  margin: 2px 0 0;
+  color: #64748b;
+  font-size: 0.78rem;
+  line-height: 1.4;
 }
 
 .btn-fill-sim {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 9px 18px;
+  padding: 8px 14px;
   border-radius: 8px;
-  background: #dc2626;
-  color: #ffffff;
-  border: none;
-  font-size: 0.86rem;
+  background: #ffffff;
+  color: #0f766e;
+  border: 1px solid #99f6e4;
+  font-size: 0.8rem;
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25);
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
   white-space: nowrap;
 }
 
 .btn-fill-sim:hover {
-  background: #b91c1c;
+  background: #f0fdfa;
+  border-color: #0d9488;
   transform: translateY(-1px);
 }
 
@@ -3900,50 +3911,84 @@
   white-space: nowrap;
 }
 
+.sos-vuln-check {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid #cbd5e1;
+  background: #ffffff;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.sos-vulnerable-card.selected .sos-vuln-check {
+  background: var(--warga-teal);
+  border-color: var(--warga-teal);
+  box-shadow: 0 2px 6px rgba(0, 154, 166, 0.25);
+}
+
 /* Photo Upload Box */
 .sos-photo-box {
   background: #f8fafc;
-  border: 1px solid var(--warga-border);
-  border-radius: 12px;
+  border: 1.5px dashed #cbd5e1;
+  border-radius: 14px;
   padding: 18px;
   margin-bottom: 24px;
 }
 
+.sos-photo-actions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 580px) {
+  .sos-photo-actions-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .btn-open-camera {
   width: 100%;
-  padding: 14px 18px;
+  padding: 12px 16px;
   border-radius: 10px;
   background: linear-gradient(135deg, var(--warga-teal) 0%, var(--warga-teal-dark) 100%);
   color: #ffffff;
   border: none;
   font-family: inherit;
   font-weight: 700;
-  font-size: 0.88rem;
+  font-size: 0.84rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0, 154, 166, 0.25);
-  margin-bottom: 10px;
+  box-shadow: 0 3px 10px rgba(0, 154, 166, 0.22);
+  margin-bottom: 0;
 }
 
 .btn-open-camera:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(0, 154, 166, 0.35);
+  box-shadow: 0 5px 14px rgba(0, 154, 166, 0.32);
 }
 
 .btn-open-gallery {
   width: 100%;
-  padding: 10px 14px;
+  padding: 12px 16px;
   border-radius: 10px;
   background: #ffffff;
   color: var(--warga-navy);
   border: 1.5px solid var(--warga-border);
   font-family: inherit;
   font-weight: 700;
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   display: flex;
   align-items: center;
   justify-content: center;
