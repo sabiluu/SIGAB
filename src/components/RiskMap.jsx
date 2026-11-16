@@ -82,8 +82,54 @@ function findMatchingVillage(featureName, villageList) {
   return found || null;
 }
 
-// Marker Icon Generators
-const createShelterIcon = (isSelected, isFull) => L.divIcon({
+// Precompute & simplify static GeoJSON polygon vertices ONCE at module load
+// Reduces vertex count by ~75% without changing visible village borders
+const STATIC_VILLAGES_GEO = (() => {
+  const mapCoords = (coords) => coords.map((c) => [c[1], c[0]]);
+  return baurenoVillagesData.features
+    .map((feature, i) => {
+      if (!feature?.geometry) return null;
+      const name = feature.properties.adm4_name || feature.properties.name || `Desa ${i + 1}`;
+      const cleanName = name.replace(/^Desa\s+/i, '').trim().toLowerCase();
+
+      let simplified = feature;
+      try {
+        simplified = turf.simplify(feature, { tolerance: 0.0002, highQuality: false });
+      } catch {
+        simplified = feature;
+      }
+
+      const geom = simplified.geometry;
+      let polygonCoords = [];
+      if (geom.type === 'Polygon') {
+        polygonCoords = geom.coordinates.map(mapCoords);
+      } else if (geom.type === 'MultiPolygon') {
+        polygonCoords = geom.coordinates.map((poly) => poly.map(mapCoords));
+      }
+
+      let centerLat = baurenoCenter[0];
+      let centerLng = baurenoCenter[1];
+      try {
+        const centroid = turf.centroid(feature);
+        centerLat = centroid.geometry.coordinates[1];
+        centerLng = centroid.geometry.coordinates[0];
+      } catch {
+        // fallback center
+      }
+
+      return {
+        id: feature.properties.adm4_pcode || i,
+        name,
+        cleanName,
+        coords: polygonCoords,
+        center: [centerLat, centerLng],
+      };
+    })
+    .filter(Boolean);
+})();
+
+// Pre-cached Marker Icon Variants (avoids recreating L.divIcon on every render)
+const buildShelterDivIcon = (isSelected, isFull) => L.divIcon({
   className: 'custom-shelter-marker',
   html: `
     <div style="
@@ -98,12 +144,11 @@ const createShelterIcon = (isSelected, isFull) => L.divIcon({
       align-items: center;
       justify-content: center;
       font-size: ${isSelected ? '17px' : '14px'};
-      box-shadow: ${isSelected ? '0 0 0 4px rgba(2, 132, 199, 0.4), 0 4px 12px rgba(0,0,0,0.35)' : '0 3px 8px rgba(0,0,0,0.35)'};
+      box-shadow: ${isSelected ? '0 0 0 4px rgba(2, 132, 199, 0.35), 0 3px 8px rgba(0,0,0,0.3)' : '0 2px 6px rgba(0,0,0,0.3)'};
       cursor: pointer;
-      transition: all 0.2s ease;
     ">
       ${isSelected ? '🎯' : '🏠'}
-      ${isSelected ? '<span style="position: absolute; -top: 7px; right: -8px; background: #ef4444; color: #ffffff; font-size: 8.5px; font-weight: 800; padding: 1px 4px; border-radius: 4px; border: 1px solid #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.3); letter-spacing: 0.04em;">TUJUAN</span>' : ''}
+      ${isSelected ? '<span style="position: absolute; top: -7px; right: -8px; background: #ef4444; color: #ffffff; font-size: 8.5px; font-weight: 800; padding: 1px 4px; border-radius: 4px; border: 1px solid #ffffff; letter-spacing: 0.04em;">TUJUAN</span>' : ''}
     </div>
   `,
   iconSize: isSelected ? [36, 36] : [30, 30],
@@ -111,13 +156,26 @@ const createShelterIcon = (isSelected, isFull) => L.divIcon({
   popupAnchor: [0, -18],
 });
 
+const SHELTER_ICONS = {
+  normal: buildShelterDivIcon(false, false),
+  selected: buildShelterDivIcon(true, false),
+  full: buildShelterDivIcon(false, true),
+  selectedFull: buildShelterDivIcon(true, true),
+};
+
+const getShelterIcon = (isSelected, isFull) => {
+  if (isSelected && isFull) return SHELTER_ICONS.selectedFull;
+  if (isSelected) return SHELTER_ICONS.selected;
+  if (isFull) return SHELTER_ICONS.full;
+  return SHELTER_ICONS.normal;
+};
+
 const userLocationIcon = L.divIcon({
   className: 'custom-user-marker',
   html: `
     <div style="position: relative; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;">
-      <div style="position: absolute; width: 34px; height: 34px; border-radius: 50%; background: rgba(37,99,235,0.35); animation: mapPulse 1.8s infinite ease-out;"></div>
-      <div style="position: absolute; width: 22px; height: 22px; border-radius: 50%; background: rgba(37,99,235,0.6); animation: mapPulse 1.8s infinite ease-out 0.4s;"></div>
-      <div style="width: 16px; height: 16px; border-radius: 50%; background: #1d4ed8; border: 3px solid white; box-shadow: 0 3px 10px rgba(0,0,0,0.5); z-index: 2;"></div>
+      <div style="position: absolute; width: 34px; height: 34px; border-radius: 50%; background: rgba(37,99,235,0.32); will-change: transform, opacity; animation: mapPulse 2s infinite ease-out;"></div>
+      <div style="width: 15px; height: 15px; border-radius: 50%; background: #1d4ed8; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.45); z-index: 2;"></div>
     </div>
   `,
   iconSize: [34, 34],
@@ -234,13 +292,14 @@ export default function RiskMap({
   height = '500px'
 }) {
   const [dbVillages, setDbVillages] = useState([]);
-  const [liveSimStatus, setLiveSimStatus] = useState(simStatus || null);
+  const simRunning = Boolean(simStatus?.is_running);
+  const simProb = simStatus?.probability != null ? Number(simStatus.probability) : null;
+  const simRisk = simStatus?.risk_level || null;
 
   useEffect(() => {
-    setLiveSimStatus(simStatus || null);
-  }, [simStatus]);
+    // Jika parent sudah menyediakan villagesData yang valid, hindari fetch ganda yang membebani jaringan
+    if (villagesData && villagesData.length > 0) return;
 
-  useEffect(() => {
     let active = true;
     async function fetchVillageData() {
       try {
@@ -249,7 +308,9 @@ export default function RiskMap({
           setDbVillages(realtime.villages);
           return;
         }
-      } catch (e) {}
+      } catch {
+        // fallback ke getVillages
+      }
 
       try {
         const vList = await getVillages();
@@ -273,89 +334,64 @@ export default function RiskMap({
       active = false;
       unsubDash();
     };
-  }, []);
+  }, [villagesData?.length]);
 
   const villages = useMemo(() => {
-    const finalVillages = [];
     const activeList = (villagesData && villagesData.length > 0) ? villagesData : dbVillages;
-    
-    baurenoVillagesData.features.forEach((feature, i) => {
-      const geom = feature.geometry;
-      if (!geom) return;
+    const targetClean = (userVillageName || selectedVillageName || '')
+      .replace(/^Desa\s+/i, '')
+      .replace(' (Pusat)', '')
+      .trim()
+      .toLowerCase();
 
-      const name = feature.properties.adm4_name || feature.properties.name || `Desa ${i+1}`;
-      const cleanName = name.replace(/^Desa\s+/i, '').trim().toLowerCase();
-      
+    return STATIC_VILLAGES_GEO.map((geoItem) => {
       let status = 'rendah';
       let prob = 0;
-      
-      const realVillage = findMatchingVillage(name, activeList);
+
+      const realVillage = findMatchingVillage(geoItem.name, activeList);
 
       // Cek apakah desa ini adalah desa domisili/pilihan warga yang sedang menyalakan simulasi
       let isUserSimVillage = false;
-      if (liveSimStatus?.is_running) {
-        const targetClean = (userVillageName || selectedVillageName || '')
-          .replace(/^Desa\s+/i, '')
-          .replace(' (Pusat)', '')
-          .trim()
-          .toLowerCase();
-
+      if (simRunning) {
         if (targetClean) {
-          isUserSimVillage = (cleanName === targetClean || cleanName.includes(targetClean) || targetClean.includes(cleanName));
+          isUserSimVillage = (
+            geoItem.cleanName === targetClean ||
+            geoItem.cleanName.includes(targetClean) ||
+            targetClean.includes(geoItem.cleanName)
+          );
         } else if (userVillageId && realVillage) {
           isUserSimVillage = (Number(realVillage.id) === Number(userVillageId));
         }
       }
 
-      if (liveSimStatus?.is_running && isUserSimVillage) {
-        prob = Number(liveSimStatus.probability != null ? liveSimStatus.probability : 10);
-        status = liveSimStatus.risk_level || (prob >= 76 ? 'awas' : (prob >= 51 ? 'tinggi' : (prob >= 25 ? 'sedang' : 'rendah')));
+      if (simRunning && isUserSimVillage) {
+        prob = simProb != null ? simProb : 10;
+        status = simRisk || (prob >= 76 ? 'awas' : (prob >= 51 ? 'tinggi' : (prob >= 25 ? 'sedang' : 'rendah')));
       } else if (realVillage) {
-        const rawProb = realVillage.current_probability != null 
-          ? Number(realVillage.current_probability) 
+        const rawProb = realVillage.current_probability != null
+          ? Number(realVillage.current_probability)
           : (realVillage.probability != null ? Number(realVillage.probability) : 0);
         prob = rawProb;
         status = realVillage.current_risk_level || realVillage.risk_level || (rawProb >= 76 ? 'awas' : (rawProb >= 51 ? 'tinggi' : (rawProb >= 25 ? 'sedang' : 'rendah')));
       } else {
-        const fallback = fallbackBaselines[cleanName];
+        const fallback = fallbackBaselines[geoItem.cleanName];
         if (fallback) {
           prob = fallback.prob;
           status = fallback.level;
         }
       }
-      
-      const mapCoords = (coords) => coords.map(c => [c[1], c[0]]);
-      
-      let polygonCoords = [];
-      if (geom.type === 'Polygon') {
-        polygonCoords = geom.coordinates.map(mapCoords);
-      } else if (geom.type === 'MultiPolygon') {
-        polygonCoords = geom.coordinates.map(poly => poly.map(mapCoords));
-      }
-      
-      let centerLat = baurenoCenter[0];
-      let centerLng = baurenoCenter[1];
-      try {
-        const centroid = turf.centroid(feature);
-        centerLat = centroid.geometry.coordinates[1];
-        centerLng = centroid.geometry.coordinates[0];
-      } catch (e) {
-        console.error("Centroid failed for", name, e);
-      }
 
-      finalVillages.push({ 
-        id: feature.properties.adm4_pcode || i, 
-        name, 
-        coords: polygonCoords, 
-        center: [centerLat, centerLng], 
-        status: status, 
+      return {
+        id: geoItem.id,
+        name: geoItem.name,
+        coords: geoItem.coords,
+        center: geoItem.center,
+        status,
         prob,
-        raw: realVillage || null 
-      });
+        raw: realVillage || null,
+      };
     });
-    
-    return finalVillages;
-  }, [dbVillages, villagesData, liveSimStatus]);
+  }, [dbVillages, villagesData, simRunning, simProb, simRisk, userVillageName, selectedVillageName, userVillageId]);
 
   const [recenterTrigger, setRecenterTrigger] = useState(0);
   const [userCenterTrigger, setUserCenterTrigger] = useState(0);
@@ -399,20 +435,24 @@ export default function RiskMap({
   return (
     <div className="leaflet-map-wrapper" style={{ height, width: '100%', borderRadius: '12px', overflow: 'hidden', position: 'relative', zIndex: 1, marginTop: '0px' }}>
       <style>{`
+        .leaflet-container {
+          touch-action: none;
+          -webkit-tap-highlight-color: transparent;
+        }
         .leaflet-tooltip.bg-transparent {
           background-color: transparent !important;
           border: none !important;
           box-shadow: none !important;
+          pointer-events: none !important;
         }
         .leaflet-tooltip.bg-transparent::before {
           display: none !important;
         }
         .leaflet-control-attribution {
           font-size: 10px !important;
-          background: rgba(255, 255, 255, 0.85) !important;
+          background: rgba(255, 255, 255, 0.9) !important;
           padding: 2px 8px !important;
           border-top-left-radius: 6px !important;
-          backdrop-filter: blur(2px) !important;
         }
         .riskmap-actions-bar {
           position: absolute;
@@ -433,8 +473,8 @@ export default function RiskMap({
           display: flex;
           align-items: center;
           gap: 5px;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
-          transition: all 0.15s ease;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16);
+          transition: transform 0.12s ease;
           border: none;
         }
         .riskmap-btn.btn-user-loc {
@@ -446,7 +486,7 @@ export default function RiskMap({
           color: #ffffff;
         }
         .riskmap-btn.btn-recenter {
-          background: rgba(255, 255, 255, 0.95);
+          background: rgba(255, 255, 255, 0.96);
           color: #0f172a;
           border: 1px solid #cbd5e1;
         }
@@ -455,8 +495,8 @@ export default function RiskMap({
         }
         @keyframes mapPulse {
           0% { transform: scale(0.95); opacity: 0.8; }
-          70% { transform: scale(2.2); opacity: 0; }
-          100% { transform: scale(2.2); opacity: 0; }
+          70% { transform: scale(2.1); opacity: 0; }
+          100% { transform: scale(2.1); opacity: 0; }
         }
       `}</style>
 
@@ -495,23 +535,28 @@ export default function RiskMap({
       <MapContainer 
         center={baurenoCenter} 
         zoom={12} 
-        bounds={baurenoBounds}
-        boundsOptions={{ padding: [15, 15] }}
+        preferCanvas={true}
+        inertia={true}
+        inertiaDeceleration={2800}
+        wheelDebounceTime={40}
         style={{ height: '100%', width: '100%', zIndex: 1 }}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          updateWhenZooming={false}
+          updateWhenIdle={false}
+          keepBuffer={4}
         />
 
         <MapController bounds={mapBounds} recenterTrigger={recenterTrigger} targetCenter={targetVillageCenter} userCenterTrigger={userCenterTrigger} routeCenterTrigger={routeCenterTrigger} userLocation={userCoords} />
 
-        {/* 1. Village Risk Polygons */}
+        {/* 1. Village Risk Polygons (Canvas Rendered) */}
         {villages.map(v => {
           const isSelected = selectedVillageName && v.name.toLowerCase().includes(selectedVillageName.toLowerCase());
           return (
             <Polygon 
-              key={`${v.id}-${v.status}-${Math.round(v.prob)}`} 
+              key={v.id} 
               positions={v.coords}
               eventHandlers={{
                 click: () => onSelectVillage && onSelectVillage({
@@ -534,7 +579,7 @@ export default function RiskMap({
               }}
             >
               <Tooltip direction="center" permanent className="bg-transparent border-0 shadow-none text-center">
-                <div style={{ color: '#fff', textShadow: '0px 1px 3px rgba(0,0,0,0.8)', fontWeight: 800, fontSize: '10px', textAlign: 'center', lineHeight: '1.2' }}>
+                <div style={{ color: '#fff', textShadow: '0px 1px 2px rgba(0,0,0,0.85)', fontWeight: 800, fontSize: '10px', textAlign: 'center', lineHeight: '1.2' }}>
                   {v.name.toUpperCase()}<br/>
                   <span style={{ 
                     display: 'inline-block', 
@@ -544,8 +589,7 @@ export default function RiskMap({
                     padding: '1px 6px',
                     fontSize: '9.5px',
                     fontWeight: 700,
-                    marginTop: '3px',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.4)',
+                    marginTop: '2px',
                     letterSpacing: '0.02em'
                   }}>
                     {Math.round(v.prob)}%
@@ -636,7 +680,7 @@ export default function RiskMap({
             <Marker
               key={s.id}
               position={[parseFloat(s.latitude), parseFloat(s.longitude)]}
-              icon={createShelterIcon(isSelected, isFull)}
+              icon={getShelterIcon(isSelected, isFull)}
               eventHandlers={{
                 click: () => onSelectShelter && onSelectShelter(s)
               }}

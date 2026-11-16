@@ -674,10 +674,20 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
               {/* Mini Map */}
               <div style={{ height: '280px', borderRadius: '12px', overflow: 'hidden', marginBottom: '16px', border: '1.5px solid var(--warga-border)', position: 'relative', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
                 {gpsLocation ? (
-                  <MapContainer center={[gpsLocation.lat, gpsLocation.lng]} zoom={16} style={{ height: '100%', width: '100%' }}>
+                  <MapContainer
+                    center={[gpsLocation.lat, gpsLocation.lng]}
+                    zoom={16}
+                    preferCanvas={true}
+                    inertia={true}
+                    inertiaDeceleration={2800}
+                    style={{ height: '100%', width: '100%' }}
+                  >
                     <TileLayer
                       attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                       url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      updateWhenZooming={false}
+                      updateWhenIdle={false}
+                      keepBuffer={4}
                     />
                     <MapPanController center={gpsLocation} />
                     <Marker 
