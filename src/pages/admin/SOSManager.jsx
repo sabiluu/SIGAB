@@ -168,25 +168,37 @@ export default function SOSManager() {
 
       <div className="admin-main-grid">
         <div className="portal-card" style={{ padding: '24px' }}>
-          <div className="table-filters" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '12px', flexWrap: 'wrap' }}>
-            <div className="tab-pills" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-              <button className={filterStatus === 'all' ? 'active' : ''} onClick={() => setFilterStatus('all')}>Semua ({tickets.length})</button>
-              <button className={filterStatus === 'simulation' ? 'active' : ''} onClick={() => setFilterStatus('simulation')}>🧪 Simulasi ({tickets.filter(t => t.is_simulation).length})</button>
-              <button className={filterStatus === 'submitted' ? 'active' : ''} onClick={() => setFilterStatus('submitted')}>Menunggu ({tickets.filter(t => t.status === 'submitted').length})</button>
-              <button className={filterStatus === 'verified' ? 'active' : ''} onClick={() => setFilterStatus('verified')}>Terverifikasi ({tickets.filter(t => t.status === 'verified').length})</button>
-              <button className={filterStatus === 'dispatched' ? 'active' : ''} onClick={() => setFilterStatus('dispatched')}>Meluncur ({tickets.filter(t => t.status === 'dispatched' || t.status === 'arrived').length})</button>
-              <button className={filterStatus === 'completed' ? 'active' : ''} onClick={() => setFilterStatus('completed')}>Selesai ({tickets.filter(t => t.status === 'completed').length})</button>
+          <div className="table-filters" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', gap: '14px', flexWrap: 'wrap' }}>
+            <div className="tab-pills">
+              <button type="button" className={filterStatus === 'all' ? 'active' : ''} onClick={() => setFilterStatus('all')}>Semua ({tickets.length})</button>
+              <button type="button" className={filterStatus === 'simulation' ? 'active' : ''} onClick={() => setFilterStatus('simulation')}>🧪 Simulasi ({tickets.filter(t => t.is_simulation).length})</button>
+              <button type="button" className={filterStatus === 'submitted' ? 'active' : ''} onClick={() => setFilterStatus('submitted')}>Menunggu ({tickets.filter(t => t.status === 'submitted').length})</button>
+              <button type="button" className={filterStatus === 'verified' ? 'active' : ''} onClick={() => setFilterStatus('verified')}>Terverifikasi ({tickets.filter(t => t.status === 'verified').length})</button>
+              <button type="button" className={filterStatus === 'dispatched' ? 'active' : ''} onClick={() => setFilterStatus('dispatched')}>Meluncur ({tickets.filter(t => t.status === 'dispatched' || t.status === 'arrived').length})</button>
+              <button type="button" className={filterStatus === 'completed' ? 'active' : ''} onClick={() => setFilterStatus('completed')}>Selesai ({tickets.filter(t => t.status === 'completed').length})</button>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div className="search-box-mini">
-                <input 
-                  type="text" 
-                  placeholder="⌕ Cari tiket, desa, alamat..." 
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                />
-              </div>
+            <div className="search-box-mini">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, color: '#94a3b8', marginLeft: '12px' }}>
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input 
+                type="text" 
+                placeholder="Cari nomor tiket, desa, alamat..." 
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <button 
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  title="Hapus pencarian"
+                  style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0 10px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  ✕
+                </button>
+              )}
             </div>
           </div>
 
