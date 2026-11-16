@@ -7,6 +7,7 @@ import wsService from '../../services/wsService'
 import useDashboardRealtime from '../../hooks/useDashboardRealtime'
 import useGeolocation, { BAURENO_VILLAGES } from '../../hooks/useGeolocation'
 import usePersonalSimulation from '../../hooks/usePersonalSimulation'
+import useRealtimeNotifications from '../../hooks/useRealtimeNotifications'
 import { playSosAlertTone } from '../../utils/audioAlarm'
 import { PERSONAL_SIM_PHASES } from '../../utils/personalSimulation'
 import RiskMap from '../../components/RiskMap'
@@ -109,8 +110,103 @@ export default function MobileWargaView() {
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [showRejectModal, setShowRejectModal] = useState(false)
+  const [showNotifSheet, setShowNotifSheet] = useState(false)
   const [realEmergencyActive, setRealEmergencyActive] = useState(false)
   const [directShelters, setDirectShelters] = useState([])
+
+  // Real-time notifications (synced with desktop & localStorage)
+  const {
+    notifications: liveNotifs,
+    markAsRead: wsMarkAsRead,
+    markAllAsRead: wsMarkAllAsRead,
+    clearAll: wsClearAll,
+  } = useRealtimeNotifications('alerts', {
+    villageId: selectedVillageId || userProfile?.village_id,
+    userId: userProfile?.id,
+    role: 'user',
+  })
+
+  const [localNotifs, setLocalNotifs] = useState(() => {
+    try {
+      const saved = localStorage.getItem('sigab_warga_notifs')
+      if (saved) return JSON.parse(saved)
+    } catch {
+      // abaikan
+    }
+    return [
+      {
+        id: 'def-1',
+        type: 'flood_alert',
+        title: 'Pemantauan Debit Bengawan Solo',
+        message: 'Debit air sungai terpantau aman. Tetap pantau kabar terbaru dari petugas BPBD.',
+        timestamp: new Date().toISOString(),
+        read: false,
+      },
+      {
+        id: 'def-2',
+        type: 'info',
+        title: 'Posko Siaga Baureno Siap 24 Jam',
+        message: 'Posko Balai Kecamatan Baureno dan Posko Desa siap melayani warga kapan saja.',
+        timestamp: new Date(Date.now() - 3600000).toISOString(),
+        read: true,
+      },
+    ]
+  })
+
+  useEffect(() => {
+    if (liveNotifs && liveNotifs.length > 0) {
+      setLocalNotifs((prev) => {
+        const merged = [...liveNotifs]
+        prev.forEach((p) => {
+          if (!merged.some((m) => m.id === p.id)) {
+            merged.push(p)
+          }
+        })
+        return merged
+      })
+    }
+  }, [liveNotifs])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('sigab_warga_notifs', JSON.stringify(localNotifs))
+    } catch {
+      // abaikan
+    }
+  }, [localNotifs])
+
+  const handleMarkAsRead = (id) => {
+    setLocalNotifs((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
+    wsMarkAsRead(id)
+  }
+
+  const handleMarkAllAsRead = () => {
+    setLocalNotifs((prev) => prev.map((n) => ({ ...n, read: true })))
+    wsMarkAllAsRead()
+  }
+
+  const handleClearAllNotifs = () => {
+    setLocalNotifs([])
+    wsClearAll()
+  }
+
+  const activeUnread = localNotifs.filter((n) => !n.read).length
+
+  const formatNotifTime = (iso) => {
+    if (!iso) return 'Baru saja'
+    try {
+      const d = new Date(iso)
+      if (isNaN(d.getTime())) return 'Baru saja'
+      const diffMins = Math.floor((Date.now() - d.getTime()) / 60000)
+      if (diffMins < 1) return 'Baru saja'
+      if (diffMins < 60) return `${diffMins} menit lalu`
+      const diffHours = Math.floor(diffMins / 60)
+      if (diffHours < 24) return `${diffHours} jam lalu`
+      return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }).replace(':', '.') + ' WIB'
+    } catch {
+      return 'Baru saja'
+    }
+  }
 
   // Real-time API data & GPS hook
   const { data: realtimeData } = useDashboardRealtime()
@@ -310,6 +406,34 @@ export default function MobileWargaView() {
     )
   }, [personalSim.isRunning, personalSim.isEmergency, simStatus, realEmergencyActive, activeVillage])
 
+  // Catat otomatis notifikasi peringatan ketika simulasi memasuki fase waspada/siaga/awas
+  useEffect(() => {
+    if (!personalSim.isRunning) return
+    const p = simStatus?.current_phase
+    const simInfo = PERSONAL_SIM_PHASES.find((item) => item.phase === p)
+    if (!simInfo) return
+    if (simInfo.risk === 'waspada' || simInfo.risk === 'siaga' || simInfo.risk === 'awas') {
+      const notifId = `sim-phase-${p}-${activeVillage.id}`
+      setLocalNotifs((prev) => {
+        if (prev.some((n) => n.id === notifId)) return prev
+        return [
+          {
+            id: notifId,
+            type: simInfo.risk === 'awas' ? 'sos_alert' : 'flood_alert',
+            title: `[Simulasi] Status ${simInfo.name.toUpperCase()} - Desa ${activeVillage.cleanName}`,
+            message:
+              simInfo.risk === 'awas'
+                ? 'Air sungai mencapai level bahaya! Segera evakuasi ke posko terdekat atau kirim sinyal SOS.'
+                : `Latihan banjir memasuki tahap ${simInfo.name}. Tinggi air dan curah hujan terpantau meningkat.`,
+            timestamp: new Date().toISOString(),
+            read: false,
+          },
+          ...prev,
+        ]
+      })
+    }
+  }, [personalSim.isRunning, simStatus?.current_phase, activeVillage.id, activeVillage.cleanName])
+
   // Handler klik tombol SOS: jika belum darurat & simulasi off, tampilkan modal tolak otomatis
   const handleSOSClick = () => {
     if (!isEmergency) {
@@ -468,14 +592,43 @@ export default function MobileWargaView() {
         </div>
 
         <div className="m-header-actions">
-          {/* Village Switcher Button */}
+          {/* Notification Bell Button */}
           <button
             type="button"
             className="m-icon-btn"
-            onClick={() => setShowVillageSheet(true)}
-            title="Pilih Desa"
+            onClick={() => setShowNotifSheet(true)}
+            title="Kabar & Notifikasi"
+            aria-label="Kabar & Notifikasi"
+            style={{ position: 'relative', width: '40px', height: '40px', background: activeUnread > 0 ? '#f0fdfa' : '#f1f6f8', color: activeUnread > 0 ? '#00828f' : '#0c1a24' }}
           >
-            📍
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+            {activeUnread > 0 && (
+              <span
+                style={{
+                  position: 'absolute',
+                  top: '-3px',
+                  right: '-3px',
+                  minWidth: '18px',
+                  height: '18px',
+                  padding: '0 4px',
+                  borderRadius: '999px',
+                  background: '#dc2626',
+                  color: '#ffffff',
+                  fontSize: '0.65rem',
+                  fontWeight: 800,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '2px solid #ffffff',
+                  boxShadow: '0 2px 4px rgba(220,38,38,0.35)',
+                }}
+              >
+                {activeUnread > 9 ? '9+' : activeUnread}
+              </span>
+            )}
           </button>
 
           {/* Profile Modal Button */}
@@ -485,8 +638,12 @@ export default function MobileWargaView() {
             onClick={() => setShowProfileModal(true)}
             title="Profil Saya"
             aria-label="Profil Saya"
+            style={{ width: '40px', height: '40px' }}
           >
-            👤
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
           </button>
 
           {/* Logout Button */}
@@ -496,9 +653,9 @@ export default function MobileWargaView() {
             onClick={() => setShowLogoutModal(true)}
             title="Keluar Akun"
             aria-label="Keluar Akun"
-            style={{ color: '#dc2626' }}
+            style={{ color: '#dc2626', width: '40px', height: '40px', background: '#fef2f2' }}
           >
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
               <polyline points="16 17 21 12 16 7" />
               <line x1="21" y1="12" x2="9" y2="12" />
@@ -560,9 +717,9 @@ export default function MobileWargaView() {
       )}
 
       {/* MAIN CONTENT AREA */}
-      <main style={{ padding: '14px 14px 20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      <main style={{ padding: '16px 14px 28px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {/* ==============================================================
-            TAB 1: BERANDA WARGA
+            TAB 1: BERANDA WARGA (BERSIH, JELAS & RAMAH LANSIA)
            ============================================================== */}
         {activeTab === 'beranda' && (
           <>
@@ -575,76 +732,108 @@ export default function MobileWargaView() {
                   : 'linear-gradient(135deg, #0c1a24 0%, #132c3d 100%)',
                 color: '#ffffff',
                 border: 'none',
-                padding: '18px',
+                padding: '20px 18px',
+                borderRadius: '18px',
+                boxShadow: '0 8px 20px rgba(12, 26, 36, 0.14)',
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <span style={{ fontSize: '0.66rem', fontWeight: 800, letterSpacing: '0.06em', color: '#94a3b8' }}>
-                  STATUS WILAYAH ANDA
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <span style={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.05em', color: '#cbd5e1' }}>
+                  WILAYAH ANDA SAAT INI
                 </span>
-                <span className={`m-badge ${activeVillage.risk_level}`}>
+                <span className={`m-badge ${activeVillage.risk_level}`} style={{ fontSize: '0.74rem', padding: '4px 12px' }}>
                   {riskLabelMap[activeVillage.risk_level] || 'AMAN'}
                 </span>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', marginBottom: '12px' }}>
                 <div>
-                  <h2 style={{ fontSize: '1.35rem', fontWeight: 800, margin: '0 0 4px', color: '#ffffff' }}>
+                  <h2 style={{ fontSize: '1.45rem', fontWeight: 800, margin: '0 0 8px', color: '#ffffff', lineHeight: 1.15 }}>
                     Desa {activeVillage.cleanName}
                   </h2>
-                  <div style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>
-                    Kecamatan Baureno
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowVillageSheet(true)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      background: 'rgba(255, 255, 255, 0.14)',
+                      color: '#ffffff',
+                      border: '1px solid rgba(255, 255, 255, 0.25)',
+                      borderRadius: '999px',
+                      padding: '6px 12px',
+                      fontSize: '0.76rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <span>📍</span>
+                    <span>Ganti Desa</span>
+                    <span style={{ opacity: 0.8 }}>▾</span>
+                  </button>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '1.85rem', fontWeight: 900, lineHeight: 1 }}>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div style={{ fontSize: '2.1rem', fontWeight: 900, lineHeight: 1 }}>
                     {Math.round(activeVillage.probability)}%
                   </div>
-                  <div style={{ fontSize: '0.66rem', color: '#cbd5e1', marginTop: '3px' }}>
-                    Indeks Risiko
+                  <div style={{ fontSize: '0.72rem', color: '#cbd5e1', marginTop: '4px' }}>
+                    Risiko Banjir
                   </div>
                 </div>
               </div>
 
-              {/* 3 Compact Telemetry Boxes */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.12)' }}>
-                <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: '10px', padding: '8px 10px' }}>
-                  <div style={{ fontSize: '0.62rem', color: '#cbd5e1' }}>Debit Sungai</div>
-                  <div style={{ fontSize: '0.86rem', fontWeight: 800, marginTop: '2px' }}>{dischargeVal} m³/s</div>
+              <p style={{ margin: '0 0 14px', fontSize: '0.84rem', color: '#e2e8f0', lineHeight: 1.45 }}>
+                {activeVillage.risk_level === 'awas'
+                  ? '⚠️ Bahaya banjir! Segera menuju posko terdekat atau tekan tombol SOS.'
+                  : activeVillage.risk_level === 'siaga'
+                  ? '🟠 Air cukup tinggi. Siapkan dokumen & barang penting keluarga.'
+                  : activeVillage.risk_level === 'waspada'
+                  ? '🟡 Air mulai naik. Harap tetap waspada dan pantau kabar terbaru.'
+                  : '✅ Keadaan aman terkendali. Belum ada tanda ancaman banjir.'}
+              </p>
+
+              {/* 3 Readable Info Boxes */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.14)' }}>
+                <div style={{ background: 'rgba(255,255,255,0.09)', borderRadius: '12px', padding: '10px 8px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.7rem', color: '#cbd5e1' }}>Debit Air</div>
+                  <div style={{ fontSize: '0.92rem', fontWeight: 800, marginTop: '3px' }}>{dischargeVal} m³/s</div>
                 </div>
-                <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: '10px', padding: '8px 10px' }}>
-                  <div style={{ fontSize: '0.62rem', color: '#cbd5e1' }}>Curah Hujan</div>
-                  <div style={{ fontSize: '0.86rem', fontWeight: 800, marginTop: '2px' }}>{rainVal} mm/j</div>
+                <div style={{ background: 'rgba(255,255,255,0.09)', borderRadius: '12px', padding: '10px 8px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.7rem', color: '#cbd5e1' }}>Hujan</div>
+                  <div style={{ fontSize: '0.92rem', fontWeight: 800, marginTop: '3px' }}>{rainVal} mm/j</div>
                 </div>
-                <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: '10px', padding: '8px 10px' }}>
-                  <div style={{ fontSize: '0.62rem', color: '#cbd5e1' }}>Posko Siap</div>
-                  <div style={{ fontSize: '0.86rem', fontWeight: 800, marginTop: '2px' }}>{shelters.length} Lokasi</div>
+                <div style={{ background: 'rgba(255,255,255,0.09)', borderRadius: '12px', padding: '10px 8px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.7rem', color: '#cbd5e1' }}>Posko Siap</div>
+                  <div style={{ fontSize: '0.92rem', fontWeight: 800, marginTop: '3px' }}>{shelters.length} Lokasi</div>
                 </div>
               </div>
             </section>
 
-            {/* Emergency Action Banner (Recommended Sequence: 1. Cek Rute -> 2. Kirim SOS) */}
+            {/* Quick Action Buttons (Besar & Mudah Ditekan) */}
             <section
               className="m-card"
               style={{
-                background: activeVillage.risk_level === 'awas' ? '#fef2f2' : '#f0fdfa',
-                borderColor: activeVillage.risk_level === 'awas' ? '#fecaca' : '#99f6e4',
+                background: activeVillage.risk_level === 'awas' ? '#fef2f2' : '#ffffff',
+                borderColor: activeVillage.risk_level === 'awas' ? '#fecaca' : '#e2ecee',
+                padding: '18px',
               }}
             >
-              <div style={{ fontSize: '0.72rem', fontWeight: 800, color: activeVillage.risk_level === 'awas' ? '#dc2626' : '#0f766e', marginBottom: '6px' }}>
+              <h3 style={{ margin: '0 0 4px', fontSize: '0.96rem', fontWeight: 800, color: activeVillage.risk_level === 'awas' ? '#dc2626' : '#0c1a24' }}>
                 {activeVillage.risk_level === 'awas'
-                  ? '⚠️ PERINGATAN DARURAT BANJIR (LEVEL AWAS)'
-                  : '🧭 LANGKAH KESIAPSIAGAAN WARGA'}
-              </div>
-              <p style={{ fontSize: '0.78rem', color: '#334155', lineHeight: 1.45, margin: '0 0 12px' }}>
+                  ? '⚠️ Tindakan Darurat Banjir'
+                  : '🧭 Menu Cepat Warga'}
+              </h3>
+              <p style={{ fontSize: '0.82rem', color: '#475569', lineHeight: 1.45, margin: '0 0 14px' }}>
                 {activeVillage.risk_level === 'awas'
-                  ? 'Air sungai meningkat tajam! Cek rute evakuasi jalan raya menuju posko terdekat terlebih dahulu, atau kirim sinyal SOS jika butuh jemputan perahu karet.'
-                  : 'Kenali jalur evakuasi terdekat dari posisi GPS Anda menuju Posko BPBD sebelum kondisi darurat.'}
+                  ? 'Pilih tombol di bawah untuk melihat jalan ke posko atau meminta jemputan petugas BPBD.'
+                  : 'Ketuk tombol di bawah untuk melihat peta posko atau meminta pertolongan darurat.'}
               </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <button
                   type="button"
                   className="m-btn m-btn-teal"
+                  style={{ minHeight: '50px', fontSize: '0.92rem', borderRadius: '13px' }}
                   onClick={() => {
                     setActiveTab('peta')
                     if (!routeData && shelters.length > 0) {
@@ -652,16 +841,15 @@ export default function MobileWargaView() {
                     }
                   }}
                 >
-                  <span>1. Cek Rute Evakuasi Terdekat {routeData ? `(${routeData.distance_km} km)` : ''}</span>
-                  <span>→</span>
+                  <span>🗺️ Lihat Peta &amp; Rute Posko {routeData ? `(${routeData.distance_km} km)` : ''}</span>
                 </button>
                 <button
                   type="button"
                   className="m-btn m-btn-danger"
+                  style={{ minHeight: '50px', fontSize: '0.92rem', borderRadius: '13px' }}
                   onClick={handleSOSClick}
                 >
-                  <span>2. Kirim Sinyal SOS Darurat ke BPBD</span>
-                  <span>🚨</span>
+                  <span>🚨 Minta Bantuan Darurat (SOS)</span>
                 </button>
               </div>
             </section>
@@ -676,33 +864,31 @@ export default function MobileWargaView() {
               const pct = Math.min(100, Math.round((occ / tot) * 100))
 
               return (
-                <section className="m-card">
+                <section className="m-card" style={{ padding: '18px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#009aa6' }}>
-                      🏕️ POSKO REKOMENDASI TERDEKAT
+                    <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#00828f' }}>
+                      🏕️ POSKO PENGUNGSIAN TERDEKAT
                     </span>
-                    <span className="m-badge aman">Buka 24 Jam</span>
+                    <span className="m-badge aman" style={{ fontSize: '0.7rem' }}>Buka 24 Jam</span>
                   </div>
-                  <div style={{ fontSize: '0.96rem', fontWeight: 800, color: '#0c1a24', marginBottom: '4px' }}>
+                  <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0c1a24', marginBottom: '4px' }}>
                     {recommendedShelter.name}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '10px' }}>
-                    {recommendedShelter.address} •{' '}
-                    {routeData ? (
-                      <span>
-                        Jarak <strong>{routeData.distance_km} km</strong> (~{routeData.duration_minutes} mnt)
-                      </span>
-                    ) : (
-                      <span>Ketuk tombol di bawah untuk menghitung jarak</span>
+                  <div style={{ fontSize: '0.82rem', color: '#475569', marginBottom: '12px', lineHeight: 1.4 }}>
+                    {recommendedShelter.address}
+                    {routeData && (
+                      <div style={{ marginTop: '4px', color: '#0f766e', fontWeight: 700 }}>
+                        Jarak: {routeData.distance_km} km (sekitar {routeData.duration_minutes} menit)
+                      </div>
                     )}
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.73rem', marginBottom: '5px' }}>
-                    <span>Terisi: <strong>{occ}</strong> / {tot} jiwa</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '6px' }}>
+                    <span>Terisi: <strong>{occ}</strong> dari {tot} orang</span>
                     <span style={{ color: '#059669', fontWeight: 700 }}>
                       Sisa {tot - occ} tempat
                     </span>
                   </div>
-                  <div style={{ height: '6px', background: '#e2e8f0', borderRadius: '999px', overflow: 'hidden', marginBottom: '12px' }}>
+                  <div style={{ height: '8px', background: '#e2e8f0', borderRadius: '999px', overflow: 'hidden', marginBottom: '14px' }}>
                     <div
                       style={{
                         height: '100%',
@@ -715,18 +901,20 @@ export default function MobileWargaView() {
                     <button
                       type="button"
                       className="m-btn m-btn-outline"
+                      style={{ minHeight: '48px', fontSize: '0.88rem', borderRadius: '12px' }}
                       onClick={() => setActiveTab('peta')}
                     >
-                      Tampilkan Garis Rute di Peta 🗺️
+                      Tampilkan Jalan di Peta 🗺️
                     </button>
                   ) : (
                     <button
                       type="button"
                       className="m-btn m-btn-outline"
+                      style={{ minHeight: '48px', fontSize: '0.88rem', borderRadius: '12px' }}
                       disabled={loadingRoute}
                       onClick={() => handleCalculateRoute(recommendedShelter)}
                     >
-                      {loadingRoute ? '⏳ Menghitung Jarak & Rute...' : 'Lihat Jarak & Rute ke Posko 🗺️'}
+                      {loadingRoute ? '⏳ Sedang Menghitung Jalan...' : 'Lihat Jarak & Jalan ke Posko 🗺️'}
                     </button>
                   )}
                 </section>
@@ -734,26 +922,26 @@ export default function MobileWargaView() {
             })()}
 
             {/* Status Desa Sekitar */}
-            <section className="m-card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <h3 style={{ margin: 0, fontSize: '0.92rem', fontWeight: 800 }}>Status Desa di Kec. Baureno</h3>
+            <section className="m-card" style={{ padding: '18px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <h3 style={{ margin: 0, fontSize: '0.96rem', fontWeight: 800 }}>Kondisi Desa Sekitar</h3>
                 <button
                   type="button"
                   onClick={() => setShowVillageSheet(true)}
-                  style={{ background: 'none', border: 'none', color: '#009aa6', fontSize: '0.74rem', fontWeight: 700, cursor: 'pointer' }}
+                  style={{ background: '#f0fdfa', border: '1px solid #99f6e4', borderRadius: '999px', padding: '5px 12px', color: '#0f766e', fontSize: '0.76rem', fontWeight: 700, cursor: 'pointer' }}
                 >
-                  Pilih Desa ({villages.length}) →
+                  Semua ({villages.length}) →
                 </button>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {villages.slice(0, 6).map((v) => (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
+                {villages.slice(0, 5).map((v) => (
                   <div
                     key={v.id}
                     onClick={() => setSelectedVillageId(v.id)}
                     style={{
-                      padding: '10px 12px',
-                      borderRadius: '11px',
-                      border: Number(v.id) === Number(activeVillage.id) ? '1.5px solid #009aa6' : '1px solid #edf2f7',
+                      padding: '12px 14px',
+                      borderRadius: '12px',
+                      border: Number(v.id) === Number(activeVillage.id) ? '2px solid #009aa6' : '1px solid #e2e8f0',
                       background: Number(v.id) === Number(activeVillage.id) ? '#f0fdfa' : '#ffffff',
                       display: 'flex',
                       justifyContent: 'space-between',
@@ -762,10 +950,10 @@ export default function MobileWargaView() {
                     }}
                   >
                     <div>
-                      <div style={{ fontSize: '0.84rem', fontWeight: 700 }}>Desa {v.cleanName}</div>
-                      <div style={{ fontSize: '0.7rem', color: '#64748b' }}>Probabilitas {Number(v.probability).toFixed(1)}%</div>
+                      <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#0c1a24' }}>Desa {v.cleanName}</div>
+                      <div style={{ fontSize: '0.76rem', color: '#64748b', marginTop: '2px' }}>Risiko {Number(v.probability).toFixed(0)}%</div>
                     </div>
-                    <span className={`m-badge ${v.risk_level}`}>{v.risk_level.toUpperCase()}</span>
+                    <span className={`m-badge ${v.risk_level}`} style={{ fontSize: '0.72rem', padding: '4px 10px' }}>{v.risk_level.toUpperCase()}</span>
                   </div>
                 ))}
               </div>
@@ -1461,15 +1649,184 @@ export default function MobileWargaView() {
         )}
       </main>
 
+      {/* BOTTOM SHEET: NOTIFIKASI & KABAR DARURAT (RAMAH LANSIA) */}
+      {showNotifSheet && (
+        <div className="m-modal-overlay" onClick={() => setShowNotifSheet(false)}>
+          <div
+            className="m-modal-sheet"
+            onClick={(e) => e.stopPropagation()}
+            style={{ padding: '22px 18px 26px', borderRadius: '24px 24px 0 0' }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '1.25rem' }}>🔔</span>
+                <h3 style={{ margin: 0, fontSize: '1.12rem', fontWeight: 800, color: '#0c1a24' }}>
+                  Kabar &amp; Peringatan
+                </h3>
+              </div>
+              <button
+                type="button"
+                className="m-icon-btn"
+                onClick={() => setShowNotifSheet(false)}
+                aria-label="Tutup Notifikasi"
+                style={{ width: '38px', height: '38px', fontSize: '1rem', fontWeight: 800 }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <p style={{ margin: '0 0 14px', fontSize: '0.82rem', color: '#64748b' }}>
+              {activeUnread > 0
+                ? `Ada ${activeUnread} kabar baru yang belum Anda baca.`
+                : 'Semua kabar sudah Anda baca.'}
+            </p>
+
+            {activeUnread > 0 && (
+              <button
+                type="button"
+                onClick={handleMarkAllAsRead}
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  marginBottom: '14px',
+                  borderRadius: '11px',
+                  background: '#e6f6f8',
+                  color: '#00828f',
+                  border: '1px solid #bae6fd',
+                  fontSize: '0.84rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                }}
+              >
+                <span>✓</span>
+                <span>Tandai Semua Sudah Dibaca</span>
+              </button>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '52vh', overflowY: 'auto', paddingBottom: '6px' }}>
+              {localNotifs.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '32px 16px', background: '#f8fafc', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
+                  <div style={{ fontSize: '2.2rem', marginBottom: '8px' }}>🔔</div>
+                  <div style={{ fontSize: '0.94rem', fontWeight: 800, color: '#0c1a24', marginBottom: '4px' }}>
+                    Belum Ada Kabar Baru
+                  </div>
+                  <div style={{ fontSize: '0.82rem', color: '#64748b', lineHeight: 1.45 }}>
+                    Peringatan dini banjir &amp; info resmi dari petugas BPBD akan muncul di sini.
+                  </div>
+                </div>
+              ) : (
+                localNotifs.map((item) => {
+                  const isSos = item.type?.includes('sos')
+                  const isFlood = item.type?.includes('flood')
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => handleMarkAsRead(item.id)}
+                      style={{
+                        padding: '14px',
+                        borderRadius: '14px',
+                        border: !item.read ? '1.5px solid #009aa6' : '1px solid #e2e8f0',
+                        background: !item.read ? '#f0fdfa' : '#ffffff',
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '12px',
+                        cursor: 'pointer',
+                        transition: 'background 0.15s ease',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '11px',
+                          background: isSos ? '#fee2e2' : isFlood ? '#ffedd5' : '#e0f2fe',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '1.2rem',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {isSos ? '🚨' : isFlood ? '🌊' : 'ℹ️'}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                          <span style={{ fontSize: '0.92rem', fontWeight: 800, color: '#0c1a24', lineHeight: 1.25 }}>
+                            {item.title}
+                          </span>
+                          {!item.read && (
+                            <span
+                              style={{
+                                background: '#009aa6',
+                                color: '#ffffff',
+                                fontSize: '0.66rem',
+                                fontWeight: 800,
+                                padding: '2px 7px',
+                                borderRadius: '999px',
+                                flexShrink: 0,
+                              }}
+                            >
+                              BARU
+                            </span>
+                          )}
+                        </div>
+                        <p style={{ margin: '0 0 6px', fontSize: '0.84rem', color: '#334155', lineHeight: 1.48 }}>
+                          {item.message}
+                        </p>
+                        <div style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 600 }}>
+                          {formatNotifTime(item.timestamp)}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '16px' }}>
+              <button
+                type="button"
+                className="m-btn m-btn-navy"
+                style={{ minHeight: '48px', fontSize: '0.92rem', borderRadius: '12px' }}
+                onClick={() => setShowNotifSheet(false)}
+              >
+                Tutup
+              </button>
+              {localNotifs.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleClearAllNotifs}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#64748b',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    padding: '6px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Hapus Semua Riwayat Kabar
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* BOTTOM SHEET: PILIH DESA */}
       {showVillageSheet && (
         <div className="m-modal-overlay" onClick={() => setShowVillageSheet(false)}>
-          <div className="m-modal-sheet" onClick={(e) => e.stopPropagation()}>
+          <div className="m-modal-sheet" onClick={(e) => e.stopPropagation()} style={{ padding: '22px 18px 26px', borderRadius: '24px 24px 0 0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800 }}>Pilih Desa Domisili / Pantauan</h3>
-              <button type="button" className="m-icon-btn" onClick={() => setShowVillageSheet(false)}>✕</button>
+              <h3 style={{ margin: 0, fontSize: '1.08rem', fontWeight: 800 }}>Pilih Desa Anda</h3>
+              <button type="button" className="m-icon-btn" onClick={() => setShowVillageSheet(false)} style={{ width: '38px', height: '38px' }}>✕</button>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '55vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', maxHeight: '55vh', overflowY: 'auto' }}>
               {villages.map((v) => (
                 <button
                   key={v.id}
@@ -1488,8 +1845,8 @@ export default function MobileWargaView() {
                     setShowVillageSheet(false)
                   }}
                   style={{
-                    padding: '11px 14px',
-                    borderRadius: '11px',
+                    padding: '13px 16px',
+                    borderRadius: '12px',
                     border: Number(v.id) === Number(activeVillage.id) ? '2px solid #009aa6' : '1px solid #e2e8f0',
                     background: Number(v.id) === Number(activeVillage.id) ? '#f0fdfa' : '#ffffff',
                     display: 'flex',
@@ -1499,8 +1856,8 @@ export default function MobileWargaView() {
                     textAlign: 'left',
                   }}
                 >
-                  <span style={{ fontSize: '0.84rem', fontWeight: 700, color: '#0c1a24' }}>Desa {v.cleanName}</span>
-                  <span className={`m-badge ${v.risk_level}`}>{Number(v.probability).toFixed(1)}%</span>
+                  <span style={{ fontSize: '0.92rem', fontWeight: 700, color: '#0c1a24' }}>Desa {v.cleanName}</span>
+                  <span className={`m-badge ${v.risk_level}`} style={{ fontSize: '0.74rem', padding: '4px 10px' }}>{Number(v.probability).toFixed(0)}%</span>
                 </button>
               ))}
             </div>
