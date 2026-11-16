@@ -52,8 +52,8 @@
 .admin-sidebar nav a { display: flex; align-items: center; padding: 0; color: #94a3b8; font-size: 0.85rem; font-weight: 500; border-radius: 99px; transition: all 0.2s ease; text-decoration: none; gap: 12px; }
 .admin-sidebar nav a i { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; font-style: normal; font-size: 1rem; flex-shrink: 0; }
 .admin-sidebar nav a:hover { color: white; background: rgba(255, 255, 255, 0.05); }
-.admin-sidebar nav a.active { background: rgba(255, 255, 255, 0.05); color: white; }
-.admin-sidebar nav a.active i { background: linear-gradient(135deg, #3b82f6, #2563eb); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+.admin-sidebar nav a.active { background: rgba(0, 164, 176, 0.12); color: white; }
+.admin-sidebar nav a.active i { background: linear-gradient(135deg, #00a4b0 0%, #008792 100%); box-shadow: 0 4px 14px rgba(0, 164, 176, 0.35); }
 .admin-sidebar nav a span { transition: opacity 0.2s; }
 .admin-sidebar nav a b { margin-left: auto; background: #ef4444; color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; margin-right: 16px; }
 .operator { margin-top: auto; padding: 24px 16px; background: rgba(0,0,0,0.2); border-top: 1px solid #1e293b; display: flex; align-items: center; gap: 12px; }
@@ -129,14 +129,14 @@
 .danger-toggle strong { font-size: 0.75rem; font-weight: 800; }
 .danger-toggle i { width: 44px; height: 24px; background: #e11d48; border-radius: 12px; position: relative; }
 .danger-toggle i::after { content: ''; position: absolute; right: 2px; top: 2px; width: 20px; height: 20px; background: white; border-radius: 50%; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
-.admin-avatar { width: 36px; height: 36px; background: #3b82f6; color: white; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 0.8rem; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.admin-avatar { width: 36px; height: 36px; background: linear-gradient(135deg, #00a4b0 0%, #008792 100%); color: white; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 0.8rem; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 6px rgba(0, 164, 176, 0.25); }
 
 .admin-dashboard { padding: 32px; overflow-y: auto; flex: 1; }
 .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 24px; }
 .kpi-card { padding: 20px 24px; display: flex; flex-direction: column; border: none; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); transition: transform 0.2s; }
 .kpi-card:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
 .kpi-card > div { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-.kpi-card span { font-size: 1.2rem; background: #eff6ff; color: #2563eb; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 10px; }
+.kpi-card span { font-size: 1.2rem; background: #e0f7f9; color: #008792; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 10px; }
 .kpi-card b { font-size: 0.7rem; padding: 4px 8px; border-radius: 20px; background: #ecfdf5; color: #059669; }
 .kpi-card b.danger-text { background: #fef2f2; color: #dc2626; }
 .kpi-card small { color: #64748b; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
@@ -146,7 +146,7 @@
 .admin-main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
 .admin-section-head { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end; }
 .admin-section-head h2 { font-size: 1.1rem; color: #0f172a; margin: 0 0 6px 0; font-weight: 700; }
-.admin-section-head b { color: #2563eb; font-weight: 600; }
+.admin-section-head b { color: #008792; font-weight: 600; }
 .admin-section-head p { margin: 0; font-size: 0.75rem; color: #64748b; }
 .admin-section-head > b { background: #fef2f2; color: #dc2626; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; }
 
