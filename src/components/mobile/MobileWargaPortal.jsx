@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { logout, getProfile } from '../../services/authService'
 import { apiFetch } from '../../services/api'
-import { getSOSTickets, createSOSTicket } from '../../services/sosService'
+import { getSOSTickets, getMyTickets, createSOSTicket } from '../../services/sosService'
 import { getShelters } from '../../services/shelterService'
+import { getFloodIncidents } from '../../services/floodService'
 import wsService from '../../services/wsService'
 import useDashboardRealtime from '../../hooks/useDashboardRealtime'
 import useGeolocation, { BAURENO_VILLAGES } from '../../hooks/useGeolocation'
@@ -178,11 +179,15 @@ export default function MobileWargaView() {
   const handleMarkAsRead = (id) => {
     setLocalNotifs((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
     wsMarkAsRead(id)
+    if (typeof id === 'number') {
+      apiFetch(`/notifications/read/${id}`, { method: 'POST' }).catch(() => {})
+    }
   }
 
   const handleMarkAllAsRead = () => {
     setLocalNotifs((prev) => prev.map((n) => ({ ...n, read: true })))
     wsMarkAllAsRead()
+    apiFetch('/notifications/read-all', { method: 'POST' }).catch(() => {})
   }
 
   const handleClearAllNotifs = () => {
@@ -217,6 +222,9 @@ export default function MobileWargaView() {
   const [routeData, setRouteData] = useState(null)
   const [loadingRoute, setLoadingRoute] = useState(false)
 
+  // Riwayat kejadian banjir (tersambung ke backend /flood/incidents)
+  const [floodIncidents, setFloodIncidents] = useState([])
+
   // SOS state
   const [myTickets, setMyTickets] = useState([])
   const [sosFamilyCount, setSosFamilyCount] = useState(3)
@@ -229,7 +237,7 @@ export default function MobileWargaView() {
   const [sosSuccessMsg, setSosSuccessMsg] = useState('')
   const [sosErrorMsg, setSosErrorMsg] = useState('')
 
-  // Load user profile & SOS tickets & live shelters
+  // Load user profile, SOS tickets, shelters, notifications & flood archive from backend
   useEffect(() => {
     let mounted = true
 
@@ -253,6 +261,41 @@ export default function MobileWargaView() {
       .then((res) => {
         if (mounted && Array.isArray(res) && res.length > 0) {
           setDirectShelters(res)
+        }
+      })
+      .catch(() => {})
+
+    // Fetch real flood incidents archive from backend
+    getFloodIncidents({ page_size: 15 })
+      .then((res) => {
+        const items = Array.isArray(res) ? res : (res?.items || [])
+        if (mounted && items.length > 0) {
+          setFloodIncidents(items)
+        }
+      })
+      .catch(() => {})
+
+    // Fetch persisted notifications from backend
+    apiFetch('/notifications?limit=30')
+      .then((res) => {
+        if (mounted && Array.isArray(res) && res.length > 0) {
+          setLocalNotifs((prev) => {
+            const mapped = res.map((n) => ({
+              id: n.id,
+              type: n.type || 'info',
+              title: n.title,
+              message: n.message,
+              timestamp: n.created_at,
+              read: Boolean(n.is_read),
+            }))
+            const merged = [...mapped]
+            prev.forEach((p) => {
+              if (!merged.some((m) => String(m.id) === String(p.id))) {
+                merged.push(p)
+              }
+            })
+            return merged
+          })
         }
       })
       .catch(() => {})
@@ -297,8 +340,17 @@ export default function MobileWargaView() {
 
   const loadTickets = async () => {
     try {
-      const list = await getSOSTickets()
-      if (Array.isArray(list)) setMyTickets(list)
+      const list = await getMyTickets()
+      if (Array.isArray(list)) {
+        setMyTickets(list)
+        return
+      }
+    } catch {
+      // fallback ke getSOSTickets jika /sos/my belum tersedia
+    }
+    try {
+      const fallbackList = await getSOSTickets()
+      if (Array.isArray(fallbackList)) setMyTickets(fallbackList)
     } catch (_) {}
   }
 
@@ -1518,60 +1570,135 @@ export default function MobileWargaView() {
         {activeTab === 'riwayat' && (
           <>
             {/* Status Tiket SOS Terkini */}
-            <section className="m-card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+            <section className="m-card" style={{ padding: '18px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '0.96rem', fontWeight: 800 }}>Riwayat Tiket SOS</h3>
-                  <div style={{ fontSize: '0.72rem', color: '#64748b' }}>Pelacakan status penjemputan perahu karet</div>
+                  <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800 }}>Riwayat Tiket SOS Anda</h3>
+                  <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '2px' }}>Pelacakan status penjemputan perahu karet</div>
                 </div>
-                <span className="m-badge aman">{myTickets.length} Tiket</span>
+                <span className="m-badge aman" style={{ fontSize: '0.74rem', padding: '4px 10px' }}>{myTickets.length} Tiket</span>
               </div>
               {myTickets.length === 0 ? (
-                <div style={{ fontSize: '0.78rem', color: '#64748b', textAlign: 'center', padding: '18px 0', background: '#f8fafc', borderRadius: '12px' }}>
+                <div style={{ fontSize: '0.84rem', color: '#64748b', textAlign: 'center', padding: '22px 14px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
                   Belum ada riwayat permintaan SOS Anda.
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {myTickets.map((t) => (
-                    <div key={t.id} style={{ padding: '12px', borderRadius: '11px', border: '1px solid #e2e8f0', background: '#f8fafc' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                        <strong style={{ fontSize: '0.82rem' }}>{t.ticket_number || `SOS-${t.id}`}</strong>
-                        <span className={`m-badge ${t.status === 'completed' ? 'aman' : 'awas'}`}>
-                          {t.status.toUpperCase()}
-                        </span>
-                      </div>
-                      <div style={{ fontSize: '0.74rem', color: '#334155' }}>
-                        📍 {t.gps_address} • 👥 {t.family_count} jiwa (Skor Prioritas: {t.priority_score})
-                      </div>
-                      {t.assigned_unit && (
-                        <div style={{ fontSize: '0.72rem', color: '#0284c7', fontWeight: 700, marginTop: '4px' }}>
-                          🚤 Tim Penjemput: {t.assigned_unit}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {myTickets.map((t) => {
+                    const st = (t.status || '').toLowerCase()
+                    const statusText =
+                      st === 'submitted' || st === 'menunggu'
+                        ? 'Menunggu Verifikasi'
+                        : st === 'verified' || st === 'terverifikasi'
+                        ? 'Terverifikasi'
+                        : st === 'dispatched' || st === 'armada meluncur'
+                        ? 'Armada Meluncur'
+                        : st === 'arrived' || st === 'tiba'
+                        ? 'Tiba di Lokasi'
+                        : st === 'completed' || st === 'selesai'
+                        ? 'Selesai'
+                        : st === 'rejected' || st === 'dibatalkan'
+                        ? 'Dibatalkan'
+                        : t.status || 'Menunggu'
+                    const badgeClass =
+                      st === 'completed' || st === 'selesai'
+                        ? 'aman'
+                        : st === 'verified' || st === 'terverifikasi'
+                        ? 'siaga'
+                        : st === 'submitted' || st === 'menunggu'
+                        ? 'waspada'
+                        : 'awas'
+
+                    return (
+                      <div key={t.id} style={{ padding: '14px', borderRadius: '12px', border: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                            <strong style={{ fontSize: '0.88rem', color: '#0c1a24' }}>{t.ticket_number || `SOS-${t.id}`}</strong>
+                            {t.is_simulation && (
+                              <span
+                                style={{
+                                  background: '#8b5cf6',
+                                  color: '#ffffff',
+                                  fontSize: '0.66rem',
+                                  fontWeight: 800,
+                                  padding: '2px 7px',
+                                  borderRadius: '999px',
+                                }}
+                              >
+                                🎮 SIMULASI
+                              </span>
+                            )}
+                          </div>
+                          <span className={`m-badge ${badgeClass}`} style={{ fontSize: '0.72rem' }}>
+                            {statusText}
+                          </span>
                         </div>
-                      )}
-                    </div>
-                  ))}
+                        <div style={{ fontSize: '0.8rem', color: '#334155', lineHeight: 1.45 }}>
+                          📍 {t.gps_address || 'Kec. Baureno'} • 👥 {t.family_count || 1} jiwa
+                          {t.priority_score != null ? ` (Prioritas: ${t.priority_score})` : ''}
+                        </div>
+                        {t.assigned_unit && (
+                          <div style={{ fontSize: '0.78rem', color: '#0284c7', fontWeight: 700, marginTop: '5px' }}>
+                            🚤 Tim Penjemput: {t.assigned_unit}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </section>
 
-            {/* Arsip Riwayat Banjir Baureno */}
-            <section className="m-card">
-              <div style={{ marginBottom: '12px' }}>
-                <h3 style={{ margin: 0, fontSize: '0.96rem', fontWeight: 800 }}>Riwayat Banjir di Baureno</h3>
-                <div style={{ fontSize: '0.72rem', color: '#64748b' }}>Catatan kejadian banjir luapan Bengawan Solo</div>
+            {/* Arsip Riwayat Banjir Baureno (Data Backend / Fallback) */}
+            <section className="m-card" style={{ padding: '18px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800 }}>Riwayat Banjir di Baureno</h3>
+                  <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '2px' }}>Catatan kejadian banjir &amp; Satu Data Bojonegoro</div>
+                </div>
+                {floodIncidents.length > 0 && (
+                  <span className="m-badge waspada" style={{ fontSize: '0.72rem' }}>{floodIncidents.length} Catatan</span>
+                )}
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {[
-                  { date: '18 Februari 2024', peak: 'TMA 15.20 m', impact: 'Desa Kadungrejo, Baureno, Tanggungan tergenang 40-70 cm', status: 'Selesai' },
-                  { date: '04 Maret 2023', peak: 'TMA 14.85 m', impact: 'Jalan poros desa Baureno-Pucangarum tergenang 30 cm', status: 'Selesai' },
-                  { date: '21 Januari 2023', peak: 'TMA 15.05 m', impact: 'Area persawahan dan 85 KK di bantaran sungai dievakuasi', status: 'Selesai' },
-                ].map((ev, i) => (
-                  <div key={i} style={{ padding: '12px', borderRadius: '11px', border: '1px solid #e2e8f0', background: '#ffffff' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                      <strong style={{ fontSize: '0.82rem', color: '#0c1a24' }}>📅 {ev.date}</strong>
-                      <span className="m-badge waspada">{ev.peak}</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {(floodIncidents.length > 0
+                  ? floodIncidents.map((inc) => {
+                      const rawDate = inc.incident_date || inc.date || inc.created_at
+                      let dateDisplay = 'Catatan Banjir'
+                      if (rawDate) {
+                        const d = new Date(rawDate)
+                        dateDisplay = !isNaN(d.getTime())
+                          ? d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+                          : String(rawDate)
+                      }
+                      const waterHeight = inc.max_water_level_cm
+                        ? `Genangan ${inc.max_water_level_cm} cm`
+                        : inc.water_level_m
+                        ? `TMA ${Number(inc.water_level_m).toFixed(2)} m`
+                        : inc.category || 'Arsip BPBD'
+                      const desc =
+                        inc.description ||
+                        inc.impact_summary ||
+                        `${inc.village_name || 'Kecamatan Baureno'}${inc.affected_families ? ` • ${inc.affected_families} KK terdampak` : ''}`
+                      return {
+                        id: inc.id,
+                        date: dateDisplay,
+                        peak: waterHeight,
+                        impact: desc,
+                      }
+                    })
+                  : [
+                      { id: 'fb-1', date: '18 Februari 2024', peak: 'TMA 15.20 m', impact: 'Desa Kadungrejo, Baureno, Tanggungan tergenang 40-70 cm' },
+                      { id: 'fb-2', date: '04 Maret 2023', peak: 'TMA 14.85 m', impact: 'Jalan poros desa Baureno-Pucangarum tergenang 30 cm' },
+                      { id: 'fb-3', date: '21 Januari 2023', peak: 'TMA 15.05 m', impact: 'Area persawahan dan 85 KK di bantaran sungai dievakuasi' },
+                    ]
+                ).map((ev, i) => (
+                  <div key={ev.id || i} style={{ padding: '14px', borderRadius: '12px', border: '1px solid #e2e8f0', background: '#ffffff' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '5px', flexWrap: 'wrap' }}>
+                      <strong style={{ fontSize: '0.88rem', color: '#0c1a24' }}>📅 {ev.date}</strong>
+                      <span className="m-badge waspada" style={{ fontSize: '0.72rem' }}>{ev.peak}</span>
                     </div>
-                    <div style={{ fontSize: '0.74rem', color: '#475569', lineHeight: 1.45 }}>{ev.impact}</div>
+                    <div style={{ fontSize: '0.82rem', color: '#475569', lineHeight: 1.48 }}>{ev.impact}</div>
                   </div>
                 ))}
               </div>

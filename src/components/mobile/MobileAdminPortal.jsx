@@ -3,6 +3,8 @@ import { logout } from '../../services/authService'
 import { getSOSTickets, updateSOSStatus, createSOSTicket } from '../../services/sosService'
 import { getShelters, updateShelterCapacity, createShelter } from '../../services/shelterService'
 import useDashboardRealtime from '../../hooks/useDashboardRealtime'
+import wsService from '../../services/wsService'
+import { playSosAlertTone } from '../../utils/audioAlarm'
 import RiskMap from '../../components/RiskMap'
 import LogoutModal from '../../components/common/LogoutModal'
 import '../../styles/mobile.css'
@@ -60,7 +62,25 @@ export default function MobileAdminView({ initialTab = 'dashboard' }) {
   useEffect(() => {
     fetchAllAdminData()
     const timer = setInterval(fetchAllAdminData, 10000)
-    return () => clearInterval(timer)
+
+    wsService.connect('sos', { role: 'admin' })
+    const unsubNew = wsService.on('sos_new', () => {
+      playSosAlertTone()
+      fetchAllAdminData()
+    })
+    const unsubUpd = wsService.on('sos_updated', () => {
+      fetchAllAdminData()
+    })
+    const unsubDispatched = wsService.on('sos_dispatched', () => {
+      fetchAllAdminData()
+    })
+
+    return () => {
+      clearInterval(timer)
+      unsubNew()
+      unsubUpd()
+      unsubDispatched()
+    }
   }, [])
 
   const villages = useMemo(() => {
@@ -90,6 +110,7 @@ export default function MobileAdminView({ initialTab = 'dashboard' }) {
   const filteredTickets = useMemo(() => {
     return tickets
       .filter((t) => {
+        if (sosFilter === 'simulation') return Boolean(t.is_simulation)
         if (sosFilter === 'active') return t.status !== 'completed' && t.status !== 'rejected'
         if (sosFilter !== 'all') return t.status === sosFilter
         return true
@@ -407,6 +428,7 @@ export default function MobileAdminView({ initialTab = 'dashboard' }) {
                 {[
                   { id: 'all', label: `Semua (${tickets.length})` },
                   { id: 'active', label: `Aktif (${activeTickets.length})` },
+                  { id: 'simulation', label: `🧪 Simulasi (${tickets.filter(t => t.is_simulation).length})` },
                   { id: 'submitted', label: 'Menunggu' },
                   { id: 'verified', label: 'Terverifikasi' },
                   { id: 'dispatched', label: 'Meluncur' },
@@ -452,10 +474,24 @@ export default function MobileAdminView({ initialTab = 'dashboard' }) {
                   <article key={t.id} className="m-card" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {/* Top Row: Ticket ID, Status Pill, Priority Score */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                         <strong style={{ fontSize: '0.9rem', color: '#0c1a24' }}>
                           {t.ticket_number || `SOS-${t.id}`}
                         </strong>
+                        {t.is_simulation && (
+                          <span
+                            style={{
+                              background: '#8b5cf6',
+                              color: '#ffffff',
+                              fontSize: '0.64rem',
+                              fontWeight: 800,
+                              padding: '2px 7px',
+                              borderRadius: '999px',
+                            }}
+                          >
+                            🎮 SIMULASI
+                          </span>
+                        )}
                         <span
                           style={{
                             background: '#fee2e2',
