@@ -604,17 +604,18 @@ export default function WargaBeranda({
           onClick={onOpenLocationModal}
           title="Ganti desa domisili"
         >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00828f" strokeWidth="2.4">
             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
             <circle cx="12" cy="10" r="3" />
           </svg>
+          <span style={{ color: '#64748b', fontWeight: 600 }}>Desa:</span>
           <span>
             {(() => {
               const v = BAURENO_VILLAGES.find(item => item.id === Number(selectedVillageId || userProfile?.village_id))
-              return v ? `Desa ${v.name.replace(' (Pusat)', '')}` : 'Desa Baureno'
+              return v ? v.name.replace(' (Pusat)', '') : 'Baureno'
             })()}
           </span>
-          <span style={{ fontSize: '11px', color: '#64748b' }}>▾</span>
+          <span style={{ fontSize: '11px', color: '#00828f' }}>Ganti ▾</span>
         </button>
       </div>
 
@@ -656,12 +657,58 @@ export default function WargaBeranda({
           <h2>
             {isAman ? 'Kondisi masih aman' : isWaspada ? 'Mulai Waspada' : isSiaga ? 'Siaga Banjir' : 'Awas Banjir Parah'}
           </h2>
-          <p>
+          <p style={{ fontSize: '0.96rem', lineHeight: 1.55, color: '#334155' }}>
             {isAman 
               ? 'Tidak ada tanda banjir dalam waktu dekat. Cukup pantau informasi seperti biasa.' 
               : 'Terjadi peningkatan debit sungai. Pantau peringatan dan siapkan dokumen penting.'}
           </p>
           <span className="warga-hero-meta">{activeVillageDisplay} • Diperbarui {lastUpdatedStr}</span>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '16px' }}>
+            <button
+              type="button"
+              onClick={() => onNavigate && onNavigate('peta')}
+              style={{
+                background: '#009aa6',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '11px',
+                padding: '11px 18px',
+                fontSize: '0.9rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: '0 4px 12px rgba(0, 154, 166, 0.22)',
+                fontFamily: 'inherit',
+              }}
+            >
+              <span>🗺️</span>
+              <span>Lihat Peta &amp; Posko Terdekat</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigate && onNavigate('sos')}
+              style={{
+                background: isAwas ? '#dc2626' : '#fef2f2',
+                color: isAwas ? '#ffffff' : '#dc2626',
+                border: '1.5px solid #fecaca',
+                borderRadius: '11px',
+                padding: '11px 18px',
+                fontSize: '0.9rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontFamily: 'inherit',
+              }}
+            >
+              <span>🚨</span>
+              <span>Minta Bantuan Darurat (SOS)</span>
+            </button>
+          </div>
         </div>
       </div>
 
