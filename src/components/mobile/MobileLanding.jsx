@@ -183,7 +183,7 @@ export default function MobileLanding({
 
         <section className="mobile-stats" aria-label="Statistik utama">
           <article><span>Desa dipantau real-time</span><strong>25</strong></article>
-          <article><span>Interval data sensor</span><strong>60 <small>dtk</small></strong></article>
+          <article><span>Interval data sensor</span><strong>30 <small>mnt</small></strong></article>
           <article><span>Posko siap beroperasi</span><strong>8</strong></article>
           <article><span>Pusdalops BPBD siaga</span><strong>24/7</strong></article>
         </section>

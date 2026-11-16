@@ -534,7 +534,7 @@ function App() {
             <div className="stat-divider" />
 
             <div className="stat-box">
-              <div className="stat-number">60<span className="stat-unit-sub">dtk</span></div>
+              <div className="stat-number">30<span className="stat-unit-sub">mnt</span></div>
               <div className="stat-label-col">
                 <span>interval pembaruan</span>
                 <span>data sensor</span>
