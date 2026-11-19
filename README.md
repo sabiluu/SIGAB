@@ -140,7 +140,27 @@ Akun berikut dibuat secara otomatis saat server backend pertama kali dijalankan.
 Program Studi **D3 Teknik Informatika PSDKU Lamongan**  
 Departemen Teknik Informatika dan Komputer — **Politeknik Elektronika Negeri Surabaya (PENS)**
 
-| Nama Pengembang | NRP | Profil GitHub |
-| :--- | :---: | :--- |
-| **Sabilu Rosyada** | `3125521009` | [@sabiluu](https://github.com/sabiluu) |
-| **Putri Norma Yunita** | `3125521010` | [@putriyunitaa](https://github.com/putriyunitaa) |
+<table>
+  <tr>
+    <td align="center" width="240">
+      <a href="https://github.com/sabiluu">
+        <img src="https://github.com/sabiluu.png?size=160" width="100" height="100" alt="Sabilu Rosyada" style="border-radius: 50%;" /><br />
+        <sub><b>Sabilu Rosyada</b></sub>
+      </a><br />
+      <sub>NRP: <code>3125521009</code></sub><br /><br />
+      <a href="https://github.com/sabiluu">
+        <img src="https://img.shields.io/badge/GitHub-@sabiluu-0c1a24?style=flat-square&logo=github" alt="@sabiluu" />
+      </a>
+    </td>
+    <td align="center" width="240">
+      <a href="https://github.com/putriyunitaa">
+        <img src="https://github.com/putriyunitaa.png?size=160" width="100" height="100" alt="Putri Norma Yunita" style="border-radius: 50%;" /><br />
+        <sub><b>Putri Norma Yunita</b></sub>
+      </a><br />
+      <sub>NRP: <code>3125521010</code></sub><br /><br />
+      <a href="https://github.com/putriyunitaa">
+        <img src="https://img.shields.io/badge/GitHub-@putriyunitaa-009aa6?style=flat-square&logo=github" alt="@putriyunitaa" />
+      </a>
+    </td>
+  </tr>
+</table>
