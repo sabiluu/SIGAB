@@ -2596,12 +2596,12 @@
 
 /* Card 1: Blue Tas Siaga Bencana */
 .panduan-tas-card {
-  background: linear-gradient(145deg, #0f2434 0%, #0c1a24 100%);
+  background: linear-gradient(145deg, #35536e 0%, #2f4a63 100%);
   color: #ffffff;
   border-radius: 18px;
   padding: 24px;
-  box-shadow: 0 10px 25px -5px rgba(12, 26, 36, 0.25);
-  border: 1px solid #1e293b;
+  box-shadow: 0 10px 25px -5px rgba(47, 74, 99, 0.25);
+  border: 1px solid #3d5d7a;
 }
 
 .panduan-tas-sub {
