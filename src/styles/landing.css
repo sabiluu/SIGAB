@@ -986,7 +986,7 @@
    7. GUIDANCE DARK SECTION
    ========================================================================== */
 .guidance-dark-section {
-  background: #2f4a63;
+  background: #061a24;
   color: #ffffff;
   padding: 100px max(32px, calc((100% - 1200px) / 2));
   position: relative;
@@ -1039,7 +1039,7 @@
 .guidance-left p {
   font-size: 0.95rem;
   line-height: 1.6;
-  color: #d5e1ec;
+  color: #94a3b8;
   max-width: 440px;
   margin: 0 0 32px;
 }
@@ -1074,19 +1074,19 @@
   align-items: center;
   justify-content: space-between;
   padding: 22px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   transition: all 0.2s ease;
   cursor: pointer;
 }
 
 .guidance-level-row:first-child {
-  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .guidance-level-row:hover {
   padding-left: 8px;
   padding-right: 8px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .level-row-left {
@@ -1143,13 +1143,13 @@
 
 .level-row-text p {
   font-size: 0.8rem;
-  color: #d5e1ec;
+  color: #94a3b8;
   margin: 0;
   line-height: 1.35;
 }
 
 .level-row-chevron {
-  color: #cbd5e1;
+  color: #64748b;
   display: flex;
   align-items: center;
 }
