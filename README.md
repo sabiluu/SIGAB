@@ -135,32 +135,47 @@ Akun berikut dibuat secara otomatis saat server backend pertama kali dijalankan.
 
 ---
 
-## 👥 Tim Pengembang
+## 🌸 Tim Pengembang ✨
 
 Program Studi **D3 Teknik Informatika PSDKU Lamongan**  
 Departemen Teknik Informatika dan Komputer — **Politeknik Elektronika Negeri Surabaya (PENS)**
 
+<div align="center">
 <table>
   <tr>
-    <td align="center" width="240">
+    <td align="center" width="260">
+      <br />
       <a href="https://github.com/sabiluu">
-        <img src="https://github.com/sabiluu.png?size=160" width="100" height="100" alt="Sabilu Rosyada" style="border-radius: 50%;" /><br />
-        <sub><b>Sabilu Rosyada</b></sub>
-      </a><br />
-      <sub>NRP: <code>3125521009</code></sub><br /><br />
-      <a href="https://github.com/sabiluu">
-        <img src="https://img.shields.io/badge/GitHub-@sabiluu-0c1a24?style=flat-square&logo=github" alt="@sabiluu" />
+        <img src="https://images.weserv.nl/?url=https://github.com/sabiluu.png?size=220&h=220&w=220&fit=cover&mask=circle" width="115" height="115" alt="Sabilu Rosyada" />
       </a>
+      <br /><br />
+      <b>✨ Sabilu Rosyada ✨</b><br />
+      <sub>🎓 NRP: <code>3125521009</code></sub><br />
+      <sub>🌷 <i>Full-Stack &amp; WebGIS Developer</i></sub>
+      <br /><br />
+      <a href="https://github.com/sabiluu">
+        <img src="https://img.shields.io/badge/%E2%9C%A8_@sabiluu-ff8fab?style=for-the-badge&logo=github&logoColor=white" alt="@sabiluu" />
+      </a>
+      <br /><br />
     </td>
-    <td align="center" width="240">
+    <td align="center" width="260">
+      <br />
       <a href="https://github.com/putriyunitaa">
-        <img src="https://github.com/putriyunitaa.png?size=160" width="100" height="100" alt="Putri Norma Yunita" style="border-radius: 50%;" /><br />
-        <sub><b>Putri Norma Yunita</b></sub>
-      </a><br />
-      <sub>NRP: <code>3125521010</code></sub><br /><br />
-      <a href="https://github.com/putriyunitaa">
-        <img src="https://img.shields.io/badge/GitHub-@putriyunitaa-009aa6?style=flat-square&logo=github" alt="@putriyunitaa" />
+        <img src="https://images.weserv.nl/?url=https://github.com/putriyunitaa.png?size=220&h=220&w=220&fit=cover&mask=circle" width="115" height="115" alt="Putri Norma Yunita" />
       </a>
+      <br /><br />
+      <b>🌸 Putri Norma Yunita 🌸</b><br />
+      <sub>🎓 NRP: <code>3125521010</code></sub><br />
+      <sub>🦋 <i>Full-Stack &amp; System Analyst</i></sub>
+      <br /><br />
+      <a href="https://github.com/putriyunitaa">
+        <img src="https://img.shields.io/badge/%F0%9F%8C%B8_@putriyunitaa-72ddf7?style=for-the-badge&logo=github&logoColor=0c1a24" alt="@putriyunitaa" />
+      </a>
+      <br /><br />
     </td>
   </tr>
 </table>
+
+<br />
+<sub>🌊 <i>Dibuat dengan 💖 untuk Kesiapsiagaan Masyarakat Kecamatan Baureno • PENS 2026</i> ✨</sub>
+</div>
