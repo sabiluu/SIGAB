@@ -139,5 +139,8 @@ Akun berikut dibuat secara otomatis saat server backend pertama kali dijalankan.
 
 Program Studi **D3 Teknik Informatika PSDKU Lamongan**  
 Departemen Teknik Informatika dan Komputer — **Politeknik Elektronika Negeri Surabaya (PENS)**
-- **Sabilu Rosyada** (`3125521009`)
-- **Putri Norma Yunita** (`3125521010`)
+
+| Nama Pengembang | NRP | Profil GitHub |
+| :--- | :---: | :--- |
+| **Sabilu Rosyada** | `3125521009` | [@sabiluu](https://github.com/sabiluu) |
+| **Putri Norma Yunita** | `3125521010` | [@putriyunitaa](https://github.com/putriyunitaa) |
