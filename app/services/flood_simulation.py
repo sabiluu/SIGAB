@@ -297,6 +297,9 @@ class FloodSimulationManager:
             now = datetime.now()
 
             # 1. Hapus semua log simulasi dari WeatherDataLog dan RiverDischargeLog
+            # PENTING: Tiket panggilan darurat SOS (termasuk tiket bertanda is_simulation=True)
+            # sengaja TIDAK dihapus agar riwayat tiket tetap tersimpan permanen di database dan
+            # riwayat penanganan tetap dapat diakses oleh admin/Pusdalops BPBD kapan pun.
             db.query(WeatherDataLog).filter(WeatherDataLog.api_source == "simulation").delete()
             db.query(RiverDischargeLog).filter(RiverDischargeLog.api_source == "simulation").delete()
 

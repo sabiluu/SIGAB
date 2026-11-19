@@ -68,6 +68,7 @@ demo-videos/
 avatar-*.jpg
 
 # ===== Raw Data, Dumps & Scratch Scripts =====
+backend/
 *.zip
 *.cjs
 src/data/idn_admin/

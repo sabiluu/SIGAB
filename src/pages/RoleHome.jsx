@@ -1109,6 +1109,7 @@ function AdminHome() {
   const [simStatus, setSimStatus] = useState(null)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [tickets, setTickets] = useState([])
+  const [dashboardSosTab, setDashboardSosTab] = useState('all')
   const [adminToast, setAdminToast] = useState(null)
   const { data: realtimeData } = useDashboardRealtime()
 
@@ -1208,6 +1209,16 @@ function AdminHome() {
   const dateStr = currentTime.toLocaleDateString('id-ID', dateOptions)
 
   const activeTickets = tickets.filter(t => t.status !== 'completed' && t.status !== 'rejected').sort((a, b) => (b.priority_score || 0) - (a.priority_score || 0))
+  const displayedDashboardTickets = useMemo(() => {
+    let list = tickets
+    if (dashboardSosTab === 'active') {
+      list = tickets.filter(t => t.status !== 'completed' && t.status !== 'rejected')
+    } else if (dashboardSosTab === 'simulation') {
+      list = tickets.filter(t => t.is_simulation)
+    }
+    return list.slice(0, 6)
+  }, [tickets, dashboardSosTab])
+
   const shelters = realtimeData?.shelters || []
   const totalShelterCap = shelters.reduce((s, sh) => s + (sh.capacity_total || 0), 0)
   const occupiedShelterCap = shelters.reduce((s, sh) => s + (sh.capacity_occupied || 0), 0)
@@ -1222,12 +1233,13 @@ function AdminHome() {
         gps_latitude: -7.1285,
         gps_longitude: 112.104,
         gps_address: 'Bantaran Bengawan Solo, RT 02/RW 01, Desa Baureno',
-        patokan: 'Ketinggian air 1.6m di dalam rumah, arus deras luapan Bengawan Solo, butuh perahu evakuasi darurat!',
+        patokan: 'Ketinggian air 1.6m di dalam rumah, arus deras luapan Bengawan Solo, butuh perahu evakuasi darurat! (Simulasi)',
         family_count: 5,
         has_elderly: true,
         has_toddler: true,
         has_pregnant: false,
-        has_disability: false
+        has_disability: false,
+        is_simulation: true
       }
       await createSOSTicket(payload)
       fetchTickets()
@@ -1508,8 +1520,8 @@ function AdminHome() {
             <article className="sos-queue portal-card">
               <div className="admin-section-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <h2>🔴 Antrian SOS Live</h2>
-                  <b>{activeTickets.length} antrean</b>
+                  <h2>🔴 Antrian & Riwayat Tiket SOS</h2>
+                  <b>{tickets.length} total</b>
                 </div>
                 <button
                   type="button"
@@ -1533,20 +1545,110 @@ function AdminHome() {
                   ⚡ Buat Tiket Simulasi
                 </button>
               </div>
-              {activeTickets.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '30px 10px', color: '#64748b' }}>
-                  <div style={{ fontSize: '2rem', marginBottom: '8px' }}>🛡️</div>
-                  <strong>Tidak ada tiket darurat aktif</strong>
-                  <p style={{ fontSize: '0.85rem', margin: '4px 0 0' }}>Situasi warga dalam pantauan aman.</p>
+
+              {/* Segmented Filter Tab Mini */}
+              <div style={{ display: 'flex', gap: '6px', margin: '6px 0 12px', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => setDashboardSosTab('all')}
+                  style={{
+                    padding: '4px 9px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    background: dashboardSosTab === 'all' ? '#0c1a24' : '#f1f5f9',
+                    color: dashboardSosTab === 'all' ? '#ffffff' : '#64748b'
+                  }}
+                >
+                  Semua ({tickets.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDashboardSosTab('active')}
+                  style={{
+                    padding: '4px 9px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    background: dashboardSosTab === 'active' ? '#dc2626' : '#f1f5f9',
+                    color: dashboardSosTab === 'active' ? '#ffffff' : '#64748b'
+                  }}
+                >
+                  Aktif ({activeTickets.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDashboardSosTab('simulation')}
+                  style={{
+                    padding: '4px 9px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    background: dashboardSosTab === 'simulation' ? '#8b5cf6' : '#f1f5f9',
+                    color: dashboardSosTab === 'simulation' ? '#ffffff' : '#64748b'
+                  }}
+                >
+                  🧪 Simulasi ({tickets.filter(t => t.is_simulation).length})
+                </button>
+              </div>
+
+              {displayedDashboardTickets.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '26px 10px', color: '#64748b' }}>
+                  <div style={{ fontSize: '1.8rem', marginBottom: '6px' }}>🛡️</div>
+                  <strong>Tidak ada tiket pada kategori ini</strong>
+                  <p style={{ fontSize: '0.82rem', margin: '4px 0 10px' }}>
+                    {dashboardSosTab === 'active' ? 'Semua tiket darurat telah selesai dievakuasi.' : 'Belum ada tiket yang terdaftar.'}
+                  </p>
+                  {dashboardSosTab === 'active' && tickets.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setDashboardSosTab('all')}
+                      style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#0f172a', borderRadius: '6px', padding: '5px 10px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      Lihat Riwayat Selesai ({tickets.length})
+                    </button>
+                  )}
                 </div>
               ) : (
-                activeTickets.slice(0, 5).map((ticket) => {
+                displayedDashboardTickets.map((ticket) => {
                   const location = ticket.gps_address || (ticket.village_name ? `Desa ${ticket.village_name}` : `Desa ID ${ticket.village_id}`)
                   const time = ticket.submitted_at ? formatWIBTime(ticket.submitted_at) : 'Baru saja'
                   return (
                     <div className="sos-ticket" key={ticket.id}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                        <strong>{ticket.ticket_number}</strong>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <strong>{ticket.ticket_number}</strong>
+                          {ticket.is_simulation ? (
+                            <span style={{
+                              background: '#8b5cf6',
+                              color: '#ffffff',
+                              padding: '1px 5px',
+                              borderRadius: '4px',
+                              fontSize: '0.62rem',
+                              fontWeight: 800
+                            }}>
+                              SIMULASI
+                            </span>
+                          ) : null}
+                          {ticket.status === 'completed' ? (
+                            <span style={{
+                              background: '#ecfdf5',
+                              color: '#059669',
+                              padding: '1px 5px',
+                              borderRadius: '4px',
+                              fontSize: '0.62rem',
+                              fontWeight: 800
+                            }}>
+                              ✓ SELESAI
+                            </span>
+                          ) : null}
+                        </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span style={{
                             background: (ticket.priority_score >= 50 ? '#fee2e2' : '#fef3c7'),

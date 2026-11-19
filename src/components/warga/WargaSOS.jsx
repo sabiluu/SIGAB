@@ -175,12 +175,24 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
 
   // Load ticket history
   const loadMyTickets = async () => {
+    // Fast initial render from local cache if list is currently empty
+    try {
+      const cached = JSON.parse(localStorage.getItem('sigab_local_sos_tickets') || '[]');
+      if (cached.length > 0) {
+        setMyTickets(prev => prev.length === 0 ? cached : prev);
+      }
+    } catch {}
+
     setLoadingTickets(true);
     try {
       const res = await getMyTickets();
       setMyTickets(res || []);
     } catch (err) {
       console.error('Gagal memuat tiket warga:', err);
+      try {
+        const fallback = JSON.parse(localStorage.getItem('sigab_local_sos_tickets') || '[]');
+        setMyTickets(fallback);
+      } catch {}
     } finally {
       setLoadingTickets(false);
     }
@@ -207,25 +219,41 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
 
     const handleSOSUpdate = (data) => {
       // Update active ticket if matches
-      if (ticket && data.ticket_id === ticket.id) {
+      if (ticket && (data.ticket_id === ticket.id || (data.ticket_number && data.ticket_number === ticket.ticket_number))) {
         setTicket(prev => ({ 
           ...prev, 
           status: data.status,
-          assigned_unit: data.extra_data?.assigned_unit || prev.assigned_unit 
+          assigned_unit: data.extra_data?.assigned_unit || data.assigned_unit || prev.assigned_unit 
         }));
       }
 
       // Update list of myTickets if present
       setMyTickets(prev => prev.map(t => {
-        if (t.id === data.ticket_id) {
+        if (t.id === data.ticket_id || (data.ticket_number && data.ticket_number === t.ticket_number)) {
           return { 
             ...t, 
             status: data.status,
-            assigned_unit: data.extra_data?.assigned_unit || t.assigned_unit 
+            assigned_unit: data.extra_data?.assigned_unit || data.assigned_unit || t.assigned_unit 
           };
         }
         return t;
       }));
+
+      // Synchronize update with local storage
+      try {
+        const localTickets = JSON.parse(localStorage.getItem('sigab_local_sos_tickets') || '[]');
+        const updatedLocals = localTickets.map(t => {
+          if (t.id === data.ticket_id || (data.ticket_number && data.ticket_number === t.ticket_number)) {
+            return {
+              ...t,
+              status: data.status,
+              assigned_unit: data.extra_data?.assigned_unit || data.assigned_unit || t.assigned_unit
+            };
+          }
+          return t;
+        });
+        localStorage.setItem('sigab_local_sos_tickets', JSON.stringify(updatedLocals));
+      } catch {}
     };
 
     const events = ['sos_verified', 'sos_dispatched', 'sos_arrived', 'sos_completed', 'sos_rejected', 'sos_updated'];
@@ -386,17 +414,21 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
       return;
     }
 
-    const isEmergency = Boolean(
+    const isRealEmergency = Boolean(
       isEmergencyActive || 
-      user?.risk_level === 'awas' ||
+      user?.risk_level === 'awas'
+    );
+
+    const isExplicitSim = Boolean(
+      isPersonalSim ||
+      simStatus?.is_running ||
       (detailPatokan && detailPatokan.toLowerCase().includes('simulasi')) || 
       (address && address.toLowerCase().includes('simulasi'))
     );
 
-    if (!isEmergency) {
-      alert('⚠️ Pengiriman SOS Ditolak Otomatis!\n\nLayanan panggilan SOS darurat ke BPBD hanya aktif saat status wilayah DARURAT / AWAS atau saat tombol "Simulasi Bahaya" dinyalakan.');
-      return;
-    }
+    // Tiket selalu diizinkan dikirim: jika wilayah tidak berstatus darurat, otomatis dicatat sebagai simulasi latihan
+    // agar riwayat tiket tetap tersimpan permanen baik di warga maupun di admin
+    const isSim = isExplicitSim || !isRealEmergency;
 
     setLoading(true);
     try {
@@ -442,7 +474,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
       setTicket(res);
       setStep(3);
       // Auto add to myTickets list
-      setMyTickets(prev => [res, ...prev]);
+      setMyTickets(prev => [res, ...prev.filter(t => String(t.id) !== String(res.id) && String(t.ticket_number) !== String(res.ticket_number))]);
     } catch (err) {
       // Jika status darurat belum diaktifkan admin di database, auto fallback kirim sebagai simulasi/demo
       if (err.message && err.message.toLowerCase().includes('belum berstatus darurat')) {

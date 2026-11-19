@@ -66,6 +66,7 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
   const [role, setRole] = useState(initialRole)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [successMsg, setSuccessMsg] = useState('')
   const [rememberMe, setRememberMe] = useState(true)
   const [villages, setVillages] = useState(DEFAULT_VILLAGES)
   const [loginEmail, setLoginEmail] = useState('')
@@ -98,12 +99,14 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
   function switchMode(nextMode) {
     setMode(nextMode)
     setError('')
+    setSuccessMsg('')
     window.history.replaceState(null, '', `#${nextMode === 'login' ? 'masuk' : 'daftar'}-${role}`)
   }
 
   function switchRole(nextRole) {
     setRole(nextRole)
     setError('')
+    setSuccessMsg('')
     setLoginEmail('')
     setLoginPassword('')
     window.history.replaceState(null, '', `#${mode === 'login' ? 'masuk' : 'daftar'}-${nextRole}`)
@@ -145,11 +148,32 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
       }
     }
 
+    // Validasi Kata Sandi dan Konfirmasi jika register
+    if (isRegister) {
+      if ((formData.password || '').length < 6) {
+        setError('Kata sandi harus terdiri dari minimal 6 karakter.')
+        setSubmitting(false)
+        return
+      }
+      if (formData.password !== formData.confirmPassword) {
+        setError('Konfirmasi kata sandi tidak cocok. Pastikan kedua kolom kata sandi sama persis.')
+        setSubmitting(false)
+        return
+      }
+    }
+
     try {
-      const response = isRegister
-        ? await register({ ...formData, role })
-        : await login(formData.email, formData.password, role)
-      
+      if (isRegister) {
+        const regRes = await register({ ...formData, role })
+        setSuccessMsg(regRes?.message || 'Pendaftaran akun berhasil! Silakan masuk dengan email dan kata sandi Anda.')
+        setLoginEmail(formData.email || '')
+        setLoginPassword('')
+        setMode('login')
+        window.history.replaceState(null, '', `#masuk-${role}`)
+        return
+      }
+
+      const response = await login(formData.email, formData.password, role)
       const target = response?.user?.role || role
       const destHash = target === 'admin' || target === 'petugas' ? '#petugas' : '#warga'
       window.location.hash = destHash
@@ -228,6 +252,27 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
 
         {/* Error Notification */}
         {error && <ErrorState message={error} onRetry={() => setError('')} />}
+
+        {/* Success Notification */}
+        {successMsg && (
+          <div style={{
+            background: '#ecfdf5',
+            border: '1.5px solid #10b981',
+            color: '#065f46',
+            padding: '12px 16px',
+            borderRadius: '8px',
+            fontSize: '0.86rem',
+            fontWeight: 600,
+            marginBottom: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            boxShadow: '0 2px 8px rgba(16, 185, 129, 0.15)'
+          }}>
+            <span style={{ fontSize: '1.1rem', color: '#10b981' }}>✓</span>
+            <span>{successMsg}</span>
+          </div>
+        )}
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="auth-form">
@@ -341,6 +386,21 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
                     </button>
                   </div>
                 </div>
+
+                <div className="auth-field">
+                  <label htmlFor="reg-confirm-pwd">Konfirmasi kata sandi</label>
+                  <div className="auth-password-wrapper">
+                    <input 
+                      id="reg-confirm-pwd" 
+                      name="confirmPassword" 
+                      type={showPassword ? 'text' : 'password'} 
+                      placeholder="Ulangi kata sandi" 
+                      required 
+                      minLength={6} 
+                      autoComplete="new-password" 
+                    />
+                  </div>
+                </div>
               </>
             ) : (
               /* Register Petugas BPBD */
@@ -426,6 +486,21 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
                     >
                       {showPassword ? SVG_ICONS.eye : SVG_ICONS.eyeOff}
                     </button>
+                  </div>
+                </div>
+
+                <div className="auth-field">
+                  <label htmlFor="petugas-confirm-pwd">Konfirmasi kata sandi</label>
+                  <div className="auth-password-wrapper">
+                    <input 
+                      id="petugas-confirm-pwd" 
+                      name="confirmPassword" 
+                      type={showPassword ? 'text' : 'password'} 
+                      placeholder="Ulangi kata sandi" 
+                      required 
+                      minLength={6} 
+                      autoComplete="new-password" 
+                    />
                   </div>
                 </div>
               </>

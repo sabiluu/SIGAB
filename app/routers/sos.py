@@ -298,6 +298,7 @@ async def create_sos_ticket(
 def get_all_sos_tickets(
     sort_by: Optional[str] = Query(None, description="Urutan: priority_desc, priority_asc, time_desc, time_asc, family_desc"),
     status: Optional[str] = Query(None),
+    is_simulation: Optional[bool] = Query(None, description="Filter tiket simulasi (true) atau riil (false)"),
     db: Session = Depends(get_db),
     current_admin = Depends(get_current_admin_user)
 ):
@@ -305,6 +306,8 @@ def get_all_sos_tickets(
     query = db.query(SOSTicket)
     if status:
         query = query.filter(SOSTicket.status == status)
+    if is_simulation is not None:
+        query = query.filter(SOSTicket.is_simulation == is_simulation)
 
     if sort_by == "priority_desc":
         query = query.order_by(SOSTicket.priority_score.desc(), SOSTicket.submitted_at.desc())

@@ -147,12 +147,13 @@ export default function MobileAdminView({ initialTab = 'dashboard' }) {
         gps_latitude: -7.1211,
         gps_longitude: 112.1027,
         gps_address: 'Desa Kauman, Kec. Baureno',
-        patokan: 'Dekat Tanggul Bengawan Solo RT 03',
+        patokan: 'Dekat Tanggul Bengawan Solo RT 03 (Simulasi)',
         family_count: 4,
         has_elderly: true,
         has_toddler: true,
         has_pregnant: false,
         has_disability: false,
+        is_simulation: true,
       })
       fetchAllAdminData()
       switchTab('sos')

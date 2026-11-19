@@ -160,7 +160,7 @@ export async function register(data) {
   const villageId = data.village_id ? parseInt(data.village_id, 10) : 3;
 
   try {
-    await apiFetch('/auth/register', {
+    const registerResponse = await apiFetch('/auth/register', {
       method: 'POST',
       body: JSON.stringify({
         full_name: cleanName,
@@ -174,9 +174,13 @@ export async function register(data) {
       }),
     });
 
-    // Setelah register berhasil ke backend, login otomatis untuk mendapatkan token
-    const loginResult = await login(cleanEmail, cleanPassword, data.role);
-    return loginResult;
+    // Pendaftaran berhasil, tidak langsung auto-login agar diarahkan ke form login terlebih dahulu
+    return {
+      success: true,
+      message: 'Pendaftaran akun berhasil! Silakan masuk dengan email dan kata sandi Anda.',
+      email: cleanEmail,
+      user: registerResponse,
+    };
   } catch (err) {
     // Tangani offline, timeout (HTTP 408), atau kegagalan koneksi backend saat register
     const isNetworkOrTimeout =
@@ -224,15 +228,11 @@ export async function register(data) {
         console.warn('Gagal menyimpan sigab_registered_users:', storageErr);
       }
 
-      // Buat sesi login aktif untuk user yang baru mendaftar
-      const sessionToken = 'sigab-token-' + Date.now();
-      localStorage.setItem('access_token', sessionToken);
-      localStorage.setItem('sigab_user_role', isPetugas ? 'petugas' : 'warga');
-      localStorage.setItem('sigab_user_profile', JSON.stringify(newUser));
-
+      // Kembalikan status berhasil tanpa membuat sesi token aktif, agar diarahkan ke login
       return {
-        access_token: sessionToken,
-        token_type: 'bearer',
+        success: true,
+        message: 'Pendaftaran akun berhasil! Silakan masuk dengan email dan kata sandi Anda.',
+        email: cleanEmail,
         user: newUser,
       };
     }

@@ -115,6 +115,7 @@ export default function SOSManager() {
       if (filterStatus === 'verified' && t.status !== 'verified') return false
       if (filterStatus === 'dispatched' && t.status !== 'dispatched' && t.status !== 'arrived') return false
       if (filterStatus === 'completed' && t.status !== 'completed') return false
+      if (filterStatus === 'history' && t.status !== 'completed' && t.status !== 'rejected') return false
       if (filterStatus === 'active' && (t.status === 'completed' || t.status === 'rejected')) return false
 
       if (searchQuery.trim()) {
@@ -160,7 +161,7 @@ export default function SOSManager() {
         </div>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
           <div className="summary-mini-card">TIKET AKTIF <strong>{tickets.filter(t => t.status !== 'completed' && t.status !== 'rejected').length}</strong></div>
-          <div className="summary-mini-card">JIWA MENUNGGU <strong>{tickets.filter(t => t.status !== 'completed' && t.status !== 'rejected').reduce((sum, t) => sum + (t.family_count || 0), 0)}</strong></div>
+          <div className="summary-mini-card">SIMULASI <strong>{tickets.filter(t => t.is_simulation).length}</strong></div>
           <div className="summary-mini-card">TEREVAKUASI <strong>{tickets.filter(t => t.status === 'completed').reduce((sum, t) => sum + (t.family_count || 0), 0)} jiwa</strong></div>
           <button className="add-btn" onClick={fetchTickets}>↻ Refresh</button>
         </div>
@@ -176,6 +177,7 @@ export default function SOSManager() {
               <button type="button" className={filterStatus === 'verified' ? 'active' : ''} onClick={() => setFilterStatus('verified')}>Terverifikasi ({tickets.filter(t => t.status === 'verified').length})</button>
               <button type="button" className={filterStatus === 'dispatched' ? 'active' : ''} onClick={() => setFilterStatus('dispatched')}>Meluncur ({tickets.filter(t => t.status === 'dispatched' || t.status === 'arrived').length})</button>
               <button type="button" className={filterStatus === 'completed' ? 'active' : ''} onClick={() => setFilterStatus('completed')}>Selesai ({tickets.filter(t => t.status === 'completed').length})</button>
+              <button type="button" className={filterStatus === 'history' ? 'active' : ''} onClick={() => setFilterStatus('history')}>📜 Riwayat Selesai ({tickets.filter(t => t.status === 'completed' || t.status === 'rejected').length})</button>
             </div>
 
             <div className="search-box-mini">

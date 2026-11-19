@@ -477,17 +477,23 @@ input[type="password"]::-ms-clear {
 @media (max-width: 768px) {
   .auth-modal-backdrop {
     padding: 16px 12px;
+    min-height: 100dvh;
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow-y: auto;
   }
 
   .auth-modal-card {
     padding: 20px 16px 22px !important;
     border-radius: 18px !important;
-    max-width: 420px !important;
+    max-width: 440px !important;
     width: 100% !important;
+    max-height: calc(100dvh - 28px) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    margin: auto !important;
     box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.4) !important;
   }
 
