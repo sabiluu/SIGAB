@@ -151,7 +151,7 @@ Departemen Teknik Informatika dan Komputer — **Politeknik Elektronika Negeri S
       <br /><br />
       <b>✨ Sabilu Rosyada ✨</b><br />
       <sub>🎓 NRP: <code>3125521009</code></sub><br />
-      <sub>🌷 <i>Full-Stack &amp; WebGIS Developer</i></sub>
+      <sub>🌷 <i>Frontend &amp; UI/UX Developer</i></sub>
       <br /><br />
       <a href="https://github.com/sabiluu">
         <img src="https://img.shields.io/badge/%E2%9C%A8_@sabiluu-ff8fab?style=for-the-badge&logo=github&logoColor=white" alt="@sabiluu" />
@@ -166,7 +166,7 @@ Departemen Teknik Informatika dan Komputer — **Politeknik Elektronika Negeri S
       <br /><br />
       <b>🌸 Putri Norma Yunita 🌸</b><br />
       <sub>🎓 NRP: <code>3125521010</code></sub><br />
-      <sub>🦋 <i>Full-Stack &amp; System Analyst</i></sub>
+      <sub>🦋 <i>Backend &amp; API Developer</i></sub>
       <br /><br />
       <a href="https://github.com/putriyunitaa">
         <img src="https://img.shields.io/badge/%F0%9F%8C%B8_@putriyunitaa-72ddf7?style=for-the-badge&logo=github&logoColor=0c1a24" alt="@putriyunitaa" />
