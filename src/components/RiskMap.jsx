@@ -1,7 +1,6 @@
 import { MapContainer, TileLayer, Polygon, Tooltip, Marker, Popup, Polyline, useMap } from 'react-leaflet'
 import { useMemo, useState, useEffect, useRef } from 'react'
 import L from 'leaflet'
-import * as turf from '@turf/turf'
 import baurenoVillagesData from '../data/baureno_villages_real.json'
 import { apiFetch, getSimulationStatus } from '../services/api'
 import wsService from '../services/wsService'
@@ -82,39 +81,55 @@ function findMatchingVillage(featureName, villageList) {
   return found || null;
 }
 
+// Lightweight native ring vertex simplifier & centroid (replaces 500KB @turf/turf bundle)
+const simplifyRing = (ring, minSqDist = 0.0002 * 0.0002) => {
+  if (!Array.isArray(ring) || ring.length <= 6) return ring;
+  const out = [ring[0]];
+  let prev = ring[0];
+  for (let i = 1; i < ring.length - 1; i++) {
+    const pt = ring[i];
+    const dx = pt[0] - prev[0];
+    const dy = pt[1] - prev[1];
+    if (dx * dx + dy * dy >= minSqDist) {
+      out.push(pt);
+      prev = pt;
+    }
+  }
+  out.push(ring[ring.length - 1]);
+  return out.length >= 4 ? out : ring;
+};
+
 // Precompute & simplify static GeoJSON polygon vertices ONCE at module load
-// Reduces vertex count by ~75% without changing visible village borders
 const STATIC_VILLAGES_GEO = (() => {
-  const mapCoords = (coords) => coords.map((c) => [c[1], c[0]]);
+  const mapCoords = (coords) => simplifyRing(coords).map((c) => [c[1], c[0]]);
   return baurenoVillagesData.features
     .map((feature, i) => {
       if (!feature?.geometry) return null;
       const name = feature.properties.adm4_name || feature.properties.name || `Desa ${i + 1}`;
       const cleanName = name.replace(/^Desa\s+/i, '').trim().toLowerCase();
 
-      let simplified = feature;
-      try {
-        simplified = turf.simplify(feature, { tolerance: 0.0002, highQuality: false });
-      } catch {
-        simplified = feature;
-      }
-
-      const geom = simplified.geometry;
+      const geom = feature.geometry;
       let polygonCoords = [];
+      let rawRing = [];
       if (geom.type === 'Polygon') {
         polygonCoords = geom.coordinates.map(mapCoords);
+        rawRing = geom.coordinates[0] || [];
       } else if (geom.type === 'MultiPolygon') {
         polygonCoords = geom.coordinates.map((poly) => poly.map(mapCoords));
+        rawRing = geom.coordinates[0]?.[0] || [];
       }
 
       let centerLat = baurenoCenter[0];
       let centerLng = baurenoCenter[1];
-      try {
-        const centroid = turf.centroid(feature);
-        centerLat = centroid.geometry.coordinates[1];
-        centerLng = centroid.geometry.coordinates[0];
-      } catch {
-        // fallback center
+      if (rawRing.length > 0) {
+        let sumLng = 0;
+        let sumLat = 0;
+        for (let k = 0; k < rawRing.length; k++) {
+          sumLng += rawRing[k][0];
+          sumLat += rawRing[k][1];
+        }
+        centerLng = sumLng / rawRing.length;
+        centerLat = sumLat / rawRing.length;
       }
 
       return {

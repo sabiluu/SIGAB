@@ -1,5 +1,7 @@
 const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/+$/, '');
-const DEFAULT_TIMEOUT = 8000;
+const DEFAULT_TIMEOUT = 3500;
+const OFFLINE_COOLDOWN_MS = 15000;
+let lastOfflineTimestamp = 0;
 
 export function resolveMediaUrl(url) {
   if (!url) return '';
@@ -42,6 +44,11 @@ export async function apiFetch(endpoint, options = {}) {
     throw new ApiError('Server backend lokal tidak dapat dihubungi dari perangkat eksternal.', 0);
   }
 
+  // Fast-fail circuit breaker: jika backend baru saja terdeteksi offline, langsung gunakan fallback lokal (0ms)
+  if (lastOfflineTimestamp > 0 && Date.now() - lastOfflineTimestamp < OFFLINE_COOLDOWN_MS) {
+    throw new ApiError('Server tidak dapat dihubungi (mode respons cepat lokal aktif).', 0);
+  }
+
   const url = `${API_BASE_URL}${endpoint}`;
 
   const token = localStorage.getItem('access_token');
@@ -82,10 +89,15 @@ export async function apiFetch(endpoint, options = {}) {
       throw new ApiError(message || `HTTP ${response.status}`, response.status);
     }
 
+    lastOfflineTimestamp = 0;
     return payload;
   } catch (error) {
-    if (error.name === 'AbortError') throw new ApiError('Permintaan terlalu lama. Coba lagi.', 408);
+    if (error.name === 'AbortError') {
+      lastOfflineTimestamp = Date.now();
+      throw new ApiError('Permintaan terlalu lama. Coba lagi.', 408);
+    }
     if (error instanceof ApiError) throw error;
+    lastOfflineTimestamp = Date.now();
     throw new ApiError('Server tidak dapat dihubungi. Periksa koneksi Anda.', 0);
   } finally {
     clearTimeout(timeoutId);

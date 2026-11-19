@@ -521,7 +521,9 @@
 
 .warga-topbar {
   height: 68px;
-  background-color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border-bottom: 1px solid #eef2f5;
   display: flex;
   align-items: center;
@@ -529,6 +531,7 @@
   padding: 0 36px;
   position: relative;
   z-index: 1500;
+  box-shadow: 0 2px 10px rgba(12, 26, 36, 0.04);
 }
 
 .warga-topbar-breadcrumb {

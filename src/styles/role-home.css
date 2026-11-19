@@ -66,7 +66,7 @@
 .admin-content { flex: 1; display: flex; flex-direction: column; min-width: 0; margin-left: 260px; width: calc(100% - 260px); transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 .admin-portal.sidebar-closed .admin-content { margin-left: 76px; width: calc(100% - 76px); }
 @media (max-width: 650px) { .admin-content { margin-left: 0 !important; width: 100% !important; } }
-.admin-header { display: flex; align-items: center; padding: 16px 32px; background: white; border-bottom: 1px solid #e2e8f0; height: 72px; gap: 24px; position: sticky; top: 0; z-index: 40; }
+.admin-header { display: flex; align-items: center; padding: 16px 32px; background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid #e2e8f0; height: 72px; gap: 24px; position: sticky; top: 0; z-index: 1100; box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04); }
 .logout-btn, .portal-tools button.logout-btn { background: white; border: 1px solid #e2e8f0; color: #64748b; height: 38px; width: auto; padding: 0 16px; border-radius: 99px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; margin-left: 8px; }
 .logout-btn i, .portal-tools button.logout-btn i { font-style: normal; font-size: 1.1rem; width: auto; height: auto; border: none; background: transparent; color: inherit; padding: 0; margin: 0; display: inline; }
 .logout-btn:hover, .portal-tools button.logout-btn:hover { background: #fef2f2; color: #ef4444; border-color: #fca5a5; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.15); }

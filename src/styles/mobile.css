@@ -11,7 +11,7 @@
   min-height: 100vh;
   width: 100%;
   max-width: 100vw;
-  overflow-x: hidden;
+  overflow-x: clip;
   box-sizing: border-box;
   -webkit-font-smoothing: antialiased;
 }
@@ -28,14 +28,17 @@
 .m-top-header {
   position: sticky;
   top: 0;
-  z-index: 90;
-  background: #ffffff;
+  z-index: 1100;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border-bottom: 1px solid #edf3f5;
   padding: 11px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  box-shadow: 0 2px 10px rgba(12, 26, 36, 0.05);
 }
 
 .m-top-header.dark {

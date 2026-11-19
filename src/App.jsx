@@ -1,18 +1,19 @@
-import { useEffect, useState } from 'react'
-import AuthPage from './pages/AuthPage'
-import RoleHome from './pages/RoleHome'
-import SOSManager from './pages/admin/SOSManager'
-import RadarPeta from './pages/admin/RadarPeta'
-import PoskoManager from './pages/admin/PoskoManager'
+import { Suspense, lazy, useEffect, useState } from 'react'
 import RiskMap from './components/RiskMap'
 import { LoadingState, ErrorState, EmptyState } from './components/common/AsyncState'
 import { fetchDashboardSnapshot } from './services/dashboardService'
 import useIsMobile from './hooks/useIsMobile'
-import MobileAuthPage from './components/mobile/MobileAuthPage'
 import MobileLanding from './components/mobile/MobileLanding'
-import MobileWargaPortal from './components/mobile/MobileWargaPortal'
-import MobileAdminPortal from './components/mobile/MobileAdminPortal'
 import './styles/landing.css'
+
+const AuthPage = lazy(() => import('./pages/AuthPage'))
+const RoleHome = lazy(() => import('./pages/RoleHome'))
+const SOSManager = lazy(() => import('./pages/admin/SOSManager'))
+const RadarPeta = lazy(() => import('./pages/admin/RadarPeta'))
+const PoskoManager = lazy(() => import('./pages/admin/PoskoManager'))
+const MobileAuthPage = lazy(() => import('./components/mobile/MobileAuthPage'))
+const MobileWargaPortal = lazy(() => import('./components/mobile/MobileWargaPortal'))
+const MobileAdminPortal = lazy(() => import('./components/mobile/MobileAdminPortal'))
 
 // Formula ambang batas risiko banjir SIGAB (PRD v3.0 §3.2)
 export function getRiskStatus(prob) {
@@ -192,9 +193,11 @@ function App() {
   }, [])
 
   const renderAuthPage = (initialMode, initialRole) => (
-    isMobile
-      ? <MobileAuthPage initialMode={initialMode} initialRole={initialRole} />
-      : <AuthPage initialMode={initialMode} initialRole={initialRole} />
+    <Suspense fallback={<div style={{ padding: '48px' }}><LoadingState label="Memuat halaman..." /></div>}>
+      {isMobile
+        ? <MobileAuthPage initialMode={initialMode} initialRole={initialRole} />
+        : <AuthPage initialMode={initialMode} initialRole={initialRole} />}
+    </Suspense>
   )
 
   // Routing Handler
@@ -231,10 +234,18 @@ function App() {
     }
     if (isMobile) {
       const tab = hash.includes('sos') ? 'sos' : hash.includes('posko') ? 'posko' : 'radar'
-      return <MobileAdminPortal initialTab={tab} />
+      return (
+        <Suspense fallback={<div style={{ padding: '48px' }}><LoadingState label="Memuat portal..." /></div>}>
+          <MobileAdminPortal initialTab={tab} />
+        </Suspense>
+      )
     }
     const Component = adminRoutes[hash]
-    return <Component />
+    return (
+      <Suspense fallback={<div style={{ padding: '48px' }}><LoadingState label="Memuat halaman..." /></div>}>
+        <Component />
+      </Suspense>
+    )
   }
 
   const isPetugasPortal = [
@@ -261,9 +272,17 @@ function App() {
       return renderAuthPage('login', role)
     }
     if (isMobile) {
-      return role === 'petugas' ? <MobileAdminPortal initialTab="dashboard" /> : <MobileWargaPortal />
+      return (
+        <Suspense fallback={<div style={{ padding: '48px' }}><LoadingState label="Memuat portal..." /></div>}>
+          {role === 'petugas' ? <MobileAdminPortal initialTab="dashboard" /> : <MobileWargaPortal />}
+        </Suspense>
+      )
     }
-    return <RoleHome role={role} />
+    return (
+      <Suspense fallback={<div style={{ padding: '48px' }}><LoadingState label="Memuat portal..." /></div>}>
+        <RoleHome role={role} />
+      </Suspense>
+    )
   }
 
   // Integrasi probabilitas real-time tiap desa dengan API Backend / Flood Engine

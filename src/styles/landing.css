@@ -28,7 +28,7 @@
   min-height: 100vh;
   margin: 0;
   padding: 0;
-  overflow-x: hidden;
+  overflow-x: clip;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -107,7 +107,9 @@
    2. NAVBAR
    ========================================================================== */
 .landing-header {
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--sigab-border-light);
   padding: 16px max(32px, calc((100% - 1200px) / 2));
   display: flex;
@@ -115,7 +117,8 @@
   justify-content: space-between;
   position: sticky;
   top: 0;
-  z-index: 50;
+  z-index: 1100;
+  box-shadow: 0 2px 12px rgba(12, 26, 36, 0.05);
 }
 
 .landing-brand {
