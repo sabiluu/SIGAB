@@ -4534,3 +4534,390 @@
   -webkit-backdrop-filter: blur(2px) !important;
   z-index: 2050 !important;
 }
+
+
+/* ==========================================================================
+   PREMIUM SOS FORM UI ENHANCEMENTS (COMMAND CENTER + EASY TO UNDERSTAND)
+   ========================================================================== */
+.sos-hero-banner {
+  background: linear-gradient(135deg, #0c1a24 0%, #152c3d 55%, #3b1219 100%);
+  border-radius: 18px;
+  padding: 24px 26px;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 14px 34px rgba(12, 26, 36, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.sos-hero-banner::after {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(239, 68, 68, 0.22) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.sos-hero-banner-main {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.sos-hero-badge-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.sos-hero-live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  color: #fecaca;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 4px 11px;
+  border-radius: 999px;
+  letter-spacing: 0.05em;
+}
+
+.sos-hero-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.35);
+  animation: pulseDotNearest 1.4s infinite;
+}
+
+.sos-hero-gps-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(16, 185, 129, 0.16);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  color: #a7f3d0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 4px 11px;
+  border-radius: 999px;
+}
+
+.sos-hero-title {
+  font-family: var(--warga-font) !important;
+  font-size: clamp(1.35rem, 2.4vw, 1.72rem) !important;
+  font-weight: 800 !important;
+  color: #ffffff !important;
+  letter-spacing: -0.02em !important;
+  margin: 0 0 6px 0 !important;
+}
+
+.sos-hero-subtitle {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #cbd5e1;
+  line-height: 1.55;
+  max-width: 600px;
+}
+
+.sos-hero-subtitle strong {
+  color: #ffffff;
+}
+
+.sos-hero-hotline {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 11px 16px;
+  border-radius: 14px;
+  color: #ffffff;
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: transform 0.16s ease, background-color 0.16s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.sos-hero-hotline:hover {
+  background: rgba(255, 255, 255, 0.18);
+  transform: translateY(-2px);
+}
+
+.sos-hero-hotline-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+.sos-hero-hotline-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.sos-hero-hotline-text small {
+  font-size: 0.68rem;
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+.sos-hero-hotline-text strong {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+/* Modern 3-Card Horizontal Stepper */
+.sos-stepper-modern {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.sos-step-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 13px;
+  border: 1.5px solid #e2e8f0;
+  background: #f8fafc;
+  transition: all 0.2s ease;
+}
+
+.sos-step-card.active {
+  background: #f0fdfa;
+  border-color: var(--warga-teal);
+  box-shadow: 0 6px 18px rgba(0, 154, 166, 0.12);
+}
+
+.sos-step-card.completed {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.sos-step-num {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #e2e8f0;
+  color: #64748b;
+  font-size: 0.88rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sos-step-card.active .sos-step-num {
+  background: linear-gradient(135deg, #00a4b0 0%, #007d87 100%);
+  color: #ffffff;
+  box-shadow: 0 3px 10px rgba(0, 154, 166, 0.3);
+}
+
+.sos-step-card.completed .sos-step-num {
+  background: #10b981;
+  color: #ffffff;
+}
+
+.sos-step-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.sos-step-meta strong {
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: #0c1a24;
+}
+
+.sos-step-meta span {
+  font-size: 0.72rem;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+/* Quick Landmark Chips */
+.sos-quick-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 10px;
+}
+
+.sos-quick-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sos-quick-chip:hover {
+  border-color: var(--warga-teal);
+  background: #f0fdfa;
+  color: #0f766e;
+}
+
+.sos-quick-chip.active {
+  background: #e0f2fe;
+  border-color: #0284c7;
+  color: #0369a1;
+}
+
+/* Step 2 Header & Live Triage Pill */
+.sos-step2-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.sos-triage-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: 1.5px solid #fde68a;
+  background: #fffbeb;
+  flex-shrink: 0;
+}
+
+.sos-triage-pill.critical {
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.sos-triage-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25);
+}
+
+.sos-triage-pill.critical .sos-triage-dot {
+  background: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.25);
+}
+
+.sos-triage-pill small {
+  display: block;
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sos-triage-pill strong {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #b45309;
+}
+
+.sos-triage-pill.critical strong {
+  color: #dc2626;
+}
+
+/* Elevated Location Card & Vulnerable Cards */
+.sos-location-card {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+  border: 1.5px solid #dbe4ee !important;
+  border-left: 4px solid var(--warga-teal) !important;
+  border-radius: 14px !important;
+  padding: 18px !important;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04) !important;
+}
+
+.sos-vulnerable-card {
+  padding: 15px 16px !important;
+  border-radius: 14px !important;
+  border: 1.5px solid #e2e8f0 !important;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.02);
+}
+
+.sos-vulnerable-card:hover {
+  transform: translateY(-1px);
+  border-color: #94a3b8 !important;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.05);
+}
+
+.sos-vulnerable-card.selected {
+  border-color: var(--warga-teal) !important;
+  background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%) !important;
+  box-shadow: 0 6px 16px rgba(0, 154, 166, 0.14) !important;
+}
+
+.sos-vuln-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem !important;
+  flex-shrink: 0;
+}
+
+.sos-vulnerable-card.selected .sos-vuln-icon {
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 154, 166, 0.15);
+}
+
+@media (max-width: 720px) {
+  .sos-hero-banner {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 20px 18px;
+  }
+
+  .sos-hero-hotline {
+    justify-content: center;
+  }
+
+  .sos-stepper-modern {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}

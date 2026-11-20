@@ -628,12 +628,32 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
         </div>
       </div>
 
-      {/* Header Title */}
-      <div className="peta-posko-kicker">Layanan Tanggap Darurat</div>
-      <h1 className="peta-posko-title warga-sos-head-title">
-        <span>Permintaan Evakuasi (SOS)</span>
-        <span className="sos-priority-tag">Prioritas Tinggi</span>
-      </h1>
+      {/* Hero Command Header Banner */}
+      <div className="sos-hero-banner">
+        <div className="sos-hero-banner-main">
+          <div className="sos-hero-badge-row">
+            <span className="sos-hero-live-pill">
+              <span className="sos-hero-live-dot" />
+              JALUR PRIORITAS PUSDALOPS BPBD
+            </span>
+            <span className="sos-hero-gps-pill">
+              {gpsLocation ? '🔒 GPS Terkunci Otomatis' : '📡 Mencari Sinyal GPS...'}
+            </span>
+          </div>
+          <h1 className="sos-hero-title">Permintaan Evakuasi Darurat (SOS)</h1>
+          <p className="sos-hero-subtitle">
+            Sinyal lokasi Anda terhubung langsung ke monitor tim SAR Kecamatan Baureno. Ikuti <strong>2 langkah singkat</strong> di bawah agar armada penyelamat segera dikirim.
+          </p>
+        </div>
+
+        <a href="tel:112" className="sos-hero-hotline" title="Hubungi Hotline Darurat 112">
+          <span className="sos-hero-hotline-icon">📞</span>
+          <div className="sos-hero-hotline-text">
+            <small>Darurat Telepon</small>
+            <strong>Panggil 112</strong>
+          </div>
+        </a>
+      </div>
 
       {/* Segmented Tab Switcher */}
       <div className="sos-segmented-tabs">
@@ -649,26 +669,41 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
           onClick={() => setActiveTab('history')}
           className={`sos-segmented-tab ${activeTab === 'history' ? 'active' : ''}`}
         >
-          <span>📋 Riwayat & Status Tiket {myTickets.length > 0 && `(${myTickets.length})`}</span>
+          <span>📋 Riwayat &amp; Status Tiket {myTickets.length > 0 && `(${myTickets.length})`}</span>
         </button>
       </div>
 
       {/* TAB 1: FORM SOS BARU */}
       {activeTab === 'create' && (
         <div className="sos-card">
-          {/* Multi-step Horizontal Stepper */}
-          <div className="sos-stepper-wrap">
-            <div className={`sos-step-indicator ${step === 1 ? 'active' : step > 1 ? 'completed' : ''}`}>
-              <div className="sos-step-circle">{step > 1 ? '✓' : '1'}</div>
-              <span className="sos-step-label">Lokasi GPS</span>
+          {/* Modern 3-Card Stepper */}
+          <div className="sos-stepper-modern">
+            <div
+              className={`sos-step-card ${step === 1 ? 'active' : step > 1 ? 'completed' : ''}`}
+              onClick={() => { if (step === 2) setStep(1); }}
+              style={{ cursor: step === 2 ? 'pointer' : 'default' }}
+            >
+              <div className="sos-step-num">{step > 1 ? '✓' : '1'}</div>
+              <div className="sos-step-meta">
+                <strong>Titik Lokasi GPS</strong>
+                <span>Kunci koordinat &amp; patokan</span>
+              </div>
             </div>
-            <div className={`sos-step-indicator ${step === 2 ? 'active' : step > 2 ? 'completed' : ''}`}>
-              <div className="sos-step-circle">{step > 2 ? '✓' : '2'}</div>
-              <span className="sos-step-label">Data Evakuasi</span>
+
+            <div className={`sos-step-card ${step === 2 ? 'active' : step > 2 ? 'completed' : ''}`}>
+              <div className="sos-step-num">{step > 2 ? '✓' : '2'}</div>
+              <div className="sos-step-meta">
+                <strong>Data Korban &amp; Foto</strong>
+                <span>Jumlah jiwa &amp; kondisi</span>
+              </div>
             </div>
-            <div className={`sos-step-indicator ${step === 3 ? 'active' : ''}`}>
-              <div className="sos-step-circle">3</div>
-              <span className="sos-step-label">Pelacakan</span>
+
+            <div className={`sos-step-card ${step === 3 ? 'active' : ''}`}>
+              <div className="sos-step-num">3</div>
+              <div className="sos-step-meta">
+                <strong>Pelacakan Tim SAR</strong>
+                <span>Status armada real-time</span>
+              </div>
             </div>
           </div>
 
@@ -677,10 +712,10 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
             <div className="sos-simulation-card">
               <div className="sos-sim-text">
                 <strong>
-                  <span>🧪</span> Mode Simulasi Uji Coba
+                  <span>🧪</span> Mode Uji Coba / Demo Cepat
                 </strong>
                 <p>
-                  Ingin mencoba alur darurat? Isi otomatis formulir dengan data contoh.
+                  Sedang melakukan demonstrasi atau uji sistem? Isi formulir otomatis dengan 1 klik.
                 </p>
               </div>
               <button
@@ -804,11 +839,38 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                 )}
               </div>
 
-              {/* Detail Patokan Input */}
+              {/* Detail Patokan Input with Quick Tap Chips */}
               <div className="sos-form-group">
                 <label className="sos-form-label">
-                  Patokan / Alamat Lengkap Tambahan (Opsional)
+                  Patokan Lokasi &amp; Kondisi Singkat (Opsional — Ketuk chip di bawah untuk isi cepat)
                 </label>
+                <div className="sos-quick-chips">
+                  {[
+                    'Air sudah masuk rumah',
+                    'Arus sungai deras',
+                    'Dekat Masjid / Musala',
+                    'Dekat Balai Desa',
+                    'Butuh perahu karet segera',
+                    'Bertahan di lantai 2 / atap',
+                  ].map((chipText) => {
+                    const isAdded = detailPatokan.toLowerCase().includes(chipText.toLowerCase());
+                    return (
+                      <button
+                        key={chipText}
+                        type="button"
+                        className={`sos-quick-chip ${isAdded ? 'active' : ''}`}
+                        onClick={() => {
+                          if (isAdded) return;
+                          setDetailPatokan((prev) =>
+                            prev.trim() ? `${prev.trim()}, ${chipText}` : chipText
+                          );
+                        }}
+                      >
+                        <span>{isAdded ? '✓' : '+'}</span> {chipText}
+                      </button>
+                    );
+                  })}
+                </div>
                 <input 
                   type="text" 
                   className="sos-input-text"
@@ -840,10 +902,25 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
           {/* STEP 2: DATA KORBAN & FOTO */}
           {step === 2 && (
             <div className="sos-step">
-              <h3 className="sos-section-title">2. Data Rombongan & Kelompok Rentan</h3>
-              <p className="sos-section-desc">
-                Data ini menentukan skor prioritas penyelamatan dan kapasitas perahu SAR yang ditugaskan ke lokasi Anda.
-              </p>
+              <div className="sos-step2-header-row">
+                <div>
+                  <h3 className="sos-section-title">2. Data Rombongan &amp; Kelompok Rentan</h3>
+                  <p className="sos-section-desc" style={{ marginBottom: 0 }}>
+                    Data ini menentukan skor prioritas penyelamatan dan kapasitas perahu SAR yang ditugaskan ke lokasi Anda.
+                  </p>
+                </div>
+                <div className={`sos-triage-pill ${(vulnerable.elderly || vulnerable.toddler || vulnerable.pregnant || vulnerable.disability) ? 'critical' : 'high'}`}>
+                  <span className="sos-triage-dot" />
+                  <div>
+                    <small>Estimasi Prioritas SAR</small>
+                    <strong>
+                      {(vulnerable.elderly || vulnerable.toddler || vulnerable.pregnant || vulnerable.disability)
+                        ? 'PRIORITAS UTAMA (Rentan)'
+                        : 'PRIORITAS TINGGI'}
+                    </strong>
+                  </div>
+                </div>
+              </div>
               
               {/* Jumlah Anggota Keluarga Stepper */}
               <div className="sos-form-group">
