@@ -1224,14 +1224,12 @@ function AdminHome() {
 
   const activeTickets = tickets.filter(t => t.status !== 'completed' && t.status !== 'rejected').sort((a, b) => (b.priority_score || 0) - (a.priority_score || 0))
   const displayedDashboardTickets = useMemo(() => {
-    let list = tickets
-    if (dashboardSosTab === 'active') {
-      list = tickets.filter(t => t.status !== 'completed' && t.status !== 'rejected')
-    } else if (dashboardSosTab === 'simulation') {
-      list = tickets.filter(t => t.is_simulation)
+    let list = activeTickets
+    if (dashboardSosTab === 'simulation') {
+      list = activeTickets.filter(t => t.is_simulation)
     }
     return list.slice(0, 6)
-  }, [tickets, dashboardSosTab])
+  }, [activeTickets, dashboardSosTab])
 
   const shelters = realtimeData?.shelters || []
   const totalShelterCap = shelters.reduce((s, sh) => s + (sh.capacity_total || 0), 0)
@@ -1576,8 +1574,8 @@ function AdminHome() {
             <article className="sos-queue portal-card">
               <div className="admin-section-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <h2>🔴 Antrian & Riwayat Tiket SOS</h2>
-                  <b>{tickets.length} total</b>
+                  <h2>🔴 Antrian Tiket SOS</h2>
+                  <b>{activeTickets.length} aktif</b>
                 </div>
                 <button
                   type="button"
@@ -1602,7 +1600,7 @@ function AdminHome() {
                 </button>
               </div>
 
-              {/* Segmented Filter Tab Mini */}
+              {/* Segmented Filter Tab Mini (Khusus Tiket Aktif / Belum Selesai) */}
               <div style={{ display: 'flex', gap: '6px', margin: '6px 0 12px', flexWrap: 'wrap' }}>
                 <button
                   type="button"
@@ -1614,27 +1612,11 @@ function AdminHome() {
                     fontSize: '0.72rem',
                     fontWeight: 700,
                     cursor: 'pointer',
-                    background: dashboardSosTab === 'all' ? '#0c1a24' : '#f1f5f9',
-                    color: dashboardSosTab === 'all' ? '#ffffff' : '#64748b'
+                    background: dashboardSosTab !== 'simulation' ? '#dc2626' : '#f1f5f9',
+                    color: dashboardSosTab !== 'simulation' ? '#ffffff' : '#64748b'
                   }}
                 >
-                  Semua ({tickets.length})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDashboardSosTab('active')}
-                  style={{
-                    padding: '4px 9px',
-                    borderRadius: '6px',
-                    border: 'none',
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    background: dashboardSosTab === 'active' ? '#dc2626' : '#f1f5f9',
-                    color: dashboardSosTab === 'active' ? '#ffffff' : '#64748b'
-                  }}
-                >
-                  Aktif ({activeTickets.length})
+                  Belum Ditangani ({activeTickets.length})
                 </button>
                 <button
                   type="button"
@@ -1650,24 +1632,24 @@ function AdminHome() {
                     color: dashboardSosTab === 'simulation' ? '#ffffff' : '#64748b'
                   }}
                 >
-                  🧪 Simulasi ({tickets.filter(t => t.is_simulation).length})
+                  🧪 Simulasi Aktif ({activeTickets.filter(t => t.is_simulation).length})
                 </button>
               </div>
 
               {displayedDashboardTickets.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '26px 10px', color: '#64748b' }}>
                   <div style={{ fontSize: '1.8rem', marginBottom: '6px' }}>🛡️</div>
-                  <strong>Tidak ada tiket pada kategori ini</strong>
+                  <strong>Tidak ada antrian SOS aktif</strong>
                   <p style={{ fontSize: '0.82rem', margin: '4px 0 10px' }}>
-                    {dashboardSosTab === 'active' ? 'Semua tiket darurat telah selesai dievakuasi.' : 'Belum ada tiket yang terdaftar.'}
+                    {tickets.length > 0 ? 'Semua tiket darurat telah selesai ditangani.' : 'Belum ada tiket yang masuk.'}
                   </p>
-                  {dashboardSosTab === 'active' && tickets.length > 0 && (
+                  {tickets.length > 0 && (
                     <button
                       type="button"
-                      onClick={() => setDashboardSosTab('all')}
+                      onClick={() => { window.location.hash = '#sos' }}
                       style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#0f172a', borderRadius: '6px', padding: '5px 10px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
                     >
-                      Lihat Riwayat Selesai ({tickets.length})
+                      Lihat Riwayat Selesai di Panel SOS ({tickets.length}) ↗
                     </button>
                   )}
                 </div>
