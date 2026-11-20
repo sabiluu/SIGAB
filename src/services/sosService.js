@@ -149,17 +149,38 @@ export async function getSOSTicketById(id) {
 }
 
 export async function updateSOSStatus(id, updateData) {
+  const updateLocalOnly = () => {
+    const localTickets = readLocalTickets();
+    const idx = localTickets.findIndex((t) => String(t.id) === String(id) || String(t.ticket_number) === String(id));
+    if (idx !== -1) {
+      localTickets[idx] = {
+        ...localTickets[idx],
+        ...updateData,
+        updated_at: new Date().toISOString(),
+      };
+      writeLocalTickets(localTickets);
+      return localTickets[idx];
+    }
+    return null;
+  };
+
+  // Tiket lokal/offline (TKT-xxxx) langsung diperbarui di localStorage tanpa memicu 422 di backend
+  if (String(id).startsWith('TKT-')) {
+    const updated = updateLocalOnly();
+    if (updated) return updated;
+  }
+
   try {
     const res = await apiFetch(`/sos/${id}`, {
       method: 'PUT',
       body: JSON.stringify(updateData),
     });
     try {
-      const localTickets = JSON.parse(localStorage.getItem('sigab_local_sos_tickets') || '[]');
+      const localTickets = readLocalTickets();
       const idx = localTickets.findIndex((t) => String(t.id) === String(id) || String(t.ticket_number) === String(id));
       if (idx !== -1) {
         localTickets[idx] = { ...localTickets[idx], ...updateData, ...res };
-        localStorage.setItem('sigab_local_sos_tickets', JSON.stringify(localTickets));
+        writeLocalTickets(localTickets);
       }
     } catch {}
     return res;
@@ -168,19 +189,17 @@ export async function updateSOSStatus(id, updateData) {
       err.status === 0 ||
       err.status === 408 ||
       err.message?.includes('tidak dapat dihubungi') ||
-      err.message?.includes('terlalu lama');
+      err.message?.includes('terlalu lama') ||
+      err.message?.includes('Failed to fetch') ||
+      err.name === 'AbortError';
 
     const currentToken = typeof localStorage !== 'undefined' ? (localStorage.getItem('access_token') || '') : '';
     const isDemoSession = !currentToken || currentToken.startsWith('demo-') || currentToken.startsWith('sigab-');
+    const isLocalFallbackStatus = err.status === 404 || err.status === 422 || err.status === 401;
 
-    if (isNetworkOrTimeout || isDemoSession) {
-      const localTickets = JSON.parse(localStorage.getItem('sigab_local_sos_tickets') || '[]');
-      const idx = localTickets.findIndex((t) => String(t.id) === String(id) || String(t.ticket_number) === String(id));
-      if (idx !== -1) {
-        localTickets[idx] = { ...localTickets[idx], ...updateData };
-        localStorage.setItem('sigab_local_sos_tickets', JSON.stringify(localTickets));
-        return localTickets[idx];
-      }
+    if (isNetworkOrTimeout || isDemoSession || isLocalFallbackStatus) {
+      const updated = updateLocalOnly();
+      if (updated) return updated;
     }
     throw err;
   }
