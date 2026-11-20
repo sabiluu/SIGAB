@@ -1575,7 +1575,6 @@ function AdminHome() {
               <div className="admin-section-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <h2>🔴 Antrian Tiket SOS</h2>
-                  <b>{activeTickets.length} aktif</b>
                 </div>
                 <button
                   type="button"
