@@ -20,6 +20,14 @@ export default function usePersonalSimulation(userId) {
     if (saved && saved.isRunning) {
       const now = Date.now();
       const elapsedSec = Math.floor((now - (saved.lastUpdated || now)) / 1000);
+
+      // Jika simulasi ditinggalkan terlalu lama (> 2 menit), reset agar tidak tiba-tiba muncul status AWAS saat buka ulang
+      if (elapsedSec > 120) {
+        saveUserSimState(userId, null);
+        setSimState({ isRunning: false, phaseIndex: 0, remainingSec: 0 });
+        return;
+      }
+
       let pIdx = saved.phaseIndex || 0;
       let rem = (saved.remainingSec != null ? saved.remainingSec : PERSONAL_SIM_PHASES[pIdx].duration) - elapsedSec;
 

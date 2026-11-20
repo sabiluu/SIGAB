@@ -449,7 +449,7 @@ export default function MobileWargaView() {
     })
   }, [villages, personalSim.isRunning, simStatus, activeVillage.id])
 
-  // Validasi Darurat: Pengiriman SOS HANYA aktif jika status desa AWAS (prob >= 76%), status darurat backend aktif, ATAU Simulasi Akun Warga di fase AWAS
+  // Validasi Darurat: Pengiriman SOS aktif jika status desa AWAS (prob >= 76%), status darurat backend aktif, ATAU Simulasi Akun Warga di fase AWAS
   const isEmergency = useMemo(() => {
     if (personalSim.isRunning) {
       return Boolean(personalSim.isEmergency || simStatus?.risk_level === 'awas' || Number(simStatus?.probability) >= 76)
@@ -763,34 +763,54 @@ export default function MobileWargaView() {
             <span style={{ fontSize: '1.05rem' }}>📢</span>
             <div style={{ lineHeight: 1.2 }}>
               <div style={{ fontSize: '0.78rem', fontWeight: 900, letterSpacing: '0.02em' }}>
-                STATUS AWAS: EVAKUASI SEGERA
+                {personalSim.isRunning ? 'SIMULASI AWAS: EVAKUASI' : 'STATUS AWAS: EVAKUASI SEGERA'}
               </div>
               <div style={{ fontSize: '0.65rem', color: '#fecaca' }}>
                 Desa {activeVillage.cleanName} • Indeks {Math.round(activeVillage.probability)}% {personalSim.isRunning ? '(Mode Simulasi)' : ''}
               </div>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setActiveTab('sos')}
-            style={{
-              background: '#ffffff',
-              color: '#dc2626',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '6px 10px',
-              fontSize: '0.72rem',
-              fontWeight: 800,
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-              flexShrink: 0,
-            }}
-          >
-            <span>🚨</span>
-            <span>Kirim SOS</span>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+            {personalSim.isRunning && (
+              <button
+                type="button"
+                onClick={() => personalSim.stopSimulation()}
+                style={{
+                  background: 'rgba(0, 0, 0, 0.25)',
+                  color: '#ffffff',
+                  border: '1px solid rgba(255, 255, 255, 0.35)',
+                  borderRadius: '8px',
+                  padding: '6px 8px',
+                  fontSize: '0.68rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Matikan
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setActiveTab('sos')}
+              style={{
+                background: '#ffffff',
+                color: '#dc2626',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '6px 10px',
+                fontSize: '0.72rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                flexShrink: 0,
+              }}
+            >
+              <span>🚨</span>
+              <span>Kirim SOS</span>
+            </button>
+          </div>
         </div>
       )}
 
