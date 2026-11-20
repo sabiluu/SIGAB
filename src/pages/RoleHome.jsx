@@ -622,31 +622,17 @@ function WargaHome() {
             </a>
 
             <div className="warga-topbar-breadcrumb">
-              <span className="divider">|</span>
-              <strong>Portal Warga</strong>
-              <span className="divider">|</span>
+              <span className="divider">/</span>
               <span 
                 onClick={() => setShowProfileModal(true)} 
-                style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
-                title="Klik untuk melihat atau mengatur data domisili, profil & keluarga Anda"
+                style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.82rem', fontWeight: 600 }}
+                title="Klik untuk melihat atau mengatur data domisili & profil"
               >
-                <span style={{ fontSize: '13px' }}>📍</span>
+                <span>📍</span>
                 {geo.loading ? (
-                  <span>Mendeteksi GPS...</span>
+                  <span>Mendeteksi...</span>
                 ) : (
-                  <span>{geo.address ? geo.address.split(',')[0].replace(/^Desa\s+/i, '') : 'Lokasi Device'}</span>
-                )}
-                {geo.isRealDevice && (
-                  <span style={{ 
-                    fontSize: '9px', 
-                    background: '#dcfce7', 
-                    color: '#15803d', 
-                    padding: '1px 5px', 
-                    borderRadius: '10px', 
-                    fontWeight: 700 
-                  }}>
-                    GPS Real
-                  </span>
+                  <span>{geo.address ? geo.address.split(',')[0].replace(/^Desa\s+/i, '') : 'Baureno'}</span>
                 )}
               </span>
             </div>
