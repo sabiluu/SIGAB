@@ -19,6 +19,8 @@ import { playSosAlertTone } from '../utils/audioAlarm'
 import { formatWIBTime, getStoredSidebarState, setStoredSidebarState, getCurrentShift } from '../utils/helpers'
 import LogoutModal from '../components/common/LogoutModal'
 import ProfileModal from '../components/warga/ProfileModal'
+import { useAccessibility } from '../context/AccessibilityContext'
+import { AccessibilityIcon } from '../components/common/AccessibilityWidget'
 import '../styles/role-home.css'
 import '../styles/warga-portal.css'
 
@@ -116,6 +118,7 @@ function Brand({ admin = false, locName = '' }) {
 }
 
 function WargaHome() {
+  const { openPanel: openA11yPanel, activeCount: a11yActiveCount } = useAccessibility()
   const [activeTab, setActiveTab] = useState(() => {
     try {
       const saved = sessionStorage.getItem('sigab_warga_tab')
@@ -449,6 +452,24 @@ function WargaHome() {
                 <circle cx="12" cy="7" r="4" />
               </svg>
               <span>Edit Profil</span>
+            </button>
+
+            <button
+              type="button"
+              className="warga-sidebar-item"
+              onClick={() => {
+                openA11yPanel()
+                if (typeof window !== 'undefined' && window.innerWidth <= 1024) {
+                  setSidebarOpen(false)
+                }
+              }}
+              title="Pengaturan Aksesibilitas (Alt + A)"
+            >
+              <AccessibilityIcon size={18} />
+              <span>Aksesibilitas</span>
+              {a11yActiveCount > 0 && (
+                <span className="a11y-sidebar-badge">{a11yActiveCount}</span>
+              )}
             </button>
 
             {isEmergencyActive && (

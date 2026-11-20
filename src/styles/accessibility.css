@@ -1,5 +1,5 @@
 /* ==========================================================================
-   SIGAB Accessibility Styles & Floating Control Panel
+   SIGAB Accessibility Styles & Modal Control Panel
    ========================================================================== */
 
 .a11y-sr-only {
@@ -101,68 +101,47 @@ html.a11y-high-contrast textarea {
   border-width: 1.5px;
 }
 
-/* Floating Accessibility Trigger Button */
-.a11y-root {
-  position: fixed;
-  bottom: 20px;
-  left: 20px;
-  z-index: 2500;
-  font-family: var(--font-body, 'Trebuchet MS', 'Segoe UI', sans-serif);
-}
-
-.a11y-fab {
+/* Sidebar badge for active accessibility features */
+.a11y-sidebar-badge {
+  margin-left: auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  min-width: 46px;
-  height: 46px;
-  padding: 0 14px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
   border-radius: 999px;
-  border: 1.5px solid rgba(255, 255, 255, 0.25);
-  background: #0c4a6e;
+  background: #0284c7;
   color: #ffffff;
-  font-size: 0.82rem;
-  font-weight: 700;
-  box-shadow: 0 10px 26px rgba(6, 26, 36, 0.28);
-  cursor: pointer;
-  transition: transform 0.16s ease, background-color 0.16s ease, box-shadow 0.16s ease;
-}
-
-.a11y-fab:hover {
-  background: #075985;
-  transform: translateY(-2px);
-  box-shadow: 0 14px 30px rgba(6, 26, 36, 0.34);
-}
-
-.a11y-fab-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  border-radius: 999px;
-  background: #f59e0b;
-  color: #0f172a;
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   font-weight: 800;
 }
 
-/* Popover Panel */
-.a11y-panel {
-  position: absolute;
-  bottom: 56px;
-  left: 0;
-  width: min(330px, calc(100vw - 28px));
-  max-height: min(76vh, 540px);
+/* Centered Modal Overlay & Dialog */
+.a11y-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.a11y-modal {
+  width: min(390px, 100%);
+  max-height: min(86vh, 620px);
   overflow-y: auto;
   background: #ffffff;
   color: #0f172a;
-  border: 1px solid #cbd5e1;
-  border-radius: 14px;
-  box-shadow: 0 20px 44px rgba(15, 23, 42, 0.22);
-  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 24px 52px rgba(15, 23, 42, 0.28);
+  padding: 18px 20px;
+  font-family: 'Plus Jakarta Sans', 'Inter', 'Segoe UI', sans-serif;
 }
 
 .a11y-panel-header {
@@ -172,17 +151,19 @@ html.a11y-high-contrast textarea {
   gap: 8px;
   padding-bottom: 12px;
   border-bottom: 1px solid #e2e8f0;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .a11y-panel-title {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.95rem;
-  font-weight: 800;
-  color: #0c4a6e;
-  margin: 0;
+  font-family: 'Plus Jakarta Sans', 'Inter', 'Segoe UI', sans-serif !important;
+  font-size: 1rem !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.01em !important;
+  color: #0c4a6e !important;
+  margin: 0 !important;
 }
 
 .a11y-close-btn {
@@ -195,7 +176,7 @@ html.a11y-high-contrast textarea {
   border: 1px solid #e2e8f0;
   background: #f8fafc;
   color: #334155;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
 }
 
@@ -204,12 +185,12 @@ html.a11y-high-contrast textarea {
 }
 
 .a11y-section {
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .a11y-label {
   display: block;
-  font-size: 0.76rem;
+  font-size: 0.74rem;
   font-weight: 700;
   color: #475569;
   margin-bottom: 6px;
@@ -229,7 +210,7 @@ html.a11y-high-contrast textarea {
   border: 1.5px solid #cbd5e1;
   background: #f8fafc;
   color: #1e293b;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 700;
   text-align: center;
 }
@@ -252,7 +233,7 @@ html.a11y-high-contrast textarea {
   justify-content: space-between;
   gap: 10px;
   width: 100%;
-  padding: 9px 10px;
+  padding: 10px 12px;
   border-radius: 10px;
   border: 1px solid #e2e8f0;
   background: #f8fafc;
@@ -272,16 +253,16 @@ html.a11y-high-contrast textarea {
 
 .a11y-toggle-text strong {
   display: block;
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   font-weight: 700;
   color: #0f172a;
 }
 
 .a11y-toggle-text span {
   display: block;
-  font-size: 0.71rem;
+  font-size: 0.72rem;
   color: #475569;
-  margin-top: 1px;
+  margin-top: 2px;
 }
 
 .a11y-switch {
@@ -328,7 +309,7 @@ html.a11y-high-contrast textarea {
   border: 0;
   background: #009aa6;
   color: #ffffff;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 700;
 }
 
@@ -345,10 +326,10 @@ html.a11y-high-contrast textarea {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-top: 12px;
-  padding-top: 10px;
+  margin-top: 14px;
+  padding-top: 12px;
   border-top: 1px solid #e2e8f0;
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   color: #64748b;
 }
 
@@ -364,21 +345,4 @@ html.a11y-high-contrast textarea {
 
 .a11y-reset-btn:hover {
   background: #f1f5f9;
-}
-
-@media (max-width: 768px) {
-  .a11y-root {
-    bottom: 84px;
-    left: 12px;
-  }
-
-  .a11y-fab {
-    min-width: 44px;
-    height: 44px;
-    padding: 0 11px;
-  }
-
-  .a11y-fab-label {
-    display: none;
-  }
 }

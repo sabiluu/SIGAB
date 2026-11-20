@@ -14,6 +14,8 @@ import { PERSONAL_SIM_PHASES } from '../../utils/personalSimulation'
 import RiskMap from '../../components/RiskMap'
 import LogoutModal from '../../components/common/LogoutModal'
 import ProfileModal from '../../components/warga/ProfileModal'
+import { useAccessibility } from '../../context/AccessibilityContext'
+import { AccessibilityIcon } from '../../components/common/AccessibilityWidget'
 import '../../styles/mobile.css'
 
 function getSimPhaseInfo(status) {
@@ -89,6 +91,7 @@ function getSimPhaseInfo(status) {
 }
 
 export default function MobileWargaView() {
+  const { openPanel: openA11yPanel, activeCount: a11yActiveCount } = useAccessibility()
   const [activeTab, setActiveTab] = useState('beranda') // 'beranda' | 'peta' | 'sos' | 'panduan' | 'kontak'
   const savedProfile = useMemo(() => {
     try {
@@ -651,6 +654,22 @@ export default function MobileWargaView() {
         </div>
 
         <div className="m-header-actions">
+          <button
+            type="button"
+            className="m-icon-btn"
+            onClick={openA11yPanel}
+            title="Pengaturan Aksesibilitas"
+            aria-label="Pengaturan Aksesibilitas"
+            style={{
+              position: 'relative',
+              width: '40px',
+              height: '40px',
+              background: a11yActiveCount > 0 ? '#e0f2fe' : '#f1f6f8',
+              color: a11yActiveCount > 0 ? '#0284c7' : '#0c1a24',
+            }}
+          >
+            <AccessibilityIcon size={19} />
+          </button>
           {/* Notification Bell Button */}
           <button
             type="button"

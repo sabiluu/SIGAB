@@ -3,10 +3,13 @@ import { logout } from '../../services/authService'
 import { apiFetch } from '../../services/api'
 import wsService from '../../services/wsService'
 import LogoutModal from '../common/LogoutModal'
+import { useAccessibility } from '../../context/AccessibilityContext'
+import { AccessibilityIcon } from '../common/AccessibilityWidget'
 import { getStoredSidebarState, setStoredSidebarState, getCurrentShift } from '../../utils/helpers'
 import '../../styles/role-home.css'
 
 export default function AdminLayout({ children, activeMenu }) {
+  const { openPanel: openA11yPanel, activeCount: a11yActiveCount } = useAccessibility()
   const [sidebarOpen, setSidebarOpen] = useState(() => getStoredSidebarState(typeof window !== 'undefined' ? window.innerWidth > 1024 : true))
   const [currentTime, setCurrentTime] = useState(new Date())
   const [isEmergency, setIsEmergency] = useState(false)
@@ -172,6 +175,19 @@ export default function AdminLayout({ children, activeMenu }) {
               {item.badge && <b>{item.badge}</b>}
             </a>
           ))}
+          <a
+            href="#aksesibilitas"
+            onClick={(e) => {
+              e.preventDefault()
+              openA11yPanel()
+              handleNavClick()
+            }}
+            title="Pengaturan Aksesibilitas (Alt + A)"
+          >
+            <i><AccessibilityIcon size={18} /></i>
+            <span>Aksesibilitas</span>
+            {a11yActiveCount > 0 && <b>{a11yActiveCount}</b>}
+          </a>
         </nav>
 
         <div className="operator">

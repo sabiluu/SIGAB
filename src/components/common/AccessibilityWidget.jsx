@@ -1,14 +1,14 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { useAccessibility } from '../../context/AccessibilityContext'
 
-const A11yIcon = () => (
+export const AccessibilityIcon = ({ size = 18 }) => (
   <svg
-    width="18"
-    height="18"
+    width={size}
+    height={size}
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
-    strokeWidth="2.2"
+    strokeWidth="2.1"
     strokeLinecap="round"
     strokeLinejoin="round"
     aria-hidden="true"
@@ -28,13 +28,13 @@ export default function AccessibilityWidget() {
     readCurrentScreen,
     stopSpeaking,
     isSpeaking,
-    activeCount,
+    isPanelOpen,
+    closePanel,
+    togglePanel,
     speechSupported,
     vibrationSupported,
   } = useAccessibility()
 
-  const [open, setOpen] = useState(false)
-  const triggerRef = useRef(null)
   const panelRef = useRef(null)
 
   // Keyboard shortcut Alt+A to toggle, Escape to close
@@ -42,32 +42,14 @@ export default function AccessibilityWidget() {
     const handleKeyDown = (e) => {
       if (e.altKey && (e.key === 'a' || e.key === 'A')) {
         e.preventDefault()
-        setOpen((prev) => !prev)
-      } else if (e.key === 'Escape' && open) {
-        setOpen(false)
-        triggerRef.current?.focus()
+        togglePanel()
+      } else if (e.key === 'Escape' && isPanelOpen) {
+        closePanel()
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [open])
-
-  // Close when clicking outside
-  useEffect(() => {
-    if (!open) return
-    const handleClickOutside = (e) => {
-      if (
-        panelRef.current &&
-        !panelRef.current.contains(e.target) &&
-        triggerRef.current &&
-        !triggerRef.current.contains(e.target)
-      ) {
-        setOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [open])
+  }, [isPanelOpen, togglePanel, closePanel])
 
   const handleSkipToContent = (e) => {
     e.preventDefault()
@@ -90,26 +72,29 @@ export default function AccessibilityWidget() {
         Lewati ke konten utama
       </a>
 
-      <div className="a11y-root">
-        {open && (
+      {isPanelOpen && (
+        <div
+          className="a11y-modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closePanel()
+          }}
+        >
           <section
             ref={panelRef}
-            className="a11y-panel"
+            className="a11y-modal"
             role="dialog"
+            aria-modal="true"
             aria-label="Pengaturan Aksesibilitas SIGAB"
           >
             <div className="a11y-panel-header">
               <h2 className="a11y-panel-title">
-                <A11yIcon />
-                <span>Aksesibilitas</span>
+                <AccessibilityIcon size={19} />
+                <span>Pengaturan Aksesibilitas</span>
               </h2>
               <button
                 type="button"
                 className="a11y-close-btn"
-                onClick={() => {
-                  setOpen(false)
-                  triggerRef.current?.focus()
-                }}
+                onClick={closePanel}
                 aria-label="Tutup panel aksesibilitas"
               >
                 ✕
@@ -249,22 +234,8 @@ export default function AccessibilityWidget() {
               </button>
             </div>
           </section>
-        )}
-
-        <button
-          ref={triggerRef}
-          type="button"
-          className="a11y-fab"
-          aria-label="Buka Pengaturan Aksesibilitas"
-          aria-expanded={open}
-          title="Aksesibilitas (Alt + A)"
-          onClick={() => setOpen((prev) => !prev)}
-        >
-          <A11yIcon />
-          <span className="a11y-fab-label">Aksesibilitas</span>
-          {activeCount > 0 && <span className="a11y-fab-badge">{activeCount}</span>}
-        </button>
-      </div>
+        </div>
+      )}
     </>
   )
 }

@@ -33,6 +33,7 @@ export function AccessibilityProvider({ children }) {
   const [prefs, setPrefs] = useState(loadInitialPrefs)
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [announcement, setAnnouncement] = useState('')
+  const [isPanelOpen, setIsPanelOpen] = useState(false)
 
   // Persist preferences and sync classes to <html>
   useEffect(() => {
@@ -173,6 +174,10 @@ export function AccessibilityProvider({ children }) {
     return count
   }, [prefs])
 
+  const openPanel = useCallback(() => setIsPanelOpen(true), [])
+  const closePanel = useCallback(() => setIsPanelOpen(false), [])
+  const togglePanel = useCallback(() => setIsPanelOpen((prev) => !prev), [])
+
   const value = useMemo(
     () => ({
       prefs,
@@ -185,6 +190,10 @@ export function AccessibilityProvider({ children }) {
       vibrate,
       announce,
       activeCount,
+      isPanelOpen,
+      openPanel,
+      closePanel,
+      togglePanel,
       speechSupported: typeof window !== 'undefined' && 'speechSynthesis' in window,
       vibrationSupported: typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function',
     }),
@@ -199,6 +208,10 @@ export function AccessibilityProvider({ children }) {
       vibrate,
       announce,
       activeCount,
+      isPanelOpen,
+      openPanel,
+      closePanel,
+      togglePanel,
     ],
   )
 
