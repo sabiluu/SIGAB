@@ -1,5 +1,4 @@
 import { Suspense, lazy, useEffect, useState } from 'react'
-import RiskMap from './components/RiskMap'
 import { LoadingState, ErrorState, EmptyState } from './components/common/AsyncState'
 import { fetchDashboardSnapshot } from './services/dashboardService'
 import useIsMobile from './hooks/useIsMobile'
@@ -7,6 +6,7 @@ import MobileLanding from './components/mobile/MobileLanding'
 import './styles/landing.css'
 
 const AuthPage = lazy(() => import('./pages/AuthPage'))
+const RiskMap = lazy(() => import('./components/RiskMap'))
 const RoleHome = lazy(() => import('./pages/RoleHome'))
 const SOSManager = lazy(() => import('./pages/admin/SOSManager'))
 const RadarPeta = lazy(() => import('./pages/admin/RadarPeta'))
@@ -471,7 +471,13 @@ function App() {
             <div className="hero-right">
               <div className="hero-visual-wrapper">
                 <div className="hero-image-frame">
-                  <img src="/hero-river.jpg" alt="Pemandangan sungai Bengawan Solo dari udara" />
+                  <img
+                    src="/hero-river.jpg"
+                    alt="Pemandangan sungai Bengawan Solo dari udara"
+                    loading="eager"
+                    fetchPriority="high"
+                    decoding="async"
+                  />
                   <div className="hero-location-chip">
                     {SVG_ICONS.pin}
                     <span>Kecamatan Baureno</span>
@@ -660,20 +666,22 @@ function App() {
             {/* Left: Real Leaflet & OSM Map Card */}
             <div className="map-visual-card">
               <div style={{ position: 'relative', width: '100%', height: '380px', borderRadius: '18px', overflow: 'hidden', boxShadow: '0 4px 14px rgba(12, 26, 36, 0.08)' }}>
-                <RiskMap
-                  height="380px"
-                  selectedVillageName={selectedLandingVillage}
-                  onSelectVillage={(v) => {
-                    if (v && v.name) {
-                      const cleanName = v.name.replace(/^Desa\s+/i, '')
-                      setSelectedLandingVillage(cleanName)
-                      const matched = villagesData.find(vd => vd.cleanName.toLowerCase() === cleanName.toLowerCase() || vd.name.toLowerCase().includes(cleanName.toLowerCase()))
-                      if (matched) {
-                        setSelectedVillageForRoute(matched)
+                <Suspense fallback={<div style={{ height: '380px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', color: '#64748b', fontSize: '0.85rem', fontWeight: 600 }}>Memuat peta interaktif...</div>}>
+                  <RiskMap
+                    height="380px"
+                    selectedVillageName={selectedLandingVillage}
+                    onSelectVillage={(v) => {
+                      if (v && v.name) {
+                        const cleanName = v.name.replace(/^Desa\s+/i, '')
+                        setSelectedLandingVillage(cleanName)
+                        const matched = villagesData.find(vd => vd.cleanName.toLowerCase() === cleanName.toLowerCase() || vd.name.toLowerCase().includes(cleanName.toLowerCase()))
+                        if (matched) {
+                          setSelectedVillageForRoute(matched)
+                        }
                       }
-                    }
-                  }}
-                />
+                    }}
+                  />
+                </Suspense>
                 <div className="map-legend-pill" style={{ zIndex: 1000, pointerEvents: 'none', bottom: '14px', left: '14px' }}>
                   <span className="river-indicator" />
                   <span>Bengawan Solo • Real-Time OSM Spasial</span>

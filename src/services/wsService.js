@@ -37,7 +37,8 @@ class WebSocketService {
    * @param {string} [options.role] - Role user ('user' | 'admin')
    */
   connect(channel = 'alerts', options = {}) {
-    if (this._connections[channel]?.readyState === WebSocket.OPEN) {
+    const existing = this._connections[channel];
+    if (existing && (existing.readyState === WebSocket.OPEN || existing.readyState === WebSocket.CONNECTING)) {
       if (options.villageId && options.villageId !== this._channelOptions[channel]?.villageId) {
         this.updateVillage(options.villageId, channel);
       }
