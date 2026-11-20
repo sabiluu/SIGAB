@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { logout, getProfile } from '../services/authService'
 import { apiFetch } from '../services/api'
 import wsService from '../services/wsService'
