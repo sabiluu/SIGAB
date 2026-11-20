@@ -382,7 +382,7 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
                       title={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
                       aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
                     >
-                      {showPassword ? SVG_ICONS.eye : SVG_ICONS.eyeOff}
+                      {showPassword ? SVG_ICONS.eyeOff : SVG_ICONS.eye}
                     </button>
                   </div>
                 </div>
@@ -484,7 +484,7 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
                       title={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
                       aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
                     >
-                      {showPassword ? SVG_ICONS.eye : SVG_ICONS.eyeOff}
+                      {showPassword ? SVG_ICONS.eyeOff : SVG_ICONS.eye}
                     </button>
                   </div>
                 </div>
@@ -544,7 +544,7 @@ function AuthPage({ initialMode = 'login', initialRole = 'warga' }) {
                     title={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
                     aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
                   >
-                    {showPassword ? SVG_ICONS.eye : SVG_ICONS.eyeOff}
+                    {showPassword ? SVG_ICONS.eyeOff : SVG_ICONS.eye}
                   </button>
                 </div>
               </div>
