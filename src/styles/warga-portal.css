@@ -5045,3 +5045,64 @@
   animation: dashShimmer 5.5s ease-in-out infinite;
   pointer-events: none;
 }
+
+
+/* ==========================================================================
+   KONTAK DARURAT: SUBTLE 2-COLUMN KANBAN CONTAINERS
+   ========================================================================== */
+.kontak-bottom-grid {
+  align-items: start;
+}
+
+.kontak-kanban-col {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 18px;
+}
+
+.kontak-kanban-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.kontak-kanban-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kontak-kanban-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.kontak-kanban-dot.teal {
+  background: var(--warga-teal);
+}
+
+.kontak-kanban-dot.blue {
+  background: #0284c7;
+}
+
+.kontak-kanban-head .kontak-subgroup-title {
+  margin: 0 !important;
+  font-size: 0.98rem !important;
+}
+
+.kontak-kanban-count {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  padding: 3px 9px;
+  border-radius: 999px;
+}

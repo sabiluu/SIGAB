@@ -145,11 +145,17 @@ export default function WargaKontakDarurat({ isEmergencyActive = false }) {
         </div>
       </div>
 
-      {/* 2-Column Split Layout */}
+      {/* 2-Column Kanban Split Layout */}
       <div className="kontak-bottom-grid">
         {/* Left Column: Layanan Gawat Darurat */}
-        <div>
-          <h2 className="kontak-subgroup-title">Layanan Gawat Darurat</h2>
+        <div className="kontak-kanban-col">
+          <div className="kontak-kanban-head">
+            <div className="kontak-kanban-title-wrap">
+              <span className="kontak-kanban-dot teal" />
+              <h2 className="kontak-subgroup-title">Layanan Gawat Darurat</h2>
+            </div>
+            <span className="kontak-kanban-count">{emergencyServices.length} kanal</span>
+          </div>
 
           <div className="kontak-services-2x2">
             {emergencyServices.map((srv, idx) => (
@@ -179,8 +185,14 @@ export default function WargaKontakDarurat({ isEmergencyActive = false }) {
         </div>
 
         {/* Right Column: Posko & Fasilitas */}
-        <div>
-          <h2 className="kontak-subgroup-title">Posko &amp; Fasilitas</h2>
+        <div className="kontak-kanban-col">
+          <div className="kontak-kanban-head">
+            <div className="kontak-kanban-title-wrap">
+              <span className="kontak-kanban-dot blue" />
+              <h2 className="kontak-subgroup-title">Posko &amp; Fasilitas</h2>
+            </div>
+            <span className="kontak-kanban-count">{facilities.length} lokasi</span>
+          </div>
 
           <div className="kontak-facilities-col">
             {facilities.map((fac, idx) => (
