@@ -139,25 +139,18 @@ function WargaHome() {
   const [showLocationModal, setShowLocationModal] = useState(false)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [tempVillageId, setTempVillageId] = useState(3)
-  const [sidebarOpen, setSidebarOpen] = useState(() => getStoredSidebarState(typeof window !== 'undefined' ? window.innerWidth > 1024 : true))
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const geo = useGeolocation()
   const [currentTime, setCurrentTime] = useState(new Date())
   const { data: realtimeData } = useDashboardRealtime()
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.innerWidth > 1024) {
-      setStoredSidebarState(sidebarOpen)
+    if (!sidebarOpen) return
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') setSidebarOpen(false)
     }
-  }, [sidebarOpen])
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth <= 1024 && sidebarOpen) {
-        setSidebarOpen(false)
-      }
-    }
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
   }, [sidebarOpen])
 
   useEffect(() => {
@@ -316,9 +309,7 @@ function WargaHome() {
     try {
       sessionStorage.setItem('sigab_warga_tab', tab)
     } catch (e) {}
-    if (typeof window !== 'undefined' && window.innerWidth <= 1024) {
-      setSidebarOpen(false)
-    }
+    setSidebarOpen(false)
     if (tab === 'peta') {
       setTimeout(() => {
         const el = document.getElementById('peta-wilayah-section')
@@ -345,20 +336,6 @@ function WargaHome() {
       <aside className={`warga-sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
         <div>
           <div className="warga-sidebar-header-row">
-            <button
-              type="button"
-              className="warga-sidebar-toggle-btn-inside"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              title={sidebarOpen ? "Ciutkan Sidebar" : "Buka Sidebar"}
-              aria-label="Toggle Sidebar"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <line x1="3" y1="12" x2="21" y2="12" />
-                <line x1="3" y1="18" x2="21" y2="18" />
-              </svg>
-            </button>
-
             <a href="#" className="warga-sidebar-brand" onClick={(e) => { e.preventDefault(); handleSelectTab('beranda'); }}>
               <div className="warga-sidebar-brand-icon">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.4" strokeLinecap="round">
@@ -372,6 +349,19 @@ function WargaHome() {
                 <span>Siaga Banjir Baureno</span>
               </div>
             </a>
+
+            <button
+              type="button"
+              className="warga-sidebar-toggle-btn-inside"
+              onClick={() => setSidebarOpen(false)}
+              title="Tutup Menu"
+              aria-label="Tutup Menu"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
           </div>
 
           <nav className="warga-sidebar-nav">
@@ -597,19 +587,42 @@ function WargaHome() {
           <div className="warga-topbar-left">
             <button
               type="button"
-              className="warga-sidebar-toggle-btn warga-mobile-only-toggle"
+              className="warga-sidebar-toggle-btn gh-hamburger-btn"
               onClick={() => setSidebarOpen(true)}
-              title="Buka Sidebar"
-              aria-label="Buka Sidebar"
+              title="Buka Menu Navigasi"
+              aria-label="Buka Menu Navigasi"
+              aria-expanded={sidebarOpen}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
                 <line x1="3" y1="6" x2="21" y2="6" />
                 <line x1="3" y1="12" x2="21" y2="12" />
                 <line x1="3" y1="18" x2="21" y2="18" />
               </svg>
             </button>
 
+            <a
+              href="#"
+              className="sigab-navbar-brand"
+              onClick={(e) => {
+                e.preventDefault()
+                handleSelectTab('beranda')
+              }}
+            >
+              <div className="sigab-navbar-brand-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M3 8c2-2 4-2 6 0s4 2 6 0 4-2 6 0" />
+                  <path d="M3 13c2-2 4-2 6 0s4 2 6 0 4-2 6 0" />
+                  <path d="M3 18c2-2 4-2 6 0s4 2 6 0 4-2 6 0" />
+                </svg>
+              </div>
+              <div className="sigab-navbar-brand-text">
+                <strong>SIGAB</strong>
+                <span>Siaga Banjir</span>
+              </div>
+            </a>
+
             <div className="warga-topbar-breadcrumb">
+              <span className="divider">|</span>
               <strong>Portal Warga</strong>
               <span className="divider">|</span>
               <span 

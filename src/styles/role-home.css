@@ -504,3 +504,99 @@
     justify-content: center !important;
   }
 }
+
+
+/* ==========================================================================
+   GITHUB-STYLE SLIDE-OVER SIDEBAR DRAWER & NAVBAR BRAND LOGO (ADMIN)
+   ========================================================================== */
+.admin-mobile-toggle.gh-hamburger-btn {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid #d0d7de;
+  background: #ffffff;
+  color: #1e293b;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.admin-mobile-toggle.gh-hamburger-btn:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0c1a24;
+}
+
+/* Full width main content */
+.admin-content,
+.admin-portal.sidebar-closed .admin-content {
+  margin-left: 0 !important;
+  width: 100% !important;
+}
+
+/* Slide-over drawer for desktop & mobile */
+.admin-sidebar,
+.admin-portal.sidebar-closed .admin-sidebar,
+.admin-portal:not(.sidebar-closed) .admin-sidebar {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  bottom: 0 !important;
+  width: 285px !important;
+  max-width: 85vw !important;
+  height: 100vh !important;
+  z-index: 2100 !important;
+  border-radius: 0 14px 14px 0 !important;
+  transition: transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.admin-portal.sidebar-closed .admin-sidebar {
+  transform: translateX(-100%) !important;
+  pointer-events: none;
+  box-shadow: none !important;
+}
+
+.admin-portal:not(.sidebar-closed) .admin-sidebar {
+  transform: translateX(0) !important;
+  pointer-events: auto;
+  box-shadow: 0 16px 48px rgba(15, 23, 42, 0.45) !important;
+}
+
+.admin-portal .sidebar-header {
+  justify-content: space-between !important;
+  padding: 18px 16px !important;
+}
+
+.admin-portal .brand-text,
+.admin-portal .role-brand,
+.admin-portal .admin-sidebar nav a span,
+.admin-portal .admin-sidebar nav a b,
+.admin-portal .op-text,
+.admin-portal .warga-sidebar-logout-btn span {
+  display: flex !important;
+}
+
+.admin-portal .admin-sidebar nav a {
+  justify-content: flex-start !important;
+}
+
+.admin-portal .operator {
+  padding: 20px 16px !important;
+  justify-content: flex-start !important;
+}
+
+.admin-sidebar-backdrop {
+  display: block !important;
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(15, 23, 42, 0.48) !important;
+  backdrop-filter: blur(2px) !important;
+  -webkit-backdrop-filter: blur(2px) !important;
+  z-index: 2050 !important;
+}
