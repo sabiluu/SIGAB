@@ -5,6 +5,7 @@ import { createSOSTicket, getMyTickets, uploadSOSPhoto } from '../../services/so
 import { resolveMediaUrl } from '../../services/api';
 import wsService from '../../services/wsService';
 import { useAuth } from '../../context/AuthContext';
+import { useAccessibility } from '../../context/AccessibilityContext';
 import { formatWIBDateTime } from '../../utils/helpers';
 
 import useGeolocation, { reverseGeocodeLocation } from '../../hooks/useGeolocation';
@@ -40,6 +41,7 @@ function MapPanController({ center }) {
 
 export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActive = false, isPersonalSim = false, simStatus = null }) {
   const { user } = useAuth();
+  const { vibrate, speak } = useAccessibility();
   const internalGeo = useGeolocation();
   const geo = externalGeo || internalGeo;
 
@@ -473,6 +475,8 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
       const res = await createSOSTicket(payload);
       setTicket(res);
       setStep(3);
+      vibrate([200, 100, 200]);
+      speak('Sinyal darurat SOS berhasil dikirim. Tetap tenang, petugas sedang memproses laporan Anda.');
       // Auto add to myTickets list
       setMyTickets(prev => [res, ...prev.filter(t => String(t.id) !== String(res.id) && String(t.ticket_number) !== String(res.ticket_number))]);
     } catch (err) {
@@ -496,6 +500,8 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
           const fallbackRes = await createSOSTicket(fallbackPayload);
           setTicket(fallbackRes);
           setStep(3);
+          vibrate([200, 100, 200]);
+          speak('Sinyal simulasi SOS berhasil dikirim.');
           setMyTickets(prev => [fallbackRes, ...prev]);
           return;
         } catch (retryErr) {

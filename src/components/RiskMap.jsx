@@ -448,7 +448,12 @@ export default function RiskMap({
   }, [villages, selectedVillageName]);
 
   return (
-    <div className="leaflet-map-wrapper" style={{ height, width: '100%', borderRadius: '12px', overflow: 'hidden', position: 'relative', zIndex: 1, marginTop: '0px' }}>
+    <div
+      className="leaflet-map-wrapper"
+      role="region"
+      aria-label="Peta interaktif risiko banjir Kecamatan Baureno"
+      style={{ height, width: '100%', borderRadius: '12px', overflow: 'hidden', position: 'relative', zIndex: 1, marginTop: '0px' }}
+    >
       <style>{`
         .leaflet-container {
           touch-action: none;
