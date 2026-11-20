@@ -4859,14 +4859,48 @@
   color: #dc2626;
 }
 
-/* Elevated Location Card & Vulnerable Cards */
+/* Compact Location Info Strip & Vulnerable Cards */
 .sos-location-card {
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
-  border: 1.5px solid #dbe4ee !important;
-  border-left: 4px solid var(--warga-teal) !important;
-  border-radius: 14px !important;
-  padding: 18px !important;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04) !important;
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 10px !important;
+  padding: 10px 14px !important;
+  box-shadow: none !important;
+  margin-bottom: 14px !important;
+}
+
+.sos-location-card .sos-location-head {
+  margin-bottom: 6px;
+  align-items: center;
+}
+
+.sos-location-card .sos-location-label {
+  font-size: 0.68rem;
+  margin-bottom: 2px;
+}
+
+.sos-location-card .sos-location-address {
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.sos-location-card .btn-refresh-gps {
+  padding: 5px 11px;
+  font-size: 0.74rem;
+  border-width: 1px;
+  border-radius: 7px;
+}
+
+.sos-location-card .sos-coords-strip {
+  font-size: 0.72rem;
+  padding-top: 7px;
+  gap: 8px;
+}
+
+.sos-location-card .sos-source-badge {
+  font-size: 0.68rem;
+  padding: 2px 7px;
 }
 
 .sos-vulnerable-card {
