@@ -70,6 +70,35 @@ export async function createSOSTicket(data) {
   }
 }
 
+function readLocalTickets() {
+  try {
+    const raw = JSON.parse(localStorage.getItem('sigab_local_sos_tickets') || '[]');
+    return Array.isArray(raw) ? raw : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeLocalTickets(tickets) {
+  try {
+    localStorage.setItem('sigab_local_sos_tickets', JSON.stringify(tickets.slice(0, 200)));
+  } catch {
+    // abaikan jika storage penuh
+  }
+}
+
+function mergeAndSortTickets(remote, localTickets, persist = false) {
+  const remoteList = Array.isArray(remote) ? remote : [];
+  const remoteIds = new Set(remoteList.map((t) => String(t.ticket_number || t.id)));
+  const uniqueLocals = localTickets.filter((t) => !remoteIds.has(String(t.ticket_number || t.id)));
+  const merged = [...uniqueLocals, ...remoteList];
+  merged.sort((a, b) => new Date(b.submitted_at || b.created_at || 0) - new Date(a.submitted_at || a.created_at || 0));
+  if (persist && merged.length > 0) {
+    writeLocalTickets(merged);
+  }
+  return merged;
+}
+
 export async function getSOSTickets(params = {}) {
   const query = new URLSearchParams();
   if (params.sort_by) query.append('sort_by', params.sort_by);
@@ -78,19 +107,16 @@ export async function getSOSTickets(params = {}) {
     query.append('is_simulation', params.is_simulation);
   }
   const qs = query.toString() ? `?${query.toString()}` : '';
+  const isUnfiltered = !params.status && (params.is_simulation === undefined || params.is_simulation === null);
   try {
     const remote = await apiFetch(`/sos${qs}`);
-    const localTickets = JSON.parse(localStorage.getItem('sigab_local_sos_tickets') || '[]');
+    const localTickets = readLocalTickets();
     if (Array.isArray(remote)) {
-      const remoteIds = new Set(remote.map((t) => String(t.ticket_number || t.id)));
-      const uniqueLocals = localTickets.filter((t) => !remoteIds.has(String(t.ticket_number || t.id)));
-      const merged = [...uniqueLocals, ...remote];
-      merged.sort((a, b) => new Date(b.submitted_at || b.created_at || 0) - new Date(a.submitted_at || a.created_at || 0));
-      return merged;
+      return mergeAndSortTickets(remote, localTickets, isUnfiltered);
     }
     return remote;
   } catch {
-    const localTickets = JSON.parse(localStorage.getItem('sigab_local_sos_tickets') || '[]');
+    const localTickets = readLocalTickets();
     localTickets.sort((a, b) => new Date(b.submitted_at || b.created_at || 0) - new Date(a.submitted_at || a.created_at || 0));
     return localTickets;
   }
@@ -99,17 +125,13 @@ export async function getSOSTickets(params = {}) {
 export async function getMyTickets() {
   try {
     const remote = await apiFetch('/sos/my');
-    const localTickets = JSON.parse(localStorage.getItem('sigab_local_sos_tickets') || '[]');
+    const localTickets = readLocalTickets();
     if (Array.isArray(remote)) {
-      const remoteIds = new Set(remote.map((t) => String(t.ticket_number || t.id)));
-      const uniqueLocals = localTickets.filter((t) => !remoteIds.has(String(t.ticket_number || t.id)));
-      const merged = [...uniqueLocals, ...remote];
-      merged.sort((a, b) => new Date(b.submitted_at || b.created_at || 0) - new Date(a.submitted_at || a.created_at || 0));
-      return merged;
+      return mergeAndSortTickets(remote, localTickets, true);
     }
     return remote;
   } catch {
-    const localTickets = JSON.parse(localStorage.getItem('sigab_local_sos_tickets') || '[]');
+    const localTickets = readLocalTickets();
     localTickets.sort((a, b) => new Date(b.submitted_at || b.created_at || 0) - new Date(a.submitted_at || a.created_at || 0));
     return localTickets;
   }
