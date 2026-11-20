@@ -1137,7 +1137,8 @@ function WargaHome() {
 }
 
 function AdminHome() {
-  const [sidebarOpen, setSidebarOpen] = useState(() => getStoredSidebarState(typeof window !== 'undefined' ? window.innerWidth > 1024 : true))
+  const { openPanel: openA11yPanel, activeCount: a11yActiveCount } = useAccessibility()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [currentTime, setCurrentTime] = useState(new Date())
   const [isEmergency, setIsEmergency] = useState(false)
   const [simStatus, setSimStatus] = useState(null)
@@ -1148,19 +1149,12 @@ function AdminHome() {
   const { data: realtimeData } = useDashboardRealtime()
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.innerWidth > 1024) {
-      setStoredSidebarState(sidebarOpen)
+    if (!sidebarOpen) return
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') setSidebarOpen(false)
     }
-  }, [sidebarOpen])
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth <= 1024 && sidebarOpen) {
-        setSidebarOpen(false)
-      }
-    }
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
   }, [sidebarOpen])
 
   const fetchTickets = () => {
@@ -1318,13 +1312,22 @@ function AdminHome() {
       )}
       <aside className="admin-sidebar">
         <div className="sidebar-header">
-          <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)} title="Toggle Sidebar">
-            ☰
+          <div style={{ marginLeft: 0 }}>
+            <Brand admin />
+          </div>
+          <button
+            type="button"
+            className="sidebar-toggle"
+            style={{ marginLeft: 'auto' }}
+            onClick={() => setSidebarOpen(false)}
+            title="Tutup Menu"
+            aria-label="Tutup Menu"
+          >
+            ✕
           </button>
-          <Brand admin />
         </div>
         <nav>
-          <a className="active" href="#petugas" onClick={() => { if (typeof window !== 'undefined' && window.innerWidth <= 1024) setSidebarOpen(false) }}>
+          <a className="active" href="#petugas" onClick={() => setSidebarOpen(false)}>
             <i>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="3" width="7" height="7" rx="1.5" />
@@ -1335,7 +1338,7 @@ function AdminHome() {
             </i>
             <span>Dashboard</span>
           </a>
-          <a href="#radar" onClick={() => { if (typeof window !== 'undefined' && window.innerWidth <= 1024) setSidebarOpen(false) }}>
+          <a href="#radar" onClick={() => setSidebarOpen(false)}>
             <i>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" />
@@ -1345,7 +1348,7 @@ function AdminHome() {
             </i>
             <span>Radar Peta</span>
           </a>
-          <a href="#sos" onClick={() => { if (typeof window !== 'undefined' && window.innerWidth <= 1024) setSidebarOpen(false) }}>
+          <a href="#sos" onClick={() => setSidebarOpen(false)}>
             <i>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
@@ -1356,7 +1359,7 @@ function AdminHome() {
             <span>Tiket SOS</span>
             {activeTickets.length > 0 && <b>{activeTickets.length}</b>}
           </a>
-          <a href="#posko" onClick={() => { if (typeof window !== 'undefined' && window.innerWidth <= 1024) setSidebarOpen(false) }}>
+          <a href="#posko" onClick={() => setSidebarOpen(false)}>
             <i>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M3 10.5L12 3l9 7.5" />
@@ -1365,6 +1368,19 @@ function AdminHome() {
               </svg>
             </i>
             <span>Manajemen Posko</span>
+          </a>
+          <a
+            href="#aksesibilitas"
+            onClick={(e) => {
+              e.preventDefault()
+              openA11yPanel()
+              setSidebarOpen(false)
+            }}
+            title="Pengaturan Aksesibilitas (Alt + A)"
+          >
+            <i><AccessibilityIcon size={18} /></i>
+            <span>Aksesibilitas</span>
+            {a11yActiveCount > 0 && <b>{a11yActiveCount}</b>}
           </a>
         </nav>
         <div className="operator">
@@ -1396,13 +1412,33 @@ function AdminHome() {
         <header className="admin-header">
           <button
             type="button"
-            className="admin-mobile-toggle"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            title="Menu Navigasi"
-            aria-label="Menu Navigasi"
+            className="admin-mobile-toggle gh-hamburger-btn"
+            onClick={() => setSidebarOpen(true)}
+            title="Buka Menu Navigasi"
+            aria-label="Buka Menu Navigasi"
+            aria-expanded={sidebarOpen}
           >
-            ☰
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
           </button>
+
+          <a href="#petugas" className="sigab-navbar-brand" onClick={() => setSidebarOpen(false)}>
+            <div className="sigab-navbar-brand-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M3 8c2-2 4-2 6 0s4 2 6 0 4-2 6 0" />
+                <path d="M3 13c2-2 4-2 6 0s4 2 6 0 4-2 6 0" />
+                <path d="M3 18c2-2 4-2 6 0s4 2 6 0 4-2 6 0" />
+              </svg>
+            </div>
+            <div className="sigab-navbar-brand-text">
+              <strong>SIGAB</strong>
+              <span>Pusdalops BPBD</span>
+            </div>
+          </a>
+
           <div className="admin-time">
             <strong>{timeStr}</strong>
             <small>{dateStr}</small>
