@@ -520,18 +520,8 @@ export default function RiskMap({
         }
       `}</style>
 
-      {/* Quick action buttons: User location, Route Focus & Recenter Baureno */}
+      {/* Quick action buttons: Route Focus & Recenter Baureno */}
       <div className="riskmap-actions-bar">
-        {userCoords && (
-          <button
-            type="button"
-            onClick={() => setUserCenterTrigger(prev => prev + 1)}
-            className="riskmap-btn btn-user-loc"
-            title="Arahkan peta ke posisi lokasi Anda saat ini"
-          >
-            <span>📍</span> <span className="riskmap-btn-text">Lokasi Saya</span>
-          </button>
-        )}
         {routeCoordinates && routeCoordinates.length > 1 && (
           <button
             type="button"
