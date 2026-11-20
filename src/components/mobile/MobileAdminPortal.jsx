@@ -7,12 +7,9 @@ import wsService from '../../services/wsService'
 import { playSosAlertTone } from '../../utils/audioAlarm'
 import RiskMap from '../../components/RiskMap'
 import LogoutModal from '../../components/common/LogoutModal'
-import { useAccessibility } from '../../context/AccessibilityContext'
-import { AccessibilityIcon } from '../../components/common/AccessibilityWidget'
 import '../../styles/mobile.css'
 
 export default function MobileAdminView({ initialTab = 'dashboard' }) {
-  const { openPanel: openA11yPanel, activeCount: a11yActiveCount } = useAccessibility()
   const [activeTab, setActiveTab] = useState(initialTab) // 'dashboard' | 'sos' | 'radar' | 'posko'
   const [showLogoutModal, setShowLogoutModal] = useState(false)
 
@@ -246,19 +243,6 @@ export default function MobileAdminView({ initialTab = 'dashboard' }) {
           >
             {activeTickets.length} SOS Aktif
           </span>
-          <button
-            type="button"
-            className="m-icon-btn"
-            onClick={openA11yPanel}
-            title="Pengaturan Aksesibilitas"
-            aria-label="Pengaturan Aksesibilitas"
-            style={{
-              color: a11yActiveCount > 0 ? '#0284c7' : '#0c1a24',
-              background: a11yActiveCount > 0 ? '#e0f2fe' : undefined,
-            }}
-          >
-            <AccessibilityIcon size={18} />
-          </button>
           <button
             type="button"
             className="m-icon-btn"

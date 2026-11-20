@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { updateProfile } from '../../services/authService'
+import { useAccessibility } from '../../context/AccessibilityContext'
 
 export default function ProfileModal({
   isOpen,
@@ -10,6 +11,7 @@ export default function ProfileModal({
   villages = [],
   startInEditMode = false,
 }) {
+  const { openPanel: openA11yPanel } = useAccessibility()
   const [isEditing, setIsEditing] = useState(startInEditMode)
   const [formData, setFormData] = useState({
     full_name: '',
@@ -763,6 +765,16 @@ export default function ProfileModal({
         <div className="profile-modal-footer">
           {!isEditing ? (
             <>
+              <button
+                type="button"
+                className="profile-btn-secondary"
+                onClick={() => {
+                  onClose()
+                  openA11yPanel()
+                }}
+              >
+                ♿ Aksesibilitas
+              </button>
               <button
                 type="button"
                 className="profile-btn-secondary"
