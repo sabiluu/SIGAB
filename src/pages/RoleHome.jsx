@@ -1478,6 +1478,38 @@ function AdminHome() {
 
         </header>
         <div className="admin-dashboard">
+          <div className="admin-command-hero">
+            <div className="admin-command-hero-left">
+              <div className="admin-command-pills">
+                <span className="admin-cmd-live-pill">
+                  <span className="admin-cmd-live-dot" />
+                  PUSDALOPS BPBD BAURENO • LIVE TELEMETRY
+                </span>
+                <span className="admin-cmd-shift-pill">
+                  Shift Aktif: {getCurrentShift(currentTime)}
+                </span>
+              </div>
+              <h1>Pusat Komando &amp; Monitoring Banjir</h1>
+              <p>
+                Pemantauan debit Bengawan Solo, curah hujan 25 desa, antrean evakuasi SOS prioritas SAW, dan kapasitas posko pengungsian secara real-time.
+              </p>
+            </div>
+            <div className="admin-command-hero-actions">
+              <a href="#radar" className="admin-cmd-btn primary">
+                <span>🗺️</span>
+                <span>Radar Peta</span>
+              </a>
+              <a href="#sos" className="admin-cmd-btn danger">
+                <span>🚨</span>
+                <span>Tiket SOS ({activeTickets.length})</span>
+              </a>
+              <a href="#posko" className="admin-cmd-btn secondary">
+                <span>🏠</span>
+                <span>Manajemen Posko</span>
+              </a>
+            </div>
+          </div>
+
           {adminToast && (
             <div style={{
               marginBottom: '16px',

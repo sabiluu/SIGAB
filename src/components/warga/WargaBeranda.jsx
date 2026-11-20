@@ -628,7 +628,7 @@ export default function WargaBeranda({
                 cx="60"
                 cy="60"
                 r={radius}
-                stroke="#edf2f7"
+                stroke="rgba(255, 255, 255, 0.14)"
                 strokeWidth="11"
                 fill="none"
               />
@@ -636,13 +636,16 @@ export default function WargaBeranda({
                 cx="60"
                 cy="60"
                 r={radius}
-                stroke={isAman ? '#009aa6' : isWaspada ? '#f59e0b' : isSiaga ? '#ea580c' : '#ef4444'}
+                stroke={isAman ? '#2dd4bf' : isWaspada ? '#fbbf24' : isSiaga ? '#fb923c' : '#f87171'}
                 strokeWidth="11"
                 fill="none"
                 strokeDasharray={circumference}
                 strokeDashoffset={strokeDashoffset}
                 strokeLinecap="round"
-                style={{ transition: 'stroke-dashoffset 0.8s ease' }}
+                style={{
+                  transition: 'stroke-dashoffset 0.9s cubic-bezier(0.22, 1, 0.36, 1)',
+                  filter: 'drop-shadow(0 0 8px rgba(45, 212, 191, 0.35))',
+                }}
               />
             </svg>
             <div className="warga-donut-inner-text">

@@ -639,3 +639,178 @@
 .admin-section-head b {
   animation: pulseDotNearest 2s infinite;
 }
+
+
+/* ==========================================================================
+   NEXT-GEN VISUAL REFRESH: ADMIN / PETUGAS COMMAND DASHBOARD
+   ========================================================================== */
+.admin-portal {
+  background:
+    radial-gradient(at 0% 0%, rgba(0, 154, 166, 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(37, 99, 235, 0.07) 0px, transparent 50%),
+    #f1f5f9 !important;
+}
+
+.admin-command-hero {
+  background: linear-gradient(135deg, #071722 0%, #0f293a 55%, #004e59 100%);
+  border-radius: 18px;
+  padding: 22px 26px;
+  margin-bottom: 22px;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  box-shadow: 0 16px 36px -8px rgba(7, 23, 34, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-command-hero::after {
+  content: '';
+  position: absolute;
+  right: -50px;
+  top: -60px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(45, 212, 191, 0.22) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.admin-command-hero-left {
+  flex: 1;
+  min-width: 260px;
+}
+
+.admin-command-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.admin-cmd-live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(16, 185, 129, 0.18);
+  border: 1px solid rgba(52, 211, 153, 0.4);
+  color: #a7f3d0;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 999px;
+  letter-spacing: 0.05em;
+}
+
+.admin-cmd-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+}
+
+.admin-cmd-shift-pill {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #e2e8f0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.admin-command-hero h1 {
+  color: #ffffff !important;
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif !important;
+  font-size: clamp(1.3rem, 2.2vw, 1.65rem) !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em !important;
+  margin: 0 0 6px 0 !important;
+}
+
+.admin-command-hero p {
+  margin: 0;
+  font-size: 0.83rem;
+  color: #cbd5e1;
+  max-width: 620px;
+  line-height: 1.5;
+}
+
+.admin-command-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
+}
+
+.admin-cmd-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 15px;
+  border-radius: 11px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.admin-cmd-btn:hover {
+  transform: translateY(-2px);
+}
+
+.admin-cmd-btn.primary {
+  background: linear-gradient(135deg, #00a4b0 0%, #007d87 100%);
+  color: #ffffff;
+  box-shadow: 0 6px 16px rgba(0, 154, 166, 0.35);
+}
+
+.admin-cmd-btn.danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #ffffff;
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.35);
+}
+
+.admin-cmd-btn.secondary {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+}
+
+/* KPI Cards Top Accent Bars */
+.admin-dashboard .kpi-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px !important;
+  box-shadow: 0 10px 24px -6px rgba(15, 23, 42, 0.06) !important;
+}
+
+.admin-dashboard .kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #009aa6, #2dd4bf);
+}
+
+.admin-dashboard .kpi-card:nth-child(2)::before {
+  background: linear-gradient(90deg, #0284c7, #38bdf8);
+}
+
+.admin-dashboard .kpi-card:nth-child(3)::before {
+  background: linear-gradient(90deg, #ef4444, #fb7185);
+}
+
+.admin-dashboard .kpi-card:nth-child(4)::before {
+  background: linear-gradient(90deg, #10b981, #34d399);
+}
