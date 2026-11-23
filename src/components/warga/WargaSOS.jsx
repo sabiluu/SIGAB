@@ -38,10 +38,22 @@ function MapPanController({ center }) {
 
 // Lokasi murni real GPS (mencegah pemalsuan lokasi)
 
-export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActive = false, isPersonalSim = false, simStatus = null }) {
+export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActive = false, isPersonalSim = false, simStatus = null, onStartSimulationAwas = null }) {
   const { user } = useAuth();
   const internalGeo = useGeolocation();
   const geo = externalGeo || internalGeo;
+
+  // Validasi Darurat: Pengiriman SOS HANYA aktif jika status desa AWAS (prob >= 76%), status darurat backend aktif, ATAU Simulasi Akun Warga di fase AWAS
+  const isEmergency = useMemo(() => {
+    if (isPersonalSim) {
+      return Boolean(simStatus?.is_emergency || simStatus?.risk_level === 'awas' || Number(simStatus?.probability) >= 76);
+    }
+    return Boolean(
+      isEmergencyActive ||
+      user?.risk_level === 'awas' ||
+      Number(user?.current_probability) >= 76
+    );
+  }, [isPersonalSim, simStatus, isEmergencyActive, user]);
 
   const [activeTab, setActiveTab] = useState('create'); // 'create' or 'history'
   const [step, setStep] = useState(1);
@@ -409,26 +421,22 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
   }, []);
 
   const handleSubmit = async () => {
+    if (!isEmergency) {
+      alert('Pengiriman SOS ditolak otomatis. Fitur panggilan darurat hanya aktif saat status wilayah DARURAT / AWAS (probabilitas ≥ 76%) atau saat mode Simulasi Akun Warga mencapai status AWAS.');
+      return;
+    }
+
     if (!gpsLocation) {
       alert('Lokasi GPS belum terkunci. Mohon tunggu atau refresh GPS.');
       return;
     }
 
-    const isRealEmergency = Boolean(
-      isEmergencyActive || 
-      user?.risk_level === 'awas'
-    );
-
-    const isExplicitSim = Boolean(
+    const isSimMode = Boolean(
       isPersonalSim ||
       simStatus?.is_running ||
       (detailPatokan && detailPatokan.toLowerCase().includes('simulasi')) || 
       (address && address.toLowerCase().includes('simulasi'))
     );
-
-    // Tiket selalu diizinkan dikirim: jika wilayah tidak berstatus darurat, otomatis dicatat sebagai simulasi latihan
-    // agar riwayat tiket tetap tersimpan permanen baik di warga maupun di admin
-    const isSim = isExplicitSim || !isRealEmergency;
 
     setLoading(true);
     try {
@@ -449,13 +457,6 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
         ? `${address || 'Lokasi Warga'} (Patokan: ${detailPatokan.trim()})`
         : (address || 'Lokasi Warga');
 
-      const isSim = Boolean(
-        isPersonalSim ||
-        simStatus?.is_running ||
-        (detailPatokan && detailPatokan.toLowerCase().includes('simulasi')) || 
-        (address && address.toLowerCase().includes('simulasi'))
-      );
-
       const payload = {
         reporter_id: user?.id || 1,
         village_id: user?.village_id || 3,
@@ -468,7 +469,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
         has_disability: vulnerable.disability,
         has_pregnant: vulnerable.pregnant,
         photo_url: finalPhotoUrl,
-        is_simulation: isSim
+        is_simulation: isSimMode
       };
       const res = await createSOSTicket(payload);
       setTicket(res);
@@ -476,33 +477,6 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
       // Auto add to myTickets list
       setMyTickets(prev => [res, ...prev.filter(t => String(t.id) !== String(res.id) && String(t.ticket_number) !== String(res.ticket_number))]);
     } catch (err) {
-      // Jika status darurat belum diaktifkan admin di database, auto fallback kirim sebagai simulasi/demo
-      if (err.message && err.message.toLowerCase().includes('belum berstatus darurat')) {
-        try {
-          const fallbackPayload = {
-            reporter_id: user?.id || 1,
-            village_id: user?.village_id || 3,
-            gps_latitude: gpsLocation.lat,
-            gps_longitude: gpsLocation.lng,
-            gps_address: fullAddress,
-            family_count: familyCount,
-            has_elderly: vulnerable.elderly,
-            has_toddler: vulnerable.toddler,
-            has_disability: vulnerable.disability,
-            has_pregnant: vulnerable.pregnant,
-            photo_url: finalPhotoUrl,
-            is_simulation: true
-          };
-          const fallbackRes = await createSOSTicket(fallbackPayload);
-          setTicket(fallbackRes);
-          setStep(3);
-          setMyTickets(prev => [fallbackRes, ...prev]);
-          return;
-        } catch (retryErr) {
-          alert('Gagal mengirim SOS: ' + (retryErr.message || 'Terjadi kesalahan'));
-          return;
-        }
-      }
       alert('Gagal mengirim SOS: ' + (err.message || 'Terjadi kesalahan'));
     } finally {
       setLoading(false);
@@ -665,6 +639,76 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
               <span className="sos-step-label">Pelacakan</span>
             </div>
           </div>
+
+          {/* SOS Lock Warning Banner if NOT in Emergency */}
+          {!isEmergency && step < 3 && (
+            <div style={{
+              background: '#fffbeb',
+              border: '1.5px solid #fde68a',
+              borderRadius: '12px',
+              padding: '16px 18px',
+              marginBottom: '16px',
+              display: 'flex',
+              gap: '14px',
+              alignItems: 'flex-start'
+            }}>
+              <div style={{ fontSize: '1.8rem', lineHeight: 1 }}>🔒</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                  <h4 style={{ margin: 0, color: '#92400e', fontSize: '0.96rem', fontWeight: 800 }}>
+                    Layanan SOS Terkunci (Wilayah Belum Berstatus AWAS)
+                  </h4>
+                  <span style={{
+                    background: '#fef3c7',
+                    color: '#b45309',
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    padding: '2px 8px',
+                    borderRadius: '6px',
+                    border: '1px solid #fde68a'
+                  }}>
+                    Proteksi Keselamatan
+                  </span>
+                </div>
+                <p style={{ margin: '0 0 12px', color: '#78350f', fontSize: '0.82rem', lineHeight: 1.55 }}>
+                  Pengiriman tiket evakuasi darurat SOS ke Pusdalops BPBD <strong>hanya aktif</strong> jika status wilayah berada pada level <strong>DARURAT / AWAS</strong> (probabilitas ≥ 76%), atau saat <strong>Simulasi Akun Warga</strong> mencapai status AWAS.
+                </p>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onStartSimulationAwas) {
+                        onStartSimulationAwas();
+                      } else {
+                        const key = `sigab_user_sim_state_${user?.id || 'guest'}`;
+                        localStorage.setItem(key, JSON.stringify({ isRunning: true, phaseIndex: 3, remainingSec: 600, lastUpdated: Date.now() }));
+                        window.dispatchEvent(new CustomEvent('sigab_sim_state_changed'));
+                      }
+                    }}
+                    style={{
+                      background: '#dc2626',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      fontSize: '0.8rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      boxShadow: '0 2px 6px rgba(220, 38, 38, 0.25)'
+                    }}
+                  >
+                    <span>🚨</span> Aktifkan Fase AWAS (94%) & Buka Kunci SOS
+                  </button>
+                  <span style={{ fontSize: '0.76rem', color: '#92400e' }}>
+                    Gunakan opsi ini untuk simulasi / uji coba latihan evakuasi mandiri.
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Quick Simulation Data Fill Banner */}
           {step < 3 && (
@@ -1165,15 +1209,31 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                 <button 
                   type="button"
                   onClick={handleSubmit} 
-                  disabled={loading}
+                  disabled={!isEmergency || loading}
                   className="btn-sos-danger-submit"
+                  style={{
+                    flex: 2,
+                    background: !isEmergency ? '#94a3b8' : undefined,
+                    borderColor: !isEmergency ? '#94a3b8' : undefined,
+                    cursor: !isEmergency ? 'not-allowed' : 'pointer',
+                    opacity: !isEmergency ? 0.8 : 1
+                  }}
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                    <line x1="12" y1="9" x2="12" y2="13" />
-                    <line x1="12" y1="17" x2="12.01" y2="17" />
-                  </svg>
-                  <span>{loading ? 'Mengirim Data...' : 'KIRIM PERMINTAAN SOS'}</span>
+                  {!isEmergency ? (
+                    <>
+                      <span>🔒</span>
+                      <span>PENGIRIMAN TERKUNCI (STATUS BELUM AWAS)</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                        <line x1="12" y1="9" x2="12" y2="13" />
+                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                      </svg>
+                      <span>{loading ? 'Mengirim Data...' : 'KIRIM PERMINTAAN SOS'}</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
