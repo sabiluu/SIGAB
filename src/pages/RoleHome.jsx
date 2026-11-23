@@ -1107,6 +1107,7 @@ function WargaHome() {
             isEmergencyActive={isEmergencyActive}
             isPersonalSim={personalSim.isRunning}
             simStatus={simStatus}
+            onStartSimulationAwas={() => personalSim.startSimulation(3)}
           />
         )}
       </main>
