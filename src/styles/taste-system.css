@@ -1,28 +1,24 @@
 /* ==========================================================================
-   SIGAB TASTE-SYSTEM: Anti-AI-Slop Visual Restraint & Architectural Polish
-   Applies unified tokens, grounded surfaces, equal edges, restrained color,
-   consistent radius scale, and tactile Rule-5 micro-interactions without
-   changing any copy, content, or functionality.
+   SIGAB VISUAL & MOTION SYSTEM
+   Lively, polished civic UI with unified typography, crisp hierarchy,
+   proper hero card framing, and smooth, purposeful micro-animations.
    ========================================================================== */
 
 :root {
-  --ts-bg: #fafaf9;
-  --ts-surface: #ffffff;
-  --ts-surface-subtle: #f4f5f6;
-  --ts-ink: #0f172a;
-  --ts-ink-muted: #52606d;
-  --ts-border: #e2e6ea;
-  --ts-border-strong: #cbd2d9;
-  --ts-accent: #0d7a82;
-  --ts-accent-hover: #0a636a;
-  --ts-radius-sm: 6px;
-  --ts-radius-md: 8px;
-  --ts-radius-lg: 12px;
-  --ts-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
-  --ts-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06);
+  --ts-accent: #008b96;
+  --ts-accent-dark: #006f78;
+  --ts-ink: #0c1a24;
+  --ts-muted: #526373;
+  --ts-border: #e2e8f0;
+  --ts-border-hover: #99d5da;
+  --ts-radius-sm: 8px;
+  --ts-radius-md: 10px;
+  --ts-radius-lg: 16px;
+  --ts-shadow-sm: 0 2px 8px rgba(12, 26, 36, 0.04);
+  --ts-shadow-md: 0 10px 26px -6px rgba(12, 26, 36, 0.1);
 }
 
-/* 1. Typography Consistency & Tabular Numerals */
+/* 1. Unified Typography & Tabular Numerals */
 body,
 .landing-page,
 .warga-portal-layout,
@@ -65,176 +61,382 @@ body,
   font-variant-numeric: tabular-nums;
 }
 
-/* 2. Landing Page Architectural Refinement */
+/* 2. Keyframes Library */
+@keyframes tsFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes tsHeroZoomIn {
+  from {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes tsFloatGentle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes tsSonarPing {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 7px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+@keyframes tsBarGrow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* 3. Live Sonar Indicators */
+.pulse-dot,
+.warga-live-chip .pulse-dot,
+.sos-pulse-dot,
+.hero-card-header .header-tag .dot {
+  animation: tsSonarPing 2s infinite !important;
+}
+
+/* 4. Landing Page — Fresh Atmosphere, Framing & Hero Entrance */
 .announcement-bar {
-  background-color: #0f172a !important;
+  background-color: #0c1b26 !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: none !important;
 }
 
 .landing-header {
-  background: rgba(255, 255, 255, 0.96) !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--ts-border) !important;
-  box-shadow: none !important;
+  box-shadow: 0 2px 12px rgba(12, 26, 36, 0.04) !important;
 }
 
 .hero-section {
-  background: var(--ts-bg) !important;
+  background:
+    radial-gradient(ellipse 75% 60% at 75% 15%, rgba(0, 154, 166, 0.1), transparent 65%),
+    linear-gradient(180deg, #f3fafb 0%, #ffffff 100%) !important;
   border-bottom: 1px solid var(--ts-border);
 }
 
 .hero-pill-badge {
-  border-radius: var(--ts-radius-sm) !important;
-  background: var(--ts-surface) !important;
-  border: 1px solid var(--ts-border) !important;
-  color: var(--ts-ink-muted) !important;
-  padding: 5px 10px !important;
-  box-shadow: none !important;
+  animation: tsFadeUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.04s both;
 }
 
-.hero-pill-badge span.dot {
-  background-color: var(--ts-accent) !important;
+.hero-left h1 {
+  animation: tsFadeUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
 }
 
 .hero-left h1 span.highlight {
   color: var(--ts-accent) !important;
 }
 
+.hero-description {
+  animation: tsFadeUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.16s both;
+}
+
+.hero-cta-group {
+  animation: tsFadeUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.22s both;
+}
+
+.hero-social-proof {
+  animation: tsFadeUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.26s both;
+}
+
 .hero-image-frame {
-  border-radius: var(--ts-radius-lg) !important;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow: var(--ts-shadow-md) !important;
+  border-radius: 22px !important;
+  border: 1px solid rgba(12, 26, 36, 0.08);
+  box-shadow: 0 20px 44px -12px rgba(12, 26, 36, 0.16) !important;
+  animation: tsHeroZoomIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .hero-image-frame img {
-  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .hero-image-frame:hover img {
-  transform: scale(1.02);
+  transform: scale(1.035);
 }
 
-/* Rule 4: Equal Content Edges — dock floating hero card cleanly inside frame */
+/* Floating Hero Card: Balanced Corner Overhang & Ambient Float */
 .floating-hero-card {
-  bottom: 16px !important;
-  left: 16px !important;
-  max-width: calc(100% - 32px);
-  border-radius: var(--ts-radius-lg) !important;
-  border: 1px solid rgba(15, 23, 42, 0.08) !important;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12) !important;
+  bottom: -24px !important;
+  left: -18px !important;
+  width: 350px !important;
+  max-width: calc(100% + 12px);
+  background: rgba(255, 255, 255, 0.94) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 18px !important;
+  border: 1px solid rgba(255, 255, 255, 0.85) !important;
+  box-shadow: 0 20px 44px -10px rgba(12, 26, 36, 0.16) !important;
+  animation: tsFloatGentle 6s ease-in-out infinite;
+}
+
+.floating-hero-card:hover {
+  animation-play-state: paused;
 }
 
 @media (max-width: 900px) {
   .floating-hero-card {
     position: static !important;
-    margin-top: 14px;
+    margin-top: 16px;
     width: 100% !important;
     max-width: 100% !important;
+    animation: none !important;
   }
 }
 
-/* One Unified Button Shape (8px) & Quiet Step/Press Motion */
-.header-register-btn,
+/* 5. Button Shine Sweep & Tactile Press */
 .btn-primary-teal,
-.btn-secondary-white,
-.btn-view-all-villages,
-.btn-guidance-download,
+.header-register-btn,
 .btn-cta-citizen,
-.btn-cta-phone-card,
 .btn-sos-primary,
-.btn-sos-secondary,
-.btn-sos-danger-submit,
-.btn-open-camera,
-.btn-open-gallery {
+.btn-sos-danger-submit {
+  position: relative;
+  overflow: hidden;
   border-radius: var(--ts-radius-md) !important;
-  box-shadow: none !important;
-  transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.14s ease !important;
+  transition: transform 0.16s ease, background-color 0.2s ease, box-shadow 0.2s ease !important;
 }
 
-.header-register-btn,
-.btn-view-all-villages {
-  background-color: var(--ts-ink) !important;
-  color: #ffffff !important;
+.btn-primary-teal::after,
+.header-register-btn::after,
+.btn-cta-citizen::after,
+.btn-sos-primary::after,
+.btn-sos-danger-submit::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 65%;
+  height: 100%;
+  background: linear-gradient(110deg, transparent 20%, rgba(255, 255, 255, 0.28) 50%, transparent 80%);
+  transform: skewX(-18deg);
+  transition: left 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
 }
 
+.btn-primary-teal:hover::after,
+.header-register-btn:hover::after,
+.btn-cta-citizen:hover::after,
+.btn-sos-primary:hover:not(:disabled)::after,
+.btn-sos-danger-submit:hover:not(:disabled)::after {
+  left: 140%;
+}
+
+.btn-primary-teal:hover,
 .header-register-btn:hover,
-.btn-view-all-villages:hover {
-  background-color: #1e293b !important;
-  transform: translateY(-1px);
+.btn-cta-citizen:hover,
+.btn-sos-primary:hover:not(:disabled),
+.btn-sos-danger-submit:hover:not(:disabled) {
+  transform: translateY(-2px);
 }
 
-.btn-primary-teal,
-.btn-cta-citizen,
-.btn-sos-primary,
-.btn-open-camera {
-  background: var(--ts-accent) !important;
+.btn-primary-teal:active,
+.header-register-btn:active,
+.btn-cta-citizen:active,
+.btn-sos-primary:active,
+.btn-sos-danger-submit:active,
+.btn-secondary-white:active,
+.btn-cta-phone-card:active,
+.btn-sos-secondary:active {
+  transform: scale(0.98) !important;
+}
+
+.btn-secondary-white,
+.btn-cta-phone-card,
+.btn-sos-secondary,
+.btn-view-all-villages,
+.btn-guidance-download {
+  border-radius: var(--ts-radius-md) !important;
+  transition: transform 0.16s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+/* 6. Stats Strip Subtle Interaction */
+.stats-strip .stat-box {
+  transition: transform 0.2s ease;
+}
+
+.stats-strip .stat-box:hover {
+  transform: translateY(-2px);
+}
+
+.stats-strip .stat-box:hover .stat-number {
+  color: var(--ts-accent);
+}
+
+/* 7. Feature Cards — Animated Top Draw Bar & Icon Shift */
+.feature-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--ts-radius-lg) !important;
+  border: 1px solid var(--ts-border) !important;
+  box-shadow: var(--ts-shadow-sm) !important;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, box-shadow 0.25s ease !important;
+}
+
+.feature-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--ts-accent), #38bdf8);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.feature-card:hover {
+  transform: translateY(-5px) !important;
+  border-color: var(--ts-border-hover) !important;
+  box-shadow: var(--ts-shadow-md) !important;
+}
+
+.feature-card:hover::before {
+  transform: scaleX(1);
+}
+
+.feature-icon-box {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.25s ease, color 0.25s ease;
+}
+
+.feature-card:hover .feature-icon-box {
+  transform: scale(1.08) rotate(-4deg);
   background-color: var(--ts-accent) !important;
   color: #ffffff !important;
 }
 
-.btn-primary-teal:hover,
-.btn-cta-citizen:hover,
-.btn-sos-primary:hover:not(:disabled),
-.btn-open-camera:hover {
-  background: var(--ts-accent-hover) !important;
-  background-color: var(--ts-accent-hover) !important;
-  transform: translateY(-1px);
+.feature-card-link {
+  transition: transform 0.2s ease, gap 0.2s ease;
 }
 
-.btn-sos-danger-submit {
-  background: #dc2626 !important;
-  background-color: #dc2626 !important;
-  color: #ffffff !important;
+.feature-card:hover .feature-card-link {
+  transform: translateX(3px);
 }
 
-.btn-sos-danger-submit:hover:not(:disabled) {
-  background: #b91c1c !important;
-  background-color: #b91c1c !important;
-  transform: translateY(-1px);
+/* 8. Status Region & Village List */
+.status-region-section {
+  background-color: #f6f9fb !important;
 }
 
-.btn-secondary-white,
-.btn-cta-phone-card,
-.btn-sos-secondary,
-.btn-open-gallery {
-  background-color: var(--ts-surface) !important;
-  border: 1px solid var(--ts-border-strong) !important;
+.map-visual-card {
+  border-radius: 18px !important;
+  border: 1px solid var(--ts-border) !important;
+  box-shadow: var(--ts-shadow-md) !important;
 }
 
-.btn-secondary-white:hover,
-.btn-cta-phone-card:hover,
-.btn-sos-secondary:hover,
-.btn-open-gallery:hover {
-  background-color: var(--ts-surface-subtle) !important;
-  transform: translateY(-1px);
+.village-status-item {
+  border-radius: 12px !important;
+  border-left: 3px solid transparent;
+  transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease !important;
 }
 
-.header-register-btn:active,
-.btn-primary-teal:active,
-.btn-secondary-white:active,
-.btn-view-all-villages:active,
-.btn-guidance-download:active,
-.btn-cta-citizen:active,
-.btn-cta-phone-card:active,
-.btn-sos-primary:active,
-.btn-sos-secondary:active,
-.btn-sos-danger-submit:active,
-.btn-open-camera:active,
-.btn-open-gallery:active {
-  transform: translateY(1px) !important;
+.village-status-item:hover {
+  transform: translateX(5px) !important;
+  border-left-color: var(--ts-accent);
+  box-shadow: var(--ts-shadow-sm) !important;
 }
 
-/* Unified Card Radius (12px), Crisp Borders & Quiet Hover Lift */
-.feature-card,
-.map-visual-card,
-.village-status-item,
-.sigab-modal-content,
+.village-status-item.active-village {
+  border-left-color: var(--ts-accent) !important;
+}
+
+/* 9. Dark Guidance Section — Clean Rich Slate & Interactive Rows */
+.guidance-dark-section {
+  background: #071722 !important;
+}
+
+.guidance-level-row {
+  border-radius: 10px;
+  transition: background-color 0.22s ease, padding 0.22s ease !important;
+}
+
+.guidance-level-row:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  padding-left: 12px !important;
+  padding-right: 12px !important;
+}
+
+.level-indicator-ring {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.guidance-level-row:hover .level-indicator-ring {
+  transform: scale(1.12);
+}
+
+.level-row-chevron {
+  transition: transform 0.22s ease, color 0.22s ease;
+}
+
+.guidance-level-row:hover .level-row-chevron {
+  transform: translateX(4px);
+  color: #38bdf8 !important;
+}
+
+/* 10. Pre-Footer & Footer */
+.pre-footer-cta-section {
+  background:
+    radial-gradient(circle at 85% 50%, rgba(0, 154, 166, 0.08), transparent 55%),
+    #eef7f8 !important;
+}
+
+.brand-icon-box,
+.m-brand-icon,
+.sigab-navbar-brand-icon,
+.auth-brand-icon {
+  background: linear-gradient(135deg, #00a4b0 0%, var(--ts-accent-dark) 100%) !important;
+  border-radius: 9px !important;
+}
+
+/* 11. Auth Modal Polish */
+.auth-modal-card {
+  border-radius: 20px !important;
+  border: 1px solid rgba(12, 26, 36, 0.08) !important;
+  box-shadow: 0 22px 50px -12px rgba(12, 26, 36, 0.28) !important;
+}
+
+/* 12. Warga & Admin Portals — Lively Cards & Hover Depth */
+.warga-portal-layout,
+.warga-main-container,
+.admin-portal {
+  background:
+    radial-gradient(at 0% 0%, rgba(0, 154, 166, 0.05) 0px, transparent 48%),
+    #f4f7fa !important;
+}
+
 .warga-card,
-.warga-hero-card,
-.portal-card,
 .kpi-card,
-.sos-card,
+.portal-card,
 .posko-item-card,
+.sos-card,
 .kontak-kanban-col,
 .m-card {
   border-radius: var(--ts-radius-lg) !important;
@@ -242,84 +444,65 @@ body,
   box-shadow: var(--ts-shadow-sm) !important;
 }
 
-.feature-card,
-.village-status-item,
-.posko-item-card,
-.warga-quick-card {
-  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease !important;
+.warga-card,
+.kpi-card,
+.posko-item-card {
+  position: relative;
+  overflow: hidden;
+  animation: tsFadeUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease, border-color 0.22s ease !important;
 }
 
-.feature-card:hover,
-.posko-item-card:hover,
-.warga-quick-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--ts-border-strong) !important;
+.kpi-card::before,
+.warga-2x2-grid .warga-card::before,
+.posko-item-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--ts-accent), #38bdf8);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.kpi-card:hover,
+.warga-2x2-grid .warga-card:hover,
+.posko-item-card:hover {
+  transform: translateY(-4px) !important;
+  border-color: var(--ts-border-hover) !important;
   box-shadow: var(--ts-shadow-md) !important;
 }
 
-.village-status-item:hover {
-  transform: translateY(-1px);
-  border-color: var(--ts-border-strong) !important;
+.kpi-card:hover::before,
+.warga-2x2-grid .warga-card:hover::before,
+.posko-item-card:hover::before {
+  transform: scaleX(1);
 }
 
-/* Neutral Surfaces & Clean Sections */
-.status-region-section,
-.pre-footer-cta-section {
-  background: var(--ts-bg) !important;
-  border-top: 1px solid var(--ts-border) !important;
+.kpi-card:nth-child(1) { animation-delay: 0.03s; }
+.kpi-card:nth-child(2) { animation-delay: 0.08s; }
+.kpi-card:nth-child(3) { animation-delay: 0.13s; }
+.kpi-card:nth-child(4) { animation-delay: 0.18s; }
+
+.warga-metric-subcard {
+  transition: transform 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
 }
 
-.guidance-dark-section {
-  background: #0d1520 !important;
+.warga-metric-subcard:hover {
+  transform: translateY(-2px);
+  border-color: var(--ts-border-hover) !important;
 }
 
-.guidance-dark-section::before {
-  display: none !important;
+.posko-capacity-bar-fill {
+  transform-origin: left;
+  animation: tsBarGrow 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-.landing-footer-new {
-  background-color: #091018 !important;
-}
-
-.footer-brand-icon,
-.brand-icon-box,
-.m-brand-icon,
-.sigab-navbar-brand-icon,
-.auth-brand-icon {
-  background: var(--ts-accent) !important;
-  border-radius: 8px !important;
-  box-shadow: none !important;
-  border-color: transparent !important;
-  color: #ffffff !important;
-}
-
-/* Restrained Editorial Badges & Chips */
-.badge-status,
-.live-pill,
-.hero-location-chip,
-.map-legend-pill {
-  border-radius: var(--ts-radius-sm) !important;
-}
-
-/* 3. Auth Modal Refinement */
-.auth-modal-card {
-  border-radius: 14px !important;
-  border: 1px solid rgba(15, 23, 42, 0.1) !important;
-  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.22) !important;
-}
-
-.auth-heading {
-  font-weight: 700 !important;
-  letter-spacing: -0.025em !important;
-}
-
-/* 4. Warga & Admin Portals Grounding + Remove AI Shimmer/Flashy Loops */
-.warga-portal-layout,
-.warga-main-container,
-.admin-portal {
-  background: #f6f7f9 !important;
-}
-
+/* Remove old shimmer sweep overlay on hero cards */
 .warga-hero-card::after,
 .warga-status-hero::after,
 .sos-hero-banner::after {
@@ -327,35 +510,37 @@ body,
   animation: none !important;
 }
 
-.warga-live-chip .pulse-dot,
-.sos-pulse-dot {
-  animation: none !important;
-  box-shadow: none !important;
-}
-
-/* Architectural Admin Sidebar */
-.admin-sidebar nav a {
-  border-radius: var(--ts-radius-md) !important;
-  padding: 4px 10px !important;
-}
-
-.admin-sidebar nav a.active i {
-  background: var(--ts-accent) !important;
-  box-shadow: none !important;
-  border-radius: var(--ts-radius-md) !important;
-}
-
-/* Authoritative Grounded SOS Header */
+/* Bold Emergency SOS Banner */
 .sos-hero-banner {
-  background: #111827 !important;
+  background: linear-gradient(135deg, #0c1a24 0%, #1c1926 58%, #450a0a 100%) !important;
   border-radius: var(--ts-radius-lg) !important;
-  border: 1px solid #1f2937 !important;
-  border-top: 3px solid #dc2626 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
   box-shadow: var(--ts-shadow-md) !important;
 }
 
-/* 5. Mobile Top Header */
-.m-top-header {
+.sos-hero-live-dot {
+  animation: tsSonarPing 1.6s infinite !important;
+}
+
+/* Admin Sidebar Hover Slide */
+.admin-sidebar nav a {
+  border-radius: var(--ts-radius-md) !important;
+  padding: 4px 10px !important;
+  transition: transform 0.16s ease, background-color 0.18s ease, color 0.18s ease !important;
+}
+
+.admin-sidebar nav a:hover {
+  transform: translateX(3px);
+}
+
+.admin-sidebar nav a.active i {
+  background: linear-gradient(135deg, #00a4b0 0%, var(--ts-accent-dark) 100%) !important;
+  border-radius: var(--ts-radius-md) !important;
   box-shadow: none !important;
+}
+
+/* Mobile Top Header */
+.m-top-header {
+  box-shadow: 0 2px 10px rgba(12, 26, 36, 0.04) !important;
   border-bottom: 1px solid var(--ts-border) !important;
 }
