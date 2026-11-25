@@ -3,6 +3,7 @@ import useDashboardRealtime from '../../hooks/useDashboardRealtime'
 import useGeolocation, { BAURENO_VILLAGES } from '../../hooks/useGeolocation'
 import RiskMap from '../RiskMap'
 import { getRouteToShelter, getShelters } from '../../services/shelterService'
+import { IconAlert, IconHome, IconMap, IconPhone, IconPin, IconTarget } from '../common/Icons'
 
 function calculateHaversineKm(lat1, lon1, lat2, lon2) {
   if (!lat1 || !lon1 || !lat2 || !lon2) return null;
@@ -356,10 +357,14 @@ export default function WargaBeranda({
                 borderRadius: '6px',
                 fontWeight: 700,
                 fontSize: '0.78rem',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
               }}
             >
-              🚨 Minta Bantuan SOS
+              <IconAlert size={14} />
+              <span>Minta Bantuan SOS</span>
             </button>
           )}
         </div>
@@ -476,10 +481,11 @@ export default function WargaBeranda({
                 <div className="posko-nearest-badge-row">
                   <div className="posko-nearest-badge">
                     <span className="pulse-dot-nearest" />
-                    <span>🎯 POSKO TERDEKAT</span>
+                    <span className="ui-inline-label"><IconTarget size={13} /> POSKO TERDEKAT</span>
                   </div>
-                  <span className="posko-gps-source-tag">
-                    {geo.isRealDevice ? '📍 GPS Real Device' : '📍 Lokasi Terdeteksi'}
+                  <span className="posko-gps-source-tag ui-inline-label">
+                    <IconPin size={13} />
+                    <span>{geo.isRealDevice ? 'GPS Real Device' : 'Lokasi Terdeteksi'}</span>
                   </span>
                 </div>
 
@@ -531,8 +537,9 @@ export default function WargaBeranda({
                   </button>
 
                   {nearest.contact_phone && (
-                    <a href={`tel:${nearest.contact_phone}`} className="btn-nearest-call" title="Hubungi Petugas Posko">
-                      📞 Hubungi
+                    <a href={`tel:${nearest.contact_phone}`} className="btn-nearest-call ui-inline-label" title="Hubungi Petugas Posko">
+                      <IconPhone size={14} />
+                      <span>Hubungi</span>
                     </a>
                   )}
                 </div>
@@ -685,7 +692,7 @@ export default function WargaBeranda({
                   fontFamily: 'inherit',
                 }}
               >
-                <span>🗺️</span>
+                <span><IconMap size={16} /></span>
                 <span>Lihat Peta &amp; Posko Terdekat</span>
               </button>
               <button
@@ -706,7 +713,7 @@ export default function WargaBeranda({
                   fontFamily: 'inherit',
                 }}
               >
-                <span>🚨</span>
+                <span><IconAlert size={16} /></span>
                 <span>Minta Bantuan Darurat (SOS)</span>
               </button>
             </div>
@@ -717,12 +724,12 @@ export default function WargaBeranda({
         <div className="warga-hero-side-info">
           <div className="warga-hero-info-item">
             <small>Posko Evakuasi Terdekat</small>
-            <strong>🏠 {nearest.name}</strong>
+            <strong className="ui-inline-label"><IconHome size={15} /> <span>{nearest.name}</span></strong>
             <span>{nearest.distanceStr} km • Sisa {nearest.avail} tempat</span>
           </div>
           <div className="warga-hero-info-item">
             <small>Hotline Darurat BPBD 24 Jam</small>
-            <strong style={{ color: '#dc2626' }}>📞 112 / (0353) 881112</strong>
+            <strong className="ui-inline-label" style={{ color: '#dc2626' }}><IconPhone size={15} /> <span>112 / (0353) 881112</span></strong>
             <span>Siaga Evakuasi Perahu Karet</span>
           </div>
         </div>
@@ -873,8 +880,9 @@ export default function WargaBeranda({
           </div>
           {isAwas ? (
             <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '10px', padding: '10px 12px', marginTop: '6px' }}>
-              <strong style={{ color: '#b91c1c', fontSize: '0.84rem', display: 'block', marginBottom: '4px' }}>
-                🚨 Peringatan Evakuasi {activeVillageDisplay}
+              <strong className="ui-inline-label" style={{ color: '#b91c1c', fontSize: '0.84rem', marginBottom: '4px' }}>
+                <IconAlert size={15} />
+                <span>Peringatan Evakuasi {activeVillageDisplay}</span>
               </strong>
               <p style={{ margin: 0, fontSize: '0.78rem', color: '#7f1d1d', lineHeight: 1.45 }}>
                 Luapan Bengawan Solo mencapai level kritis ({probVal}%). Warga diimbau segera menuju <strong>{nearest.name}</strong> atau menekan tombol SOS jika butuh jemputan perahu.
@@ -882,8 +890,9 @@ export default function WargaBeranda({
             </div>
           ) : (isSiaga || isWaspada) ? (
             <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '10px', padding: '10px 12px', marginTop: '6px' }}>
-              <strong style={{ color: '#92400e', fontSize: '0.84rem', display: 'block', marginBottom: '4px' }}>
-                ⚠️ Imbauan Kewaspadaan {activeVillageDisplay}
+              <strong className="ui-inline-label" style={{ color: '#92400e', fontSize: '0.84rem', marginBottom: '4px' }}>
+                <IconAlert size={15} />
+                <span>Imbauan Kewaspadaan {activeVillageDisplay}</span>
               </strong>
               <p style={{ margin: 0, fontSize: '0.78rem', color: '#78350f', lineHeight: 1.45 }}>
                 Probabilitas genangan terpantau {probVal}%. Amankan dokumen penting dan pantau informasi dari Pusdalops BPBD Baureno.

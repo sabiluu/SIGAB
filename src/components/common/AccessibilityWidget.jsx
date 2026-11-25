@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useAccessibility } from '../../context/AccessibilityContext'
+import { IconStop, IconVolume } from './Icons'
 
 export const AccessibilityIcon = ({ size = 18 }) => (
   <svg
@@ -209,18 +210,22 @@ export default function AccessibilityWidget() {
                 <div className="a11y-voice-actions">
                   <button
                     type="button"
-                    className="a11y-action-btn"
+                    className="a11y-action-btn ui-inline-label"
+                    style={{ justifyContent: 'center' }}
                     onClick={readCurrentScreen}
                   >
-                    🔊 Bacakan Layar Ini
+                    <IconVolume size={15} />
+                    <span>Bacakan Layar Ini</span>
                   </button>
                   {isSpeaking && (
                     <button
                       type="button"
-                      className="a11y-action-btn stop"
+                      className="a11y-action-btn stop ui-inline-label"
+                      style={{ justifyContent: 'center' }}
                       onClick={stopSpeaking}
                     >
-                      ⏹ Berhenti
+                      <IconStop size={15} />
+                      <span>Berhenti</span>
                     </button>
                   )}
                 </div>

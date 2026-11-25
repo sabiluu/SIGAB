@@ -21,6 +21,7 @@ import LogoutModal from '../components/common/LogoutModal'
 import ProfileModal from '../components/warga/ProfileModal'
 import { useAccessibility } from '../context/AccessibilityContext'
 import { AccessibilityIcon } from '../components/common/AccessibilityWidget'
+import { IconAlert, IconFlask, IconPin, IconRadio, IconShield, IconTarget, IconUsers, IconWaves, IconZap } from '../components/common/Icons'
 import '../styles/role-home.css'
 import '../styles/warga-portal.css'
 
@@ -474,7 +475,7 @@ function WargaHome() {
                   <line x1="12" y1="9" x2="12" y2="13" />
                   <line x1="12" y1="17" x2="12.01" y2="17" />
                 </svg>
-                <span>🚨 Minta Bantuan SOS</span>
+                <span>Minta Bantuan SOS</span>
               </button>
             )}
           </nav>
@@ -562,7 +563,9 @@ function WargaHome() {
           {isEmergencyActive && (
           <div className="warga-emergency-top-banner">
             <div className="warga-emergency-top-info">
-              <span className="warga-emergency-icon">📢</span>
+              <span className="warga-emergency-icon" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                <IconRadio size={20} />
+              </span>
               <div className="warga-emergency-text-wrap">
                 <span className="warga-emergency-title">BANJIR PARAH — EVAKUASI SEKARANG</span>
                 <span className="warga-emergency-subtitle">
@@ -576,7 +579,7 @@ function WargaHome() {
               onClick={() => handleSelectTab('sos')}
               className="warga-emergency-sos-btn"
             >
-              <span>⚠️</span>
+              <IconAlert size={15} />
               <span>MINTA BANTUAN SOS</span>
             </button>
           </div>
@@ -628,7 +631,7 @@ function WargaHome() {
                 style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.82rem', fontWeight: 600 }}
                 title="Klik untuk melihat atau mengatur data domisili & profil"
               >
-                <span>📍</span>
+                <IconPin size={13} />
                 {geo.loading ? (
                   <span>Mendeteksi...</span>
                 ) : (
@@ -647,7 +650,7 @@ function WargaHome() {
                 title="Simulasi aktif. Klik untuk kembali ke normal"
               >
                 <span className="sim-pulse-dot" />
-                <span>🚨 Mode Simulasi (ON)</span>
+                <span className="ui-inline-label"><IconAlert size={13} /> Mode Simulasi (ON)</span>
               </button>
             )}
 
@@ -679,8 +682,8 @@ function WargaHome() {
                   />
                   <div className="notif-panel" style={{ zIndex: 9999 }}>
                     <div className="notif-panel-header">
-                      <h4>
-                        <span>🔔</span> Pemberitahuan ({displayNotifs.length})
+                      <h4 className="ui-inline-label">
+                        <IconAlert size={15} /> Pemberitahuan ({displayNotifs.length})
                       </h4>
                       <div className="notif-panel-actions">
                         {activeUnread > 0 && (
@@ -725,7 +728,9 @@ function WargaHome() {
                     <div className="notif-panel-body">
                       {displayNotifs.length === 0 ? (
                         <div className="notif-empty">
-                          <div className="notif-empty-icon">🔔</div>
+                          <div className="notif-empty-icon" style={{ display: 'inline-flex', justifyContent: 'center' }}>
+                            <IconAlert size={22} />
+                          </div>
                           <strong>Tidak ada notifikasi</strong>
                           <p style={{ margin: '4px 0 0', fontSize: '0.78rem' }}>Semua pemberitahuan sudah dibaca.</p>
                         </div>
@@ -742,7 +747,7 @@ function WargaHome() {
                             }}
                           >
                             <div className={`notif-item-icon ${item.type?.includes('flood') ? 'flood' : item.type?.includes('sos') ? 'sos' : 'info'}`}>
-                              {item.type?.includes('flood') ? '🌊' : item.type?.includes('sos') ? '🚨' : '📢'}
+                              {item.type?.includes('flood') ? <IconWaves size={16} /> : item.type?.includes('sos') ? <IconAlert size={16} /> : <IconRadio size={16} />}
                             </div>
                             <div className="notif-item-content">
                               <div className="notif-item-title">
@@ -846,7 +851,7 @@ function WargaHome() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid #f1f5f9', paddingBottom: '14px', marginBottom: '16px' }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '1.4rem' }}>📍</span>
+                  <span style={{ display: 'inline-flex', color: '#0f172a' }}><IconPin size={19} /></span>
                   <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#0f172a' }}>
                     Lokasi Domisili Warga
                   </h3>
@@ -878,8 +883,8 @@ function WargaHome() {
               flexWrap: 'wrap'
             }}>
               <div>
-                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#166534' }}>
-                  🎯 Lokasi GPS Real Perangkat
+                <div className="ui-inline-label" style={{ fontSize: '0.82rem', fontWeight: 700, color: '#166534' }}>
+                  <IconTarget size={15} /> <span>Lokasi GPS Real Perangkat</span>
                 </div>
                 <div style={{ fontSize: '0.74rem', color: '#15803d', marginTop: '2px' }}>
                   Kunci koordinat GPS nyata langsung dari perangkat Anda saat ini.
@@ -1032,7 +1037,7 @@ function WargaHome() {
                   }}
                   title="Deteksi ulang dari sensor GPS perangkat (disarankan di HP)"
                 >
-                  {geo.loading ? 'Mendeteksi...' : '📡 Pindai GPS'}
+                  {geo.loading ? 'Mendeteksi...' : <span className="ui-inline-label"><IconRadio size={14} /> Pindai GPS</span>}
                 </button>
               </div>
 
@@ -1260,7 +1265,7 @@ function AdminHome() {
       setAdminToast({ type: 'success', text: '✓ Tiket SOS simulasi banjir parah berhasil dibuat dan masuk ke antrean live!' })
       setTimeout(() => setAdminToast(null), 4000)
     } catch (err) {
-      setAdminToast({ type: 'error', text: '⚠️ Gagal membuat tiket simulasi: ' + (err.message || 'Error') })
+      setAdminToast({ type: 'error', text: 'Gagal membuat tiket simulasi: ' + (err.message || 'Error') })
       setTimeout(() => setAdminToast(null), 4000)
     }
   }
@@ -1575,7 +1580,7 @@ function AdminHome() {
             <article className="sos-queue portal-card">
               <div className="admin-section-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <h2>🔴 Antrian Tiket SOS</h2>
+                  <h2 className="ui-inline-label"><span style={{ width: 9, height: 9, borderRadius: '50%', background: '#dc2626', display: 'inline-block' }} /> Antrian Tiket SOS</h2>
                 </div>
                 <button
                   type="button"
@@ -1596,7 +1601,7 @@ function AdminHome() {
                   }}
                   title="Generate tiket SOS simulasi untuk pengujian evakuasi"
                 >
-                  ⚡ Buat Tiket Simulasi
+                  <IconZap size={13} /> <span>Buat Tiket Simulasi</span>
                 </button>
               </div>
 
@@ -1632,13 +1637,13 @@ function AdminHome() {
                     color: dashboardSosTab === 'simulation' ? '#ffffff' : '#64748b'
                   }}
                 >
-                  🧪 Simulasi Aktif ({activeTickets.filter(t => t.is_simulation).length})
+                  <span className="ui-inline-label"><IconFlask size={13} /> Simulasi Aktif ({activeTickets.filter(t => t.is_simulation).length})</span>
                 </button>
               </div>
 
               {displayedDashboardTickets.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '26px 10px', color: '#64748b' }}>
-                  <div style={{ fontSize: '1.8rem', marginBottom: '6px' }}>🛡️</div>
+                  <div style={{ marginBottom: '8px', color: '#64748b' }}><IconShield size={28} /></div>
                   <strong>Tidak ada antrian SOS aktif</strong>
                   <p style={{ fontSize: '0.82rem', margin: '4px 0 10px' }}>
                     {tickets.length > 0 ? 'Semua tiket darurat telah selesai ditangani.' : 'Belum ada tiket yang masuk.'}
@@ -1688,7 +1693,7 @@ function AdminHome() {
                           ) : null}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{
+                          <span className="ui-inline-label" style={{
                             background: (ticket.priority_score >= 50 ? '#fee2e2' : '#fef3c7'),
                             color: (ticket.priority_score >= 50 ? '#dc2626' : '#b45309'),
                             padding: '2px 7px',
@@ -1696,13 +1701,13 @@ function AdminHome() {
                             fontSize: '0.72rem',
                             fontWeight: 800
                           }}>
-                            ⚡ Skor {ticket.priority_score || 0}
+                            <IconZap size={12} /> Skor {ticket.priority_score || 0}
                           </span>
                           <time>{time}</time>
                         </div>
                       </div>
-                      <b>📍 {location}</b>
-                      <small>👥 {ticket.family_count} jiwa{getVulnerableSummary(ticket)}</small>
+                      <b className="ui-inline-label"><IconPin size={13} /> {location}</b>
+                      <small className="ui-inline-label"><IconUsers size={13} /> {ticket.family_count} jiwa{getVulnerableSummary(ticket)}</small>
                       <button
                         type="button"
                         onClick={() => {

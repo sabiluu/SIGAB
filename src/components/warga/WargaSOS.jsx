@@ -7,6 +7,27 @@ import wsService from '../../services/wsService';
 import { useAuth } from '../../context/AuthContext';
 import { useAccessibility } from '../../context/AccessibilityContext';
 import { formatWIBDateTime } from '../../utils/helpers';
+import {
+  IconAccessibility,
+  IconAlert,
+  IconCamera,
+  IconClock,
+  IconFlask,
+  IconHeart,
+  IconImage,
+  IconList,
+  IconLock,
+  IconNavigation,
+  IconPhone,
+  IconPin,
+  IconRadio,
+  IconRefresh,
+  IconSearch,
+  IconShield,
+  IconUser,
+  IconUsers,
+  IconZap,
+} from '../common/Icons';
 
 import useGeolocation, { reverseGeocodeLocation } from '../../hooks/useGeolocation';
 
@@ -16,7 +37,7 @@ const userPinIcon = L.divIcon({
     <div style="position: relative; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
       <div style="position: absolute; width: 36px; height: 36px; border-radius: 50%; background: rgba(220, 38, 38, 0.4); animation: pulse 1.5s infinite;"></div>
       <div style="background-color: #dc2626; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; border: 2.5px solid white; box-shadow: 0 3px 8px rgba(0,0,0,0.45); cursor: default;">
-        📍
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
       </div>
     </div>
   `,
@@ -609,7 +630,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
               JALUR PRIORITAS PUSDALOPS BPBD
             </span>
             <span className="sos-hero-gps-pill">
-              {gpsLocation ? '🔒 GPS Terkunci Otomatis' : '📡 Mencari Sinyal GPS...'}
+              {gpsLocation ? <span className="ui-inline-label"><IconLock size={13} /> GPS Terkunci Otomatis</span> : <span className="ui-inline-label"><IconRadio size={13} /> Mencari Sinyal GPS...</span>}
             </span>
           </div>
           <h1 className="sos-hero-title">Permintaan Evakuasi Darurat (SOS)</h1>
@@ -619,7 +640,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
         </div>
 
         <a href="tel:112" className="sos-hero-hotline" title="Hubungi Hotline Darurat 112">
-          <span className="sos-hero-hotline-icon">📞</span>
+          <span className="sos-hero-hotline-icon"><IconPhone size={18} /></span>
           <div className="sos-hero-hotline-text">
             <small>Darurat Telepon</small>
             <strong>Panggil 112</strong>
@@ -634,14 +655,14 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
           onClick={() => setActiveTab('create')}
           className={`sos-segmented-tab tab-danger ${activeTab === 'create' ? 'active' : ''}`}
         >
-          <span>🚨 Buat Tiket SOS Baru</span>
+          <span className="ui-inline-label"><IconAlert size={16} /> Buat Tiket SOS Baru</span>
         </button>
         <button
           type="button"
           onClick={() => setActiveTab('history')}
           className={`sos-segmented-tab ${activeTab === 'history' ? 'active' : ''}`}
         >
-          <span>📋 Riwayat &amp; Status Tiket {myTickets.length > 0 && `(${myTickets.length})`}</span>
+          <span className="ui-inline-label"><IconList size={16} /> Riwayat &amp; Status Tiket {myTickets.length > 0 && `(${myTickets.length})`}</span>
         </button>
       </div>
 
@@ -691,7 +712,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
               gap: '14px',
               alignItems: 'flex-start'
             }}>
-              <div style={{ fontSize: '1.8rem', lineHeight: 1 }}>🔒</div>
+              <div style={{ color: '#b45309', lineHeight: 1, marginTop: '2px' }}><IconLock size={26} /></div>
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
                   <h4 style={{ margin: 0, color: '#92400e', fontSize: '0.96rem', fontWeight: 800 }}>
@@ -739,7 +760,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                       boxShadow: '0 2px 6px rgba(220, 38, 38, 0.25)'
                     }}
                   >
-                    <span>🚨</span> Aktifkan Fase AWAS (94%) & Buka Kunci SOS
+                    <IconAlert size={15} /><span>Aktifkan Fase AWAS (94%) & Buka Kunci SOS</span>
                   </button>
                   <span style={{ fontSize: '0.76rem', color: '#92400e' }}>
                     Gunakan opsi ini untuk simulasi / uji coba latihan evakuasi mandiri.
@@ -754,7 +775,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
             <div className="sos-simulation-card">
               <div className="sos-sim-text">
                 <strong>
-                  <span>🧪</span> Mode Uji Coba / Demo Cepat
+                  <IconFlask size={15} /><span>Mode Uji Coba / Demo Cepat</span>
                 </strong>
                 <p>
                   Sedang melakukan demonstrasi atau uji sistem? Isi formulir otomatis dengan 1 klik.
@@ -773,7 +794,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                   }
                 }}
               >
-                <span>⚡ Isi Data Contoh</span>
+                <span className="ui-inline-label"><IconZap size={14} /> Isi Data Contoh</span>
               </button>
             </div>
           )}
@@ -812,9 +833,9 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                     >
                       <Popup>
                         <div style={{ textAlign: 'center', fontSize: '12px' }}>
-                          <strong style={{ color: '#dc2626' }}>📍 Titik Evakuasi Real</strong><br />
+                          <strong style={{ color: '#dc2626' }}>Titik Evakuasi Real</strong><br />
                           <span>{address}</span><br />
-                          <small style={{ color: '#16a34a', fontWeight: 600 }}>🔒 Terkunci otomatis via GPS perangkat</small>
+                          <small style={{ color: '#16a34a', fontWeight: 600 }}>Terkunci otomatis via GPS perangkat</small>
                         </div>
                       </Popup>
                     </Marker>
@@ -822,7 +843,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                 ) : (
                   <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', color: '#64748b', gap: '8px' }}>
                     <div style={{ width: '26px', height: '26px', border: '3px solid #cbd5e1', borderTopColor: 'var(--warga-teal)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                    <span style={{ fontSize: '13px', fontWeight: 600 }}>📡 Mengunci koordinat GPS perangkat Anda...</span>
+                    <span style={{ fontSize: '13px', fontWeight: 600 }}><span className="ui-inline-label" style={{ fontSize: '13px', fontWeight: 600 }}><IconRadio size={15} /> Mengunci koordinat GPS perangkat Anda...</span></span>
                   </div>
                 )}
                 
@@ -845,7 +866,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                   gap: '6px',
                   border: '1px solid rgba(255, 255, 255, 0.15)'
                 }}>
-                  <span style={{ color: '#4ade80' }}>🔒</span>
+                  <span style={{ color: '#4ade80', display: 'inline-flex' }}><IconLock size={13} /></span>
                   <span>Lokasi Terkunci Real GPS</span>
                 </div>
               </div>
@@ -856,7 +877,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                   <div style={{ flex: 1, minWidth: '220px' }}>
                     <div className="sos-location-label">Alamat Terdeteksi:</div>
                     <div className="sos-location-address">
-                      📍 {address}
+                      <span className="ui-inline-label"><IconPin size={15} /> <span>{address}</span></span>
                     </div>
                   </div>
                   <button
@@ -865,7 +886,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                     disabled={loadingGps}
                     className="btn-refresh-gps"
                   >
-                    {loadingGps ? '📡 Mencari...' : '🔄 Refresh GPS'}
+                    {loadingGps ? <span className="ui-inline-label"><IconRadio size={14} /> Mencari...</span> : <span className="ui-inline-label"><IconRefresh size={14} /> Refresh GPS</span>}
                   </button>
                 </div>
 
@@ -1021,7 +1042,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                     onClick={() => setVulnerable(prev => ({ ...prev, elderly: !prev.elderly }))}
                   >
                     <div className="sos-vuln-left">
-                      <span className="sos-vuln-icon">👵</span>
+                      <span className="sos-vuln-icon"><IconUser size={19} /></span>
                       <div className="sos-vuln-info">
                         <strong>Lansia (&gt;60 th)</strong>
                         <span>Butuh bantuan mobilitas</span>
@@ -1036,7 +1057,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                     onClick={() => setVulnerable(prev => ({ ...prev, toddler: !prev.toddler }))}
                   >
                     <div className="sos-vuln-left">
-                      <span className="sos-vuln-icon">👶</span>
+                      <span className="sos-vuln-icon"><IconUsers size={19} /></span>
                       <div className="sos-vuln-info">
                         <strong>Balita / Anak</strong>
                         <span>Butuh rompi pelampung anak</span>
@@ -1051,7 +1072,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                     onClick={() => setVulnerable(prev => ({ ...prev, pregnant: !prev.pregnant }))}
                   >
                     <div className="sos-vuln-left">
-                      <span className="sos-vuln-icon">🤰</span>
+                      <span className="sos-vuln-icon"><IconHeart size={19} /></span>
                       <div className="sos-vuln-info">
                         <strong>Ibu Hamil</strong>
                         <span>Prioritas medis & ambulans</span>
@@ -1066,7 +1087,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                     onClick={() => setVulnerable(prev => ({ ...prev, disability: !prev.disability }))}
                   >
                     <div className="sos-vuln-left">
-                      <span className="sos-vuln-icon">♿</span>
+                      <span className="sos-vuln-icon"><IconAccessibility size={19} /></span>
                       <div className="sos-vuln-info">
                         <strong>Disabilitas / Sakit</strong>
                         <span>Butuh tandu evakuasi</span>
@@ -1081,7 +1102,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
               <div className="sos-photo-box">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
                   <label className="sos-form-label" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span>📸</span> Foto Situasi Genangan / Banjir (Opsional)
+                    <IconCamera size={16} /> Foto Situasi Genangan / Banjir (Opsional)
                   </label>
                   <span className="sos-source-badge gps">
                     Sangat Dianjurkan
@@ -1147,7 +1168,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                           gap: '6px'
                         }}
                       >
-                        🔄 Beralih Kamera
+                        <span className="ui-inline-label"><IconRefresh size={13} /> Beralih Kamera</span>
                       </button>
                     </div>
 
@@ -1191,7 +1212,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                         title="Ambil foto"
                       >
                         <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '18px' }}>
-                          📸
+                          <IconCamera size={20} />
                         </div>
                       </button>
 
@@ -1201,7 +1222,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                 ) : cameraError ? (
                   <div style={{ background: '#fee2e2', border: '1px solid #fecaca', borderRadius: '10px', padding: '14px', marginBottom: '12px' }}>
                     <div style={{ color: '#dc2626', fontWeight: 800, fontSize: '13px', marginBottom: '4px' }}>
-                      ⚠️ Akses Kamera Terkendala
+                      <span className="ui-inline-label"><IconAlert size={15} /> Akses Kamera Terkendala</span>
                     </div>
                     <p style={{ margin: '0 0 10px 0', fontSize: '12px', color: '#991b1b' }}>
                       {cameraError}
@@ -1232,7 +1253,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                       onClick={() => startLiveCamera(cameraFacing)}
                       className="btn-open-camera"
                     >
-                      <span style={{ fontSize: '18px' }}>📸</span>
+                      <IconCamera size={18} />
                       <span>Buka Kamera Langsung</span>
                     </button>
 
@@ -1241,7 +1262,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                       onClick={() => galleryInputRef.current?.click()}
                       className="btn-open-gallery"
                     >
-                      <span style={{ fontSize: '16px' }}>📁</span>
+                      <IconImage size={17} />
                       <span>Pilih dari Galeri</span>
                     </button>
                   </div>
@@ -1263,7 +1284,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                           onClick={() => startLiveCamera(cameraFacing)}
                           style={{ background: 'var(--warga-teal)', border: 'none', color: 'white', padding: '5px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: 700 }}
                         >
-                          📷 Ambil Ulang
+                          <span className="ui-inline-label"><IconCamera size={13} /> Ambil Ulang</span>
                         </button>
                         <button
                           type="button"
@@ -1302,7 +1323,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                 >
                   {!isEmergency ? (
                     <>
-                      <span>🔒</span>
+                      <IconLock size={16} />
                       <span>PENGIRIMAN TERKUNCI (STATUS BELUM AWAS)</span>
                     </>
                   ) : (
@@ -1354,7 +1375,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                         alignItems: 'center',
                         gap: '3px'
                       }}>
-                        <span>🎮</span> SIMULASI
+                        <IconFlask size={12} /> SIMULASI
                       </span>
                     )}
                   </div>
@@ -1379,7 +1400,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                 {ticket.photo_url && (
                   <div style={{ marginTop: '12px', borderTop: '1px solid var(--warga-border)', paddingTop: '10px' }}>
                     <span style={{ fontSize: '12px', color: 'var(--warga-text-muted)', display: 'block', marginBottom: '6px', fontWeight: 700 }}>
-                      📷 Foto Situasi yang Dikirim:
+                      <span className="ui-inline-label" style={{ fontSize: '12px', color: 'var(--warga-text-muted)', marginBottom: '6px', fontWeight: 700 }}><IconCamera size={14} /> Foto Situasi yang Dikirim:</span>
                     </span>
                     <img 
                       src={resolveMediaUrl(ticket.photo_url)} 
@@ -1395,7 +1416,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
               <div className="sos-tracker-box">
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #e0f2fe', paddingBottom: '10px' }}>
                   <h4 style={{ margin: 0, color: '#0369a1', fontSize: '0.92rem', fontWeight: 800 }}>
-                    📡 Pelacakan Evakuasi Real-time
+                    <span className="ui-inline-label"><IconRadio size={16} /> Pelacakan Evakuasi Real-time</span>
                   </h4>
                   <span style={{ fontSize: '0.72rem', color: '#0284c7', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span className="sos-pulse-dot" style={{ background: '#0284c7' }} /> Terhubung Live
@@ -1407,7 +1428,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
               {/* Call 112 Hotline Box */}
               <div className="sos-call-112-box">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ fontSize: '1.4rem' }}>📞</span>
+                  <span style={{ color: '#dc2626', display: 'inline-flex' }}><IconPhone size={20} /></span>
                   <div>
                     <strong style={{ color: '#b91c1c', display: 'block', fontSize: '0.85rem' }}>
                       Butuh bantuan langsung via telepon?
@@ -1444,14 +1465,14 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
         <div className="sos-card">
           <div className="sos-card-head">
             <h2 className="sos-card-title">
-              📋 Riwayat & Status Tiket SOS Anda
+              <span className="ui-inline-label"><IconList size={20} /> Riwayat &amp; Status Tiket SOS Anda</span>
             </h2>
             <button
               type="button"
               onClick={loadMyTickets}
               className="btn-refresh-gps"
             >
-              🔄 Segarkan Data
+              <span className="ui-inline-label"><IconRefresh size={14} /> Segarkan Data</span>
             </button>
           </div>
 
@@ -1468,7 +1489,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
             fontSize: '0.8rem',
             color: '#166534'
           }}>
-            <span style={{ fontSize: '1.2rem' }}>🛡️</span>
+            <span style={{ color: '#15803d', display: 'inline-flex', flexShrink: 0 }}><IconShield size={20} /></span>
             <span>
               <strong>Arsip Riwayat Permanen:</strong> Seluruh laporan SOS (kejadian darurat riil maupun sesi latihan simulasi) tersimpan secara permanen di riwayat akun Anda dan tidak akan terhapus meskipun simulasi telah selesai.
             </span>
@@ -1499,7 +1520,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                   style={{ padding: '8px 12px 8px 34px', fontSize: '0.82rem' }}
                 />
                 <span style={{ position: 'absolute', left: '11px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '13px' }}>
-                  🔍
+                  <span style={{ display: 'inline-flex', alignItems: 'center' }}><IconSearch size={14} /></span>
                 </span>
                 {ticketSearch && (
                   <button
@@ -1526,7 +1547,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                   onClick={() => setTicketFilterStatus('simulation')}
                   className={`sos-preset-chip ${ticketFilterStatus === 'simulation' ? 'active' : ''}`}
                 >
-                  🎮 Simulasi ({myTickets.filter(t => t.is_simulation).length})
+                  <span className="ui-inline-label"><IconFlask size={13} /> Simulasi ({myTickets.filter(t => t.is_simulation).length})</span>
                 </button>
                 <button
                   type="button"
@@ -1555,11 +1576,11 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
 
           {loadingTickets ? (
             <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--warga-text-muted)' }}>
-              ⏳ Memuat riwayat tiket evakuasi...
+              <span className="ui-inline-label" style={{ justifyContent: 'center' }}><IconClock size={16} /> Memuat riwayat tiket evakuasi...</span>
             </div>
           ) : myTickets.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '3rem', background: '#f8fafc', borderRadius: '12px', border: '1px dashed var(--warga-border)' }}>
-              <div style={{ fontSize: '2.5rem', marginBottom: '8px' }}>🛡️</div>
+              <div style={{ marginBottom: '10px', color: '#64748b' }}><IconShield size={36} /></div>
               <h3 style={{ color: 'var(--warga-navy)', margin: '0 0 4px 0', fontSize: '1.05rem', fontWeight: 800 }}>Belum Ada Tiket SOS</h3>
               <p style={{ color: 'var(--warga-text-muted)', fontSize: '0.82rem', margin: 0 }}>
                 Anda belum pernah mengajukan tiket evakuasi darurat.
@@ -1570,12 +1591,12 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                 className="btn-sos-danger-submit"
                 style={{ marginTop: '16px', padding: '10px 20px', fontSize: '0.82rem' }}
               >
-                🚨 Buat Permintaan SOS
+                <span className="ui-inline-label"><IconAlert size={15} /> Buat Permintaan SOS</span>
               </button>
             </div>
           ) : filteredMyTickets.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '2.5rem', background: '#f8fafc', borderRadius: '12px', border: '1px dashed var(--warga-border)' }}>
-              <div style={{ fontSize: '2rem', marginBottom: '6px' }}>🔍</div>
+              <div style={{ marginBottom: '8px', color: '#64748b' }}><IconSearch size={30} /></div>
               <h4 style={{ color: 'var(--warga-navy)', margin: '0 0 4px 0', fontWeight: 800 }}>Tidak Ada Tiket yang Cocok</h4>
               <p style={{ color: 'var(--warga-text-muted)', fontSize: '0.82rem', margin: 0 }}>
                 Tidak ditemukan tiket dengan kata kunci "{ticketSearch}".
@@ -1612,7 +1633,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                           alignItems: 'center',
                           gap: '3px'
                         }}>
-                          <span>🎮</span> SIMULASI
+                          <IconFlask size={12} /> SIMULASI
                         </span>
                       )}
                       <span style={{ fontSize: '0.78rem', color: 'var(--warga-text-muted)' }}>
@@ -1623,11 +1644,11 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                   </div>
 
                   <div style={{ fontSize: '0.84rem', color: 'var(--warga-text-body)', lineHeight: 1.5, marginBottom: '8px' }}>
-                    <div>📍 <strong>Lokasi:</strong> {t.gps_address}</div>
-                    <div>👥 <strong>Jumlah Korban:</strong> {t.family_count} Jiwa {t.has_elderly ? '• Lansia' : ''} {t.has_toddler ? '• Balita' : ''} {t.has_pregnant ? '• Ibu Hamil' : ''} {t.has_disability ? '• Disabilitas' : ''}</div>
+                    <div className="ui-inline-label"><IconPin size={14} /> <span><strong>Lokasi:</strong> {t.gps_address}</span></div>
+                    <div className="ui-inline-label" style={{ marginTop: '3px' }}><IconUsers size={14} /> <span><strong>Jumlah Korban:</strong> {t.family_count} Jiwa {t.has_elderly ? '• Lansia' : ''} {t.has_toddler ? '• Balita' : ''} {t.has_pregnant ? '• Ibu Hamil' : ''} {t.has_disability ? '• Disabilitas' : ''}</span></div>
                     {t.assigned_unit && (
-                      <div style={{ color: '#b45309', fontWeight: 700, marginTop: '4px' }}>
-                        🚤 <strong>Armada Ditugaskan:</strong> {t.assigned_unit}
+                      <div className="ui-inline-label" style={{ color: '#b45309', fontWeight: 700, marginTop: '4px' }}>
+                        <IconNavigation size={14} /> <span><strong>Armada Ditugaskan:</strong> {t.assigned_unit}</span>
                       </div>
                     )}
                   </div>
@@ -1642,7 +1663,7 @@ export default function WargaSOS({ onNavigate, geo: externalGeo, isEmergencyActi
                         onClick={() => setLightboxPhoto(resolveMediaUrl(t.photo_url))}
                       />
                       <div>
-                        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--warga-navy)', display: 'block' }}>📷 Foto Situasi Banjir</span>
+                        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--warga-navy)', display: 'inline-flex', alignItems: 'center', gap: '6px' }}><IconCamera size={14} /> Foto Situasi Banjir</span>
                         <button
                           type="button"
                           onClick={() => setLightboxPhoto(resolveMediaUrl(t.photo_url))}

@@ -1,6 +1,22 @@
 import { useState, useEffect, useRef } from 'react'
 import { updateProfile } from '../../services/authService'
 import { useAccessibility } from '../../context/AccessibilityContext'
+import {
+  IconAccessibility,
+  IconAlert,
+  IconCamera,
+  IconEdit,
+  IconFileText,
+  IconHeart,
+  IconHome,
+  IconPhone,
+  IconPin,
+  IconSave,
+  IconShield,
+  IconTarget,
+  IconUser,
+  IconUsers,
+} from '../common/Icons'
 
 export default function ProfileModal({
   isOpen,
@@ -217,7 +233,7 @@ export default function ProfileModal({
         {/* Header Modal */}
         <div className="profile-modal-header">
           <h3>
-            <span>👤</span>
+            <IconUser size={16} />
             {isEditing ? 'Edit Profil & Data Warga' : 'Profil Warga & Rumah Tangga'}
           </h3>
           <button
@@ -280,7 +296,7 @@ export default function ProfileModal({
                       boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
                     }}
                   >
-                    📷
+                    <IconCamera size={13} />
                   </button>
                 </div>
                 <div className="profile-hero-info">
@@ -288,7 +304,7 @@ export default function ProfileModal({
                   <div className="profile-hero-meta">
                     <span>NIK: {formData.nik}</span>
                     <span>•</span>
-                    <span>📞 {formData.phone}</span>
+                    <span className="ui-inline-label"><IconPhone size={13} /> {formData.phone}</span>
                   </div>
                   <div className="profile-verified-badge">
                     ✓ Terverifikasi BPBD Baureno
@@ -299,7 +315,7 @@ export default function ProfileModal({
               <div className="profile-grid-2">
                 <div className="profile-info-card">
                   <div className="profile-info-label">
-                    <span>📍</span> Kecamatan &amp; Desa
+                    <IconPin size={14} /> Kecamatan &amp; Desa
                   </div>
                   <div className="profile-info-value">
                     Desa {selectedVillage.name.replace(' (Pusat)', '')}
@@ -311,7 +327,7 @@ export default function ProfileModal({
 
                 <div className="profile-info-card">
                   <div className="profile-info-label">
-                    <span>🏠</span> Alamat Domisili
+                    <IconHome size={14} /> Alamat Domisili
                   </div>
                   <div 
                     className="profile-info-value"
@@ -329,7 +345,7 @@ export default function ProfileModal({
 
                 <div className="profile-info-card">
                   <div className="profile-info-label">
-                    <span>👨‍👩‍👧‍👦</span> Jumlah Keluarga
+                    <IconUsers size={14} /> Jumlah Keluarga
                   </div>
                   <div 
                     className="profile-info-value"
@@ -350,27 +366,27 @@ export default function ProfileModal({
 
                 <div className="profile-info-card">
                   <div className="profile-info-label">
-                    <span>🛡️</span> Kelompok Rentan
+                    <IconShield size={14} /> Kelompok Rentan
                   </div>
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '4px' }}>
                     {Number(formData.elderly_count) > 0 && (
-                      <span style={{ background: '#fee2e2', color: '#991b1b', padding: '2px 8px', borderRadius: '4px', fontSize: '0.74rem', fontWeight: 700 }}>
-                        👴 {formData.elderly_count} Lansia
+                      <span style={{ background: '#fee2e2', color: '#991b1b', padding: '2px 8px', borderRadius: '4px', fontSize: '0.74rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <IconUser size={13} /> {formData.elderly_count} Lansia
                       </span>
                     )}
                     {Number(formData.toddler_count) > 0 && (
-                      <span style={{ background: '#fef3c7', color: '#92400e', padding: '2px 8px', borderRadius: '4px', fontSize: '0.74rem', fontWeight: 700 }}>
-                        👶 {formData.toddler_count} Balita
+                      <span style={{ background: '#fef3c7', color: '#92400e', padding: '2px 8px', borderRadius: '4px', fontSize: '0.74rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <IconUsers size={13} /> {formData.toddler_count} Balita
                       </span>
                     )}
                     {Number(formData.pregnant_count) > 0 && (
-                      <span style={{ background: '#fce7f3', color: '#9d174d', padding: '2px 8px', borderRadius: '4px', fontSize: '0.74rem', fontWeight: 700 }}>
-                        🤰 {formData.pregnant_count} Ibu Hamil
+                      <span style={{ background: '#fce7f3', color: '#9d174d', padding: '2px 8px', borderRadius: '4px', fontSize: '0.74rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <IconHeart size={13} /> {formData.pregnant_count} Ibu Hamil
                       </span>
                     )}
                     {Number(formData.disabled_count) > 0 && (
-                      <span style={{ background: '#f3e8ff', color: '#6b21a8', padding: '2px 8px', borderRadius: '4px', fontSize: '0.74rem', fontWeight: 700 }}>
-                        ♿ {formData.disabled_count} Disabilitas
+                      <span style={{ background: '#f3e8ff', color: '#6b21a8', padding: '2px 8px', borderRadius: '4px', fontSize: '0.74rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <IconAccessibility size={13} /> {formData.disabled_count} Disabilitas
                       </span>
                     )}
                     {!hasVulnerable && (
@@ -384,7 +400,7 @@ export default function ProfileModal({
 
               <div className="profile-info-card" style={{ marginBottom: '14px' }}>
                 <div className="profile-info-label">
-                  <span>📝</span> Catatan Khusus Evakuasi / Riwayat Medis
+                  <IconFileText size={14} /> Catatan Khusus Evakuasi / Riwayat Medis
                 </div>
                 <div 
                   style={{ 
@@ -404,7 +420,7 @@ export default function ProfileModal({
               {/* Seksi Ganti Foto Profil */}
               <div className="profile-form-section profile-avatar-edit-section">
                 <div className="profile-section-title">
-                  <span>📷</span> Foto Profil Warga
+                  <IconCamera size={15} /> Foto Profil Warga
                 </div>
                 <div className="profile-avatar-upload-box" style={{
                   display: 'flex',
@@ -455,7 +471,7 @@ export default function ProfileModal({
                           gap: '6px',
                         }}
                       >
-                        <span>📷</span> {formData.avatar_url ? 'Ganti Foto' : 'Unggah Foto'}
+                        <IconCamera size={15} /> {formData.avatar_url ? 'Ganti Foto' : 'Unggah Foto'}
                       </button>
                       {formData.avatar_url && (
                         <button
@@ -476,7 +492,7 @@ export default function ProfileModal({
                             gap: '4px',
                           }}
                         >
-                          <span>🗑️</span> Hapus Foto
+                          <IconAlert size={13} /> Hapus Foto
                         </button>
                       )}
                     </div>
@@ -485,7 +501,7 @@ export default function ProfileModal({
                     </div>
                     {photoError && (
                       <div style={{ color: '#dc2626', fontSize: '0.75rem', marginTop: '4px', fontWeight: 600 }}>
-                        ⚠️ {photoError}
+                        <span className="ui-inline-label" style={{ color: '#dc2626', fontSize: '0.75rem', marginTop: '4px', fontWeight: 600 }}><IconAlert size={14} /> {photoError}</span>
                       </div>
                     )}
                   </div>
@@ -495,7 +511,7 @@ export default function ProfileModal({
               {/* Seksi Identitas Diri */}
               <div className="profile-form-section">
                 <div className="profile-section-title">
-                  <span>👤</span> Data Identitas Diri
+                  <IconUser size={16} /> Data Identitas Diri
                 </div>
                 <div className="profile-form-grid">
                   <div className="profile-form-group">
@@ -549,7 +565,7 @@ export default function ProfileModal({
               {/* Seksi Domisili & Lokasi */}
               <div className="profile-form-section">
                 <div className="profile-section-title">
-                  <span>📍</span> Lokasi Domisili &amp; Koordinat GPS
+                  <IconPin size={14} /> Lokasi Domisili &amp; Koordinat GPS
                 </div>
 
                 {/* Quick Real GPS Device Toggle */}
@@ -567,7 +583,7 @@ export default function ProfileModal({
                 }}>
                   <div>
                     <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#166534' }}>
-                      🎯 Sinkronkan dengan GPS Nyata Perangkat
+                      <span className="ui-inline-label" style={{ fontSize: '0.82rem', fontWeight: 700, color: '#166534' }}><IconTarget size={15} /> Sinkronkan dengan GPS Nyata Perangkat</span>
                     </div>
                     <div style={{ fontSize: '0.74rem', color: '#15803d', marginTop: '2px' }}>
                       {geo?.isRealDevice 
@@ -628,7 +644,7 @@ export default function ProfileModal({
               {/* Seksi Rumah Tangga & Kerentanan */}
               <div className="profile-form-section">
                 <div className="profile-section-title">
-                  <span>👨‍👩‍👧‍👦</span> Data Keluarga &amp; Prioritas Evakuasi
+                  <IconUsers size={14} /> Data Keluarga &amp; Prioritas Evakuasi
                 </div>
                 
                 <div style={{ marginBottom: '12px' }}>
@@ -660,7 +676,7 @@ export default function ProfileModal({
                 
                 <div className="profile-vulnerable-grid">
                   <div className="profile-counter-card">
-                    <span className="profile-counter-label">👴 Lansia (&gt;60 thn)</span>
+                    <span className="profile-counter-label ui-inline-label"><IconUser size={14} /> Lansia (&gt;60 thn)</span>
                     <div className="profile-counter-controls">
                       <button
                         type="button"
@@ -681,7 +697,7 @@ export default function ProfileModal({
                   </div>
 
                   <div className="profile-counter-card">
-                    <span className="profile-counter-label">👶 Balita (&lt;5 thn)</span>
+                    <span className="profile-counter-label ui-inline-label"><IconUsers size={14} /> Balita (&lt;5 thn)</span>
                     <div className="profile-counter-controls">
                       <button
                         type="button"
@@ -702,7 +718,7 @@ export default function ProfileModal({
                   </div>
 
                   <div className="profile-counter-card">
-                    <span className="profile-counter-label">🤰 Ibu Hamil/Menyusui</span>
+                    <span className="profile-counter-label ui-inline-label"><IconHeart size={14} /> Ibu Hamil/Menyusui</span>
                     <div className="profile-counter-controls">
                       <button
                         type="button"
@@ -723,7 +739,7 @@ export default function ProfileModal({
                   </div>
 
                   <div className="profile-counter-card">
-                    <span className="profile-counter-label">♿ Disabilitas/Sakit Berat</span>
+                    <span className="profile-counter-label ui-inline-label"><IconAccessibility size={14} /> Disabilitas/Sakit Berat</span>
                     <div className="profile-counter-controls">
                       <button
                         type="button"
@@ -748,7 +764,7 @@ export default function ProfileModal({
               {/* Seksi Catatan Tambahan */}
               <div className="profile-form-section">
                 <div className="profile-form-group full-width">
-                  <label>📝 Catatan Khusus Evakuasi / Riwayat Medis</label>
+                  <label className="ui-inline-label"><IconFileText size={14} /> <span>Catatan Khusus Evakuasi / Riwayat Medis</span></label>
                   <textarea
                     rows={2}
                     value={formData.notes}
@@ -773,7 +789,7 @@ export default function ProfileModal({
                   openA11yPanel()
                 }}
               >
-                ♿ Aksesibilitas
+                <span className="ui-inline-label"><IconAccessibility size={15} /> Aksesibilitas</span>
               </button>
               <button
                 type="button"
@@ -787,7 +803,7 @@ export default function ProfileModal({
                 className="profile-btn-primary"
                 onClick={() => setIsEditing(true)}
               >
-                <span>✏️</span> Edit Profil &amp; Data Warga
+                <IconEdit size={15} /> Edit Profil &amp; Data Warga
               </button>
             </>
           ) : (
@@ -813,7 +829,7 @@ export default function ProfileModal({
                   <>Menyimpan...</>
                 ) : (
                   <>
-                    <span>💾</span> Simpan Perubahan
+                    <IconSave size={15} /> Simpan Perubahan
                   </>
                 )}
               </button>
