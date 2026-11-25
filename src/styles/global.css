@@ -14,8 +14,8 @@
   --red: #b94d40;
   --red-pale: #fff0ed;
   --shadow: 0 12px 28px rgba(24, 47, 62, 0.06);
-  --font-display: Georgia, 'Times New Roman', serif;
-  --font-body: 'Trebuchet MS', 'Segoe UI', sans-serif;
+  --font-display: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-body: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 *,
@@ -66,8 +66,8 @@ button {
 .welcome-row { align-items: end; display: flex; justify-content: space-between; margin-bottom: 28px; }
 .eyebrow { color: var(--teal); font-size: 0.68rem; font-weight: 800; letter-spacing: 0.12em; margin: 0 0 7px; }
 h1, h2, p { margin-top: 0; }
-h1 { color: var(--navy); font-family: var(--font-display); font-size: clamp(2rem, 4vw, 3rem); font-weight: 500; letter-spacing: -0.04em; margin-bottom: 8px; }
-h2 { color: var(--navy); font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; letter-spacing: -0.025em; margin-bottom: 0; }
+h1 { color: var(--navy); font-family: var(--font-display); font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; letter-spacing: -0.03em; margin-bottom: 8px; }
+h2 { color: var(--navy); font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0; }
 .intro { color: var(--muted); font-size: 0.94rem; margin-bottom: 0; }
 .location-chip { background: var(--paper); border: 1px solid #dde7e5; border-radius: 22px; color: var(--navy); font-size: 0.82rem; padding: 9px 15px; }
 .location-chip span { color: var(--teal); font-size: 1rem; margin-right: 6px; }
