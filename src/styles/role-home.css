@@ -601,11 +601,7 @@
   z-index: 2050 !important;
 }
 
-.admin-header-title {
-  display: none;
-}
-
-/* Desktop (>= 960px): Pin admin sidebar permanently without breaking navbar */
+/* Desktop (>= 960px): Pin admin sidebar permanently while keeping original navbar */
 @media (min-width: 960px) {
   .admin-sidebar,
   .admin-portal.sidebar-closed .admin-sidebar,
@@ -677,8 +673,7 @@
 
   .admin-sidebar .sidebar-toggle,
   .admin-sidebar-backdrop,
-  .admin-mobile-toggle.gh-hamburger-btn,
-  .admin-header .sigab-navbar-brand {
+  .admin-mobile-toggle.gh-hamburger-btn {
     display: none !important;
   }
 
@@ -691,33 +686,6 @@
   .admin-header {
     padding: 0 28px;
     gap: 18px;
-  }
-
-  .admin-header-title {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    line-height: 1.2;
-  }
-
-  .admin-header-title strong {
-    font-size: 1rem;
-    font-weight: 800;
-    color: #0f172a;
-    letter-spacing: -0.02em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .admin-header-title span {
-    font-size: 0.72rem;
-    font-weight: 500;
-    color: #64748b;
-    margin-top: 2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 }
 

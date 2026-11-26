@@ -4535,11 +4535,7 @@
   z-index: 2050 !important;
 }
 
-.warga-topbar-page-title {
-  display: none;
-}
-
-/* Desktop (>= 960px): Pin sidebar permanently without duplicating navbar brand */
+/* Desktop (>= 960px): Pin sidebar permanently while keeping original topbar */
 @media (min-width: 960px) {
   .warga-sidebar,
   .warga-sidebar.closed,
@@ -4654,8 +4650,7 @@
 
   .warga-sidebar-toggle-btn-inside,
   .warga-sidebar-backdrop,
-  .warga-sidebar-toggle-btn.gh-hamburger-btn,
-  .warga-topbar .sigab-navbar-brand {
+  .warga-sidebar-toggle-btn.gh-hamburger-btn {
     display: none !important;
   }
 
@@ -4667,24 +4662,15 @@
   }
 
   .warga-topbar {
-    padding: 0 28px;
+    padding: 0 32px;
     gap: 16px;
   }
 
   .warga-topbar-left {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     min-width: 0;
-  }
-
-  .warga-topbar-page-title {
-    display: inline-block;
-    font-size: 0.96rem;
-    font-weight: 800;
-    color: var(--warga-text-title);
-    letter-spacing: -0.02em;
-    white-space: nowrap;
   }
 
   .warga-topbar-actions {
@@ -4696,10 +4682,6 @@
 @media (min-width: 960px) and (max-width: 1200px) {
   .warga-topbar {
     padding: 0 18px;
-  }
-
-  .warga-live-chip {
-    display: none;
   }
 }
 

@@ -624,17 +624,6 @@ function WargaHome() {
               </div>
             </a>
 
-            <span className="warga-topbar-page-title">
-              {({
-                beranda: 'Beranda',
-                peta: 'Peta & Rute',
-                riwayat: 'Riwayat Banjir',
-                panduan: 'Panduan Siaga',
-                kontak: 'Kontak Darurat',
-                sos: 'Bantuan SOS',
-              })[activeTab] || 'Beranda'}
-            </span>
-
             <div className="warga-topbar-breadcrumb">
               <span className="divider">/</span>
               <span 
@@ -1439,11 +1428,6 @@ function AdminHome() {
               <span>Pusdalops BPBD</span>
             </div>
           </a>
-
-          <div className="admin-header-title">
-            <strong>Dashboard Pusdalops</strong>
-            <span>Kecamatan Baureno • Pemantauan Real-Time</span>
-          </div>
 
           <div className="admin-time">
             <strong>{timeStr}</strong>
