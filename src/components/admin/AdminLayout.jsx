@@ -247,6 +247,18 @@ export default function AdminLayout({ children, activeMenu }) {
             </div>
           </a>
 
+          <div className="admin-header-title">
+            <strong>
+              {({
+                dashboard: 'Dashboard Pusdalops',
+                radar: 'Radar Peta Wilayah',
+                sos: 'Manajemen Tiket SOS',
+                posko: 'Manajemen Posko Evakuasi',
+              })[activeMenu] || 'Dashboard Pusdalops'}
+            </strong>
+            <span>Pusdalops BPBD • Kecamatan Baureno</span>
+          </div>
+
           <div className="admin-time">
             <strong>{timeStr}</strong>
             <small>{dateStr}</small>

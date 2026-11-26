@@ -601,6 +601,137 @@
   z-index: 2050 !important;
 }
 
+.admin-header-title {
+  display: none;
+}
+
+/* Desktop (>= 960px): Pin admin sidebar permanently without breaking navbar */
+@media (min-width: 960px) {
+  .admin-sidebar,
+  .admin-portal.sidebar-closed .admin-sidebar,
+  .admin-portal:not(.sidebar-closed) .admin-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 256px !important;
+    min-width: 256px !important;
+    max-width: 256px !important;
+    flex: 0 0 256px !important;
+    height: 100vh !important;
+    transform: translateX(0) !important;
+    pointer-events: auto !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    border-right: 1px solid #1e293b !important;
+    z-index: 1200 !important;
+  }
+
+  .admin-portal.sidebar-closed .sidebar-header,
+  .admin-portal .sidebar-header {
+    justify-content: flex-start !important;
+    height: 72px;
+    min-height: 72px;
+    padding: 0 18px !important;
+    margin-bottom: 18px !important;
+    box-sizing: border-box;
+  }
+
+  .admin-portal.sidebar-closed .brand-text,
+  .admin-portal.sidebar-closed .role-brand,
+  .admin-portal.sidebar-closed .admin-sidebar nav a span,
+  .admin-portal.sidebar-closed .admin-sidebar nav a b,
+  .admin-portal.sidebar-closed .op-text,
+  .admin-portal.sidebar-closed .warga-sidebar-logout-btn span {
+    display: flex !important;
+  }
+
+  .admin-portal.sidebar-closed .admin-sidebar nav {
+    padding: 0 16px !important;
+  }
+
+  .admin-portal.sidebar-closed .admin-sidebar nav a {
+    justify-content: flex-start !important;
+  }
+
+  .admin-portal.sidebar-closed .operator {
+    padding: 20px 16px !important;
+    justify-content: flex-start !important;
+  }
+
+  .admin-portal.sidebar-closed .op-status {
+    width: 44px !important;
+  }
+
+  .admin-portal.sidebar-closed .sidebar-logout-wrap {
+    padding: 12px 16px !important;
+    display: block !important;
+  }
+
+  .admin-portal.sidebar-closed .warga-sidebar-logout-btn {
+    justify-content: flex-start !important;
+    padding: 10px 14px !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  .admin-sidebar .sidebar-toggle,
+  .admin-sidebar-backdrop,
+  .admin-mobile-toggle.gh-hamburger-btn,
+  .admin-header .sigab-navbar-brand {
+    display: none !important;
+  }
+
+  .admin-content,
+  .admin-portal.sidebar-closed .admin-content {
+    margin-left: 256px !important;
+    width: calc(100% - 256px) !important;
+  }
+
+  .admin-header {
+    padding: 0 28px;
+    gap: 18px;
+  }
+
+  .admin-header-title {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.2;
+  }
+
+  .admin-header-title strong {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .admin-header-title span {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: #64748b;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+@media (min-width: 960px) and (max-width: 1200px) {
+  .admin-header {
+    padding: 0 18px;
+    gap: 12px;
+  }
+
+  .admin-dashboard {
+    padding: 22px;
+  }
+}
+
 
 /* ==========================================================================
    LIVELY DASHBOARD ANIMATIONS (ADMIN / PETUGAS PORTAL)

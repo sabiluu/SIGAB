@@ -346,3 +346,102 @@ html.a11y-high-contrast textarea {
 .a11y-reset-btn:hover {
   background: #f1f5f9;
 }
+
+/* Mobile-only right-edge floating dock (hidden on desktop >= 768px) */
+.a11y-mobile-dock {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .a11y-mobile-dock {
+    position: fixed;
+    right: 0;
+    bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+    z-index: 180;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 46px;
+    padding: 0 6px 0 10px;
+    border-radius: 999px 0 0 999px;
+    background: rgba(12, 26, 36, 0.78);
+    color: #ffffff;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-right: none;
+    box-shadow: -3px 4px 14px rgba(12, 26, 36, 0.18);
+    opacity: 0.78;
+    cursor: pointer;
+    touch-action: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: opacity 0.22s ease, transform 0.22s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .a11y-mobile-dock.is-scrolling {
+    opacity: 0.34;
+    transform: translateX(10px);
+  }
+
+  .a11y-mobile-dock:hover,
+  .a11y-mobile-dock:focus-visible,
+  .a11y-mobile-dock.is-dragging {
+    opacity: 1;
+    transform: translateX(0);
+    background: rgba(12, 26, 36, 0.94);
+    box-shadow: -4px 6px 18px rgba(12, 26, 36, 0.28);
+  }
+
+  .a11y-mobile-dock.is-dragging {
+    transition: none;
+    cursor: grabbing;
+  }
+
+  .a11y-mobile-dock.has-active {
+    background: rgba(0, 139, 150, 0.88);
+    opacity: 0.9;
+  }
+
+  .a11y-mobile-dock.has-active.is-scrolling {
+    opacity: 0.45;
+  }
+
+  .a11y-mobile-dock-grip {
+    position: absolute;
+    left: 4px;
+    width: 2px;
+    height: 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.34);
+    pointer-events: none;
+  }
+
+  .a11y-mobile-dock-badge {
+    position: absolute;
+    top: -5px;
+    left: -4px;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: #0284c7;
+    color: #ffffff;
+    border: 1.5px solid #ffffff;
+    font-size: 0.62rem;
+    font-weight: 800;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  html.a11y-high-contrast .a11y-mobile-dock {
+    opacity: 1;
+    background: #0f172a;
+    border: 2px solid #f59e0b;
+    border-right: none;
+  }
+}

@@ -1,6 +1,17 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAccessibility } from '../../context/AccessibilityContext'
 import { IconStop, IconVolume } from './Icons'
+
+const DOCK_STORAGE_KEY = 'sigab_a11y_mobile_y'
+const DOCK_MIN_TOP = 88
+const DOCK_BOTTOM_OFFSET = 148
+
+function clampDockY(y) {
+  if (typeof window === 'undefined') return DOCK_MIN_TOP
+  return Math.round(
+    Math.min(Math.max(DOCK_MIN_TOP, y), Math.max(DOCK_MIN_TOP, window.innerHeight - DOCK_BOTTOM_OFFSET)),
+  )
+}
 
 export const AccessibilityIcon = ({ size = 18 }) => (
   <svg
@@ -32,11 +43,28 @@ export default function AccessibilityWidget() {
     isPanelOpen,
     closePanel,
     togglePanel,
+    activeCount,
     speechSupported,
     vibrationSupported,
   } = useAccessibility()
 
   const panelRef = useRef(null)
+  const [dockY, setDockY] = useState(() => {
+    if (typeof window === 'undefined') return null
+    try {
+      const saved = localStorage.getItem(DOCK_STORAGE_KEY)
+      if (saved === null) return null
+      const parsed = Number(saved)
+      return Number.isFinite(parsed) ? clampDockY(parsed) : null
+    } catch {
+      return null
+    }
+  })
+  const [isScrolling, setIsScrolling] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
+  const dragRef = useRef({ active: false, pointerId: null, startY: 0, startTop: 0, moved: false, lastY: null })
+  const suppressClickRef = useRef(false)
+  const scrollTimerRef = useRef(null)
 
   // Keyboard shortcut Alt+A to toggle, Escape to close
   useEffect(() => {
@@ -51,6 +79,91 @@ export default function AccessibilityWidget() {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isPanelOpen, togglePanel, closePanel])
+
+  // Auto-tuck mobile dock while scrolling so content remains unobstructed
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.innerWidth >= 768) return
+      setIsScrolling(true)
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current)
+      scrollTimerRef.current = setTimeout(() => {
+        setIsScrolling(false)
+      }, 650)
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current)
+    }
+  }, [])
+
+  // Keep custom mobile dock Y position within safe viewport bounds on resize/rotation
+  useEffect(() => {
+    if (dockY === null) return
+    const handleResize = () => {
+      setDockY((prev) => (prev === null ? null : clampDockY(prev)))
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [dockY])
+
+  const handleDockPointerDown = (e) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    dragRef.current = {
+      active: true,
+      pointerId: e.pointerId,
+      startY: e.clientY,
+      startTop: rect.top,
+      moved: false,
+      lastY: rect.top,
+    }
+    e.currentTarget.setPointerCapture?.(e.pointerId)
+  }
+
+  const handleDockPointerMove = (e) => {
+    if (!dragRef.current.active || dragRef.current.pointerId !== e.pointerId) return
+    const deltaY = e.clientY - dragRef.current.startY
+    if (!dragRef.current.moved && Math.abs(deltaY) > 6) {
+      dragRef.current.moved = true
+      setIsDragging(true)
+    }
+    if (dragRef.current.moved) {
+      const nextY = clampDockY(dragRef.current.startTop + deltaY)
+      dragRef.current.lastY = nextY
+      setDockY(nextY)
+    }
+  }
+
+  const finishDrag = (e) => {
+    if (!dragRef.current.active) return
+    if (dragRef.current.pointerId !== null) {
+      try {
+        e.currentTarget.releasePointerCapture?.(dragRef.current.pointerId)
+      } catch {
+        // Ignore if capture was already released
+      }
+    }
+    if (dragRef.current.moved) {
+      suppressClickRef.current = true
+      try {
+        localStorage.setItem(DOCK_STORAGE_KEY, String(dragRef.current.lastY))
+      } catch {
+        // Ignore storage quota errors
+      }
+    }
+    dragRef.current.active = false
+    setIsDragging(false)
+  }
+
+  const handleDockClick = () => {
+    if (suppressClickRef.current) {
+      suppressClickRef.current = false
+      return
+    }
+    togglePanel()
+  }
 
   const handleSkipToContent = (e) => {
     e.preventDefault()
@@ -72,6 +185,29 @@ export default function AccessibilityWidget() {
       <a href="#main-content" className="skip-to-content" onClick={handleSkipToContent}>
         Lewati ke konten utama
       </a>
+
+      {!isPanelOpen && (
+        <button
+          type="button"
+          className={`a11y-mobile-dock${isScrolling && !isDragging ? ' is-scrolling' : ''}${isDragging ? ' is-dragging' : ''}${activeCount > 0 ? ' has-active' : ''}`}
+          style={dockY !== null ? { top: `${dockY}px`, bottom: 'auto' } : undefined}
+          onPointerDown={handleDockPointerDown}
+          onPointerMove={handleDockPointerMove}
+          onPointerUp={finishDrag}
+          onPointerCancel={finishDrag}
+          onClick={handleDockClick}
+          aria-label={activeCount > 0 ? `Pengaturan Aksesibilitas (${activeCount} aktif)` : 'Pengaturan Aksesibilitas'}
+          title="Aksesibilitas (geser atas/bawah untuk memindahkan)"
+        >
+          <span className="a11y-mobile-dock-grip" aria-hidden="true" />
+          <AccessibilityIcon size={18} />
+          {activeCount > 0 && (
+            <span className="a11y-mobile-dock-badge" aria-hidden="true">
+              {activeCount}
+            </span>
+          )}
+        </button>
+      )}
 
       {isPanelOpen && (
         <div

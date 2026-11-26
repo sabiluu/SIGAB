@@ -4535,6 +4535,174 @@
   z-index: 2050 !important;
 }
 
+.warga-topbar-page-title {
+  display: none;
+}
+
+/* Desktop (>= 960px): Pin sidebar permanently without duplicating navbar brand */
+@media (min-width: 960px) {
+  .warga-sidebar,
+  .warga-sidebar.closed,
+  .warga-sidebar.open {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 252px !important;
+    min-width: 252px !important;
+    max-width: 252px !important;
+    flex: 0 0 252px !important;
+    height: 100vh !important;
+    padding: 0 14px 18px !important;
+    transform: translateX(0) !important;
+    pointer-events: auto !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    z-index: 1200 !important;
+  }
+
+  .warga-sidebar.closed .warga-sidebar-header-row,
+  .warga-sidebar .warga-sidebar-header-row {
+    justify-content: flex-start !important;
+    gap: 10px !important;
+    height: 68px;
+    min-height: 68px;
+    padding: 0 4px !important;
+    margin-bottom: 14px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  }
+
+  .warga-sidebar.closed .warga-sidebar-brand,
+  .warga-sidebar .warga-sidebar-brand {
+    display: flex !important;
+  }
+
+  .warga-sidebar.closed .warga-sidebar-nav,
+  .warga-sidebar .warga-sidebar-nav {
+    align-items: stretch !important;
+    gap: 6px !important;
+  }
+
+  .warga-sidebar.closed .warga-sidebar-item,
+  .warga-sidebar .warga-sidebar-item {
+    justify-content: flex-start !important;
+    width: 100% !important;
+    height: auto !important;
+    padding: 10px 12px !important;
+    border-radius: 8px !important;
+    margin: 0 !important;
+  }
+
+  .warga-sidebar.closed .warga-sidebar-item span,
+  .warga-sidebar .warga-sidebar-item span {
+    display: inline !important;
+  }
+
+  .warga-sidebar.closed .a11y-sidebar-badge,
+  .warga-sidebar .a11y-sidebar-badge {
+    display: inline-flex !important;
+  }
+
+  .warga-sidebar.closed .warga-sidebar-bottom,
+  .warga-sidebar .warga-sidebar-bottom {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+
+  .warga-sidebar.closed .warga-sidebar-sim-btn,
+  .warga-sidebar .warga-sidebar-sim-btn {
+    justify-content: space-between !important;
+    width: 100% !important;
+    height: auto !important;
+    padding: 10px 12px !important;
+    border-radius: 10px !important;
+    margin: 0 !important;
+  }
+
+  .warga-sidebar.closed .warga-sidebar-sim-info,
+  .warga-sidebar .warga-sidebar-sim-info {
+    justify-content: flex-start !important;
+    gap: 10px !important;
+  }
+
+  .warga-sidebar.closed .warga-sidebar-sim-text,
+  .warga-sidebar .warga-sidebar-sim-text,
+  .warga-sidebar.closed .warga-sidebar-sim-toggle,
+  .warga-sidebar .warga-sidebar-sim-toggle,
+  .warga-sidebar.closed .warga-sidebar-help-card,
+  .warga-sidebar .warga-sidebar-help-card {
+    display: flex !important;
+  }
+
+  .warga-sidebar.closed .warga-sidebar-logout-btn,
+  .warga-sidebar .warga-sidebar-logout-btn {
+    justify-content: flex-start !important;
+    width: 100% !important;
+    height: auto !important;
+    padding: 10px 12px !important;
+    border-radius: 10px !important;
+    margin: 0 !important;
+  }
+
+  .warga-sidebar.closed .warga-sidebar-logout-btn span,
+  .warga-sidebar .warga-sidebar-logout-btn span {
+    display: inline !important;
+  }
+
+  .warga-sidebar-toggle-btn-inside,
+  .warga-sidebar-backdrop,
+  .warga-sidebar-toggle-btn.gh-hamburger-btn,
+  .warga-topbar .sigab-navbar-brand {
+    display: none !important;
+  }
+
+  .warga-portal-layout.sidebar-open .warga-main-container,
+  .warga-portal-layout.sidebar-closed .warga-main-container,
+  .warga-main-container {
+    margin-left: 252px !important;
+    width: calc(100% - 252px) !important;
+  }
+
+  .warga-topbar {
+    padding: 0 28px;
+    gap: 16px;
+  }
+
+  .warga-topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .warga-topbar-page-title {
+    display: inline-block;
+    font-size: 0.96rem;
+    font-weight: 800;
+    color: var(--warga-text-title);
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+  }
+
+  .warga-topbar-actions {
+    flex-shrink: 0;
+    gap: 10px;
+  }
+}
+
+@media (min-width: 960px) and (max-width: 1200px) {
+  .warga-topbar {
+    padding: 0 18px;
+  }
+
+  .warga-live-chip {
+    display: none;
+  }
+}
+
 
 /* ==========================================================================
    PREMIUM SOS FORM UI ENHANCEMENTS (COMMAND CENTER + EASY TO UNDERSTAND)
